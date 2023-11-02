@@ -1,5 +1,4 @@
 <p align="center">
-  <img width="18%" align="center" src="https://raw.githubusercontent.com/zhiyiYo/PyQt-Fluent-Widgets/master/docs/source/_static/logo.png" alt="logo">
 </p>
   <h1 align="center">
   PyQt-Fluent-Widgets
@@ -8,7 +7,7 @@
   A fluent design widgets library based on PyQt5
 </p>
 
-<p align="center">
+
   <a href="https://pypi.org/project/PyQt-Fluent-Widgets" target="_blank">
     <img src="https://img.shields.io/pypi/v/pyqt-fluent-widgets?color=%2334D058&label=Version" alt="Version">
   </a>
@@ -26,11 +25,7 @@
   </a>
 </p>
 
-<p align="center">
-English | <a href="docs/README_zh.md">简体中文</a>
 </p>
-
-![Interface](https://raw.githubusercontent.com/zhiyiYo/PyQt-Fluent-Widgets/master/docs/source/_static/Interface.jpg)
 
 
 ## Install
@@ -43,7 +38,6 @@ Or install full-featured version:
 pip install "PyQt-Fluent-Widgets[full]" -i https://pypi.org/simple/
 ```
 
-If you are using PySide2, PySide6 or PyQt6, you can download the code in [PySide2](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/PySide2), [PySide6](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/PySide6) or [PyQt6](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/PyQt6) branch.
 
 The component libraries of Qt5 and Qt6 require purchasing a license from the [official website](https://qfluentwidgets.com/price) in order to use them. You can also download the compiled demo `QFluentWidgets_v*.*.*.zip` from the [release page](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/releases).
 
