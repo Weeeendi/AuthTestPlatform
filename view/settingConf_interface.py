@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLayout,QWidget,QHBoxLayo
 
 from qfluentwidgets import (HeaderCardWidget,ScrollArea,BodyLabel,InfoBar,HorizontalSeparator,
                             InfoBarPosition,SwitchButton,ComboBox,HyperlinkButton,DoubleSpinBox,IndicatorPosition,
-                            SpinBox,PillToolButton)
+                            SpinBox,PillToolButton,CheckBox)
 from qfluentwidgets import FluentIcon as FIF
 
 # from resource.ui.SettingInterface_ui import Ui_SettingInterface
@@ -25,7 +25,8 @@ class SettingInterface(ScrollArea):
         self.view.setObjectName("scrollAreaWidgetContents")
         self.vBoxLayout = QVBoxLayout(self.view)
 
-        self.BasicSetCard = BaseSettingCard(self)    
+        self.BasicSetCard = BaseSettingCard(self)  
+        self.Setting_SelectCard = Setting_SelectCard(self)  
         self.TestSetHeaderCard = TestSetHeaderCard(self)
         self.DescriptionCard = DescriptionCard(self)
 
@@ -36,6 +37,7 @@ class SettingInterface(ScrollArea):
         self.vBoxLayout.setSpacing(10)
         self.vBoxLayout.setContentsMargins(30, 30, 30, 30)
         self.vBoxLayout.addWidget(self.BasicSetCard,0,Qt.AlignTop)
+        self.vBoxLayout.addWidget(self.Setting_SelectCard,0,Qt.AlignTop)
         self.vBoxLayout.addWidget(self.TestSetHeaderCard,0,Qt.AlignTop)
         self.vBoxLayout.addWidget(self.DescriptionCard,0,Qt.AlignTop)
 
@@ -83,6 +85,56 @@ class SettingInterface(ScrollArea):
             parent=self
         )
 
+class Setting_SelectCard(HeaderCardWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setTitle('测试项目选择')
+
+        self.expandButton = PillToolButton(FIF.EDIT, self)
+        self.expandButton.setFixedSize(32, 32)
+        self.expandButton.setIconSize(QSize(12, 12))
+        self.headerLayout.addWidget(self.expandButton, 0, Qt.AlignRight)
+
+        self.expandButton.toggled.connect(self._setComponentState)
+        
+        self.flashCheckBox = CheckBox("flash测试",self)
+        self.gsensorCheckBox = CheckBox("gSensor测试",self)
+        self.mainBatteryCheckBox = CheckBox("主电池电压测试",self)
+        self.backupBatteryCheckBox  = CheckBox("备用电池电压测试",self)
+        self.lteInfoCheckBox = CheckBox("蜂窝信息测试",self)
+        self.lteCSQCheckBox = CheckBox("蜂窝信号强度（CSQ）测试",self)
+        self.gpsCheckBox = CheckBox("GPS测试",self)
+        self.BLECheckBox = CheckBox("蓝牙RSSI测试",self)
+        self.LayOurSetting()
+        self._setComponentState(False)
+    
+
+    def LayOurSetting(self):
+        self.rowCount = 0
+        self.ColumnCount = 0
+        self.GridLayout = QGridLayout(self)
+        CheckBox_edits = self.findChildren(CheckBox) 
+        for le in CheckBox_edits:
+            if(self.ColumnCount>0):
+                self.GridLayout.addWidget(le,self.rowCount,self.ColumnCount,Qt.AlignLeft)
+                self.rowCount += 1
+                self.ColumnCount = 0
+                continue
+            self.GridLayout.addWidget(le,self.rowCount,self.ColumnCount,Qt.AlignLeft)
+            self.ColumnCount +=1
+
+        self.viewLayout.addLayout(self.GridLayout)
+
+
+    def _setComponentState(self,isChecked:bool):
+        """set lineEdit"""
+        CheckBox_edits = self.findChildren(CheckBox) 
+        for le in CheckBox_edits:
+            if isChecked: 
+                le.setDisabled(False)
+            else:
+                le.setDisabled(True)
+
 class BaseSettingCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
@@ -99,6 +151,9 @@ class BaseSettingCard(HeaderCardWidget):
         self.GridLayout = QGridLayout(self)
         self.LogLevelLabel = BodyLabel("日志等级", self)
         self.LogLevelCombo = ComboBox(self)
+        listOps = ["INFO","DEBUG","ERROR"]
+        self.LogLevelCombo.addItems(listOps)
+        self.LogLevelCombo.setMinimumWidth(100)
         self.GridLayout.addWidget(self.LogLevelLabel,0,0,Qt.AlignLeft)  
         self.GridLayout.addWidget(self.LogLevelCombo,0,1,Qt.AlignRight)
         self.GridLayout.setColumnStretch(0, 1)
@@ -112,10 +167,9 @@ class BaseSettingCard(HeaderCardWidget):
 
         self.TokenTakeAddrLabel = BodyLabel("注册地址选择", self)
         self.TokenTakeAddrCombo = ComboBox(self)
-        self.TokenTakeAddrCombo.setMinimumWidth(200)
+        self.TokenTakeAddrCombo.setMinimumWidth(400)
         self.GridLayout.addWidget(self.TokenTakeAddrLabel,2,0,Qt.AlignLeft)
         self.GridLayout.addWidget(self.TokenTakeAddrCombo,2,1,Qt.AlignRight)
-
         self.GridLayout.setAlignment(Qt.AlignLeft)
 
         self.viewLayout.addLayout(self.GridLayout)
@@ -166,10 +220,7 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.QGridLayOut = QGridLayout(self)
         self.QGridLayOut.setColumnStretch(0, 1)
         self.QGridLayOut.setColumnStretch(1, 1)  
-        #4G Test
-        self.Test4GLabel = BodyLabel("4G测试", self)
-        self.switchTest4G = SwitchButton(self.tr('Off'),self,IndicatorPosition.RIGHT)
-        self.switchTest4G.checkedChanged.connect(self.onCheckedChanged)
+
         #flash retry
         self.RetryFlashTestLabel = BodyLabel("Flash测试重试次数", self)
         self.RetryFlashEdit = IntEditBox(99,self)
@@ -203,13 +254,6 @@ class TestSetHeaderCard(HeaderCardWidget):
         #Sub Battery MIN volt
         self.SubBattMinVoltLabel = BodyLabel("备用电池下限电压阈值(V)", self)
         self.SubBattMinVoltEdit = DoubleEditBox(9,0.1,self)
-
-        self.QGridLayOut.addWidget(self.Test4GLabel,self.GridRowCount,0,Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.switchTest4G,self.GridRowCount,1,Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(HorizontalSeparator_list[0],self.GridRowCount,0,1,2)
-        self.GridRowCount += 1
 
         self.QGridLayOut.addWidget(self.RetryFlashTestLabel,self.GridRowCount,0,Qt.AlignLeft)
         self.QGridLayOut.addWidget(self.RetryFlashEdit,self.GridRowCount,1,Qt.AlignRight)
@@ -245,7 +289,6 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.QGridLayOut.addWidget(self.SubBattMinVoltLabel,self.GridRowCount,0,Qt.AlignLeft)
         self.QGridLayOut.addWidget(self.SubBattMinVoltEdit,self.GridRowCount,1,Qt.AlignRight)
         self.GridRowCount += 1
-
         
         self.viewLayout.addLayout(self.QGridLayOut)
         self._LineEditInit()
@@ -253,7 +296,6 @@ class TestSetHeaderCard(HeaderCardWidget):
        
     def _LineEditInit(self):
         """set lineEdit"""
-        self.switchTest4G.setDisabled(True)
         Doubleline_edits = self.findChildren(DoubleEditBox) 
         Intline_edits = self.findChildren(IntEditBox) 
         for le in Intline_edits: 
@@ -268,13 +310,11 @@ class TestSetHeaderCard(HeaderCardWidget):
   
         # 设置所有的LineEdit为只读
         if  isChecked: 
-            self.switchTest4G.setDisabled(False) 
             for le in Intline_edits: 
                 le.setDisabled(False)    
             for le in Doubleline_edits:
                 le.setDisabled(False)   
         else:
-            self.switchTest4G.setDisabled(True)
             for le in Intline_edits: 
                 le.setDisabled(True)    
             for le in Doubleline_edits:
@@ -292,9 +332,6 @@ class TestSetHeaderCard(HeaderCardWidget):
             Box.addWidget(LabelWidget,3,Qt.AlignRight)
             Box.setAlignment(Qt.AlignRight)
 
-    def onCheckedChanged(self, isChecked: bool):
-        text = 'On' if isChecked else 'Off'
-        self.switchTest4G.setText(text) 
 
 class IntEditBox(SpinBox):
     """ Int line edit """

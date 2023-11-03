@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication,QHBoxLayout,QFrame
 
-from qfluentwidgets import NavigationItemPosition,setStyleSheet,setTheme, Theme,setThemeColor, FluentWindow, SubtitleLabel, setFont
+from qfluentwidgets import NavigationItemPosition,setStyleSheet,setTheme,Theme,setThemeColor, FluentWindow, SubtitleLabel, setFont
 from qfluentwidgets import FluentIcon as FIF
 
 from view.AuthTest_interface import AuthTestInterface
@@ -62,7 +62,7 @@ class Window(FluentWindow):
 
     def initWindow(self):
         self.resize(900, 750)
-        self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
+        self.setWindowIcon(QIcon("resource/logo.ico"))
         self.setWindowTitle('Production Test Platform')
 
 
@@ -70,10 +70,10 @@ if __name__ == '__main__':
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-
-    #setTheme(Theme.DARK)
-
     app = QApplication(sys.argv)
+
     w = Window()
+    # setTheme(Theme.DARK)
+
     w.show()
     app.exec()

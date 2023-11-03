@@ -502,7 +502,7 @@
              </widget>
             </item>
             <item>
-             <widget class="CheckBox" name="skipRelaxCheckBox">
+             <widget class="CheckBox" name="checkBox">
               <property name="enabled">
                <bool>true</bool>
               </property>
