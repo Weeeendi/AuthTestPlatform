@@ -99,6 +99,9 @@ class BaseSettingCard(HeaderCardWidget):
         self.GridLayout = QGridLayout(self)
         self.LogLevelLabel = BodyLabel("日志等级", self)
         self.LogLevelCombo = ComboBox(self)
+        listOps = ["INFO","DEBUG","ERROR"]
+        self.LogLevelCombo.addItems(listOps)
+        self.LogLevelCombo.setMinimumWidth(100)
         self.GridLayout.addWidget(self.LogLevelLabel,0,0,Qt.AlignLeft)  
         self.GridLayout.addWidget(self.LogLevelCombo,0,1,Qt.AlignRight)
         self.GridLayout.setColumnStretch(0, 1)
@@ -112,7 +115,7 @@ class BaseSettingCard(HeaderCardWidget):
 
         self.TokenTakeAddrLabel = BodyLabel("注册地址选择", self)
         self.TokenTakeAddrCombo = ComboBox(self)
-        self.TokenTakeAddrCombo.setMinimumWidth(200)
+        self.TokenTakeAddrCombo.setMinimumWidth(400)
         self.GridLayout.addWidget(self.TokenTakeAddrLabel,2,0,Qt.AlignLeft)
         self.GridLayout.addWidget(self.TokenTakeAddrCombo,2,1,Qt.AlignRight)
 
