@@ -118,7 +118,7 @@ class BaseSettingCard(HeaderCardWidget):
 
         self.GridLayout.setAlignment(Qt.AlignLeft)
 
-        # self.viewLayout.addLayout(self.GridLayout)
+        self.viewLayout.addLayout(self.GridLayout)
         self._componentInit()
 
     def _componentInit(self):
@@ -247,7 +247,7 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.GridRowCount += 1
 
         
-        #self.viewLayout.addLayout(self.QGridLayOut)
+        self.viewLayout.addLayout(self.QGridLayOut)
         self._LineEditInit()
         
        
@@ -351,10 +351,10 @@ class DescriptionCard(HeaderCardWidget):
             parent=self,
             icon=FIF.LINK
         )
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        
         self.horizontalLayout.addWidget(self.descriptionLabel)
         self.horizontalLayout.addWidget(self.hyperlinkButton)
-        self.horizontalLayout.addItem(spacerItem)
+        self.horizontalLayout.setAlignment(Qt.AlignLeft)
         
         self.viewLayout.addLayout(self.horizontalLayout)
 
