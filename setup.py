@@ -5,10 +5,10 @@ with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="PyQt-Fluent-Widgets",
-    version="1.3.5",
+    name="AuthTest",
+    version="1.0.0",
     keywords="pyqt fluent widgets",
-    author="zhiyiYo",
+    author="wendy",
     author_email="shokokawaii@outlook.com",
     description="A fluent design widgets library based on PyQt5",
     long_description=long_description,

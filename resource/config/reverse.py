@@ -1,6 +1,7 @@
 import configparser
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,QFileDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog
 import sys
+
 
 class IniFileDialog(QWidget):
     def __init__(self):
@@ -52,7 +53,6 @@ class IniFileDialog(QWidget):
 
 
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
 
     w = IniFileDialog()

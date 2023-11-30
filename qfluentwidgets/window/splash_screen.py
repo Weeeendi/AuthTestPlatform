@@ -1,16 +1,14 @@
 # coding:utf-8
 from typing import Union
-from PyQt5 import QtGui
 
-from PyQt5.QtCore import Qt, QSize, QRectF, QEvent
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QIcon
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGraphicsDropShadowEffect
-
-from ..common.icon import FluentIconBase, drawIcon, toQIcon
-from ..common.style_sheet import isDarkTheme, FluentStyleSheet
-from ..components.widgets import IconWidget
+from PyQt5.QtCore import Qt, QSize, QEvent
+from PyQt5.QtGui import QPainter, QColor, QIcon
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect
 from qframelesswindow import TitleBar
 
+from ..common.icon import FluentIconBase, toQIcon
+from ..common.style_sheet import isDarkTheme, FluentStyleSheet
+from ..components.widgets import IconWidget
 
 
 class SplashScreen(QWidget):
@@ -59,6 +57,7 @@ class SplashScreen(QWidget):
         self.titleBar = titleBar
         titleBar.setParent(self)
         titleBar.raise_()
+
         self.titleBar.resize(self.width(), self.titleBar.height())
 
     def eventFilter(self, obj, e: QEvent):
@@ -87,3 +86,7 @@ class SplashScreen(QWidget):
         c = 32 if isDarkTheme() else 255
         painter.setBrush(QColor(c, c, c))
         painter.drawRect(self.rect())
+
+
+if __name__ == '__main__':
+    login_lage = SplashScreen()

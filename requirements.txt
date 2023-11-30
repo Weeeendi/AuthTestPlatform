@@ -1,6 +1,9 @@
 PyQt5>=5.15.0
 PyQt5-Frameless-Window>=0.3.3
+pandas>=2.0.3
 darkdetect
 colorthief
 scipy
 pillow<=9.4.0
+requests<=2.26.0
+pyserial>=3.5

@@ -17,9 +17,11 @@ class ProgressRing(ProgressBar):
         self.lightBackgroundColor = QColor(0, 0, 0, 34)
         self.darkBackgroundColor = QColor(255, 255, 255, 34)
         self._strokeWidth = 6
+        self.color = themeColor()
 
         self.setTextVisible(False)
         self.setFixedSize(100, 100)
+        self.valueChanged.connect(self.setColor)
         setFont(self)
 
     def getStrokeWidth(self):
@@ -39,30 +41,31 @@ class ProgressRing(ProgressBar):
         painter = QPainter(self)
         painter.setRenderHints(QPainter.Antialiasing)
 
-        cw = self._strokeWidth    # circle thickness
+        cw = self._strokeWidth  # circle thickness
         w = min(self.height(), self.width()) - cw
-        rc = QRectF(cw/2, self.height()/2 - w/2, w, w)
+        rc = QRectF(cw / 2, self.height() / 2 - w / 2, w, w)
 
         # draw background
         bc = self.darkBackgroundColor if isDarkTheme() else self.lightBackgroundColor
         pen = QPen(bc, cw, cap=Qt.RoundCap, join=Qt.RoundJoin)
         painter.setPen(pen)
-        painter.drawArc(rc, 0, 360*16)
+        painter.drawArc(rc, 0, 360 * 16)
 
         if self.maximum() <= self.minimum():
             return
 
         # draw bar
-        pen.setColor(themeColor())
+        pen.setColor(self.color)
         painter.setPen(pen)
         degree = int(self.val / (self.maximum() - self.minimum()) * 360)
-        painter.drawArc(rc, 90*16, -degree*16)
+        painter.drawArc(rc, 90 * 16, -degree * 16)
 
         # draw text
         if self.isTextVisible():
             self._drawText(painter, self.valText())
 
-    strokeWidth = pyqtProperty(int, getStrokeWidth, setStrokeWidth)
+    def setColor(self, Color):
+        self.color = QColor(Color)
 
 
 class IndeterminateProgressRing(QProgressBar):
@@ -174,19 +177,19 @@ class IndeterminateProgressRing(QProgressBar):
 
         cw = self._strokeWidth
         w = min(self.height(), self.width()) - cw
-        rc = QRectF(cw/2, self.height()/2 - w/2, w, w)
+        rc = QRectF(cw / 2, self.height() / 2 - w / 2, w, w)
 
         # draw background
         bc = self.darkBackgroundColor if isDarkTheme() else self.lightBackgroundColor
         pen = QPen(bc, cw, cap=Qt.RoundCap, join=Qt.RoundJoin)
         painter.setPen(pen)
-        painter.drawArc(rc, 0, 360*16)
+        painter.drawArc(rc, 0, 360 * 16)
 
         # draw bar
         pen.setColor(themeColor())
         painter.setPen(pen)
 
         startAngle = -self.startAngle + 180
-        painter.drawArc(rc, (startAngle % 360)*16, -self.spanAngle*16)
+        painter.drawArc(rc, (startAngle % 360) * 16, -self.spanAngle * 16)
 
     strokeWidth = pyqtProperty(int, getStrokeWidth, setStrokeWidth)
