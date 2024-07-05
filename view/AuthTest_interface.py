@@ -1,5 +1,4 @@
 # coding:utf-8
-from typing import TypeVar
 
 import serial
 import serial.tools.list_ports
@@ -25,10 +24,13 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     testSend_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送输入的硬件唯一标识码
     deviceId_sinOut = pyqtSignal(str)
+    # 自定义信号,用来显示授权信息
+    authInfo_sinOut = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
+        self.regUrl = None
         self.setupUi(self)
 
         # Flag of StartButton
@@ -37,8 +39,6 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # Authkey BLE MAC or IMEI
         self.AuthParam = ''
 
-        # Auth Information
-        self.authInfo = None
         # set the icon of button
         self.Button_UpdateSerial.setIcon(FluentIcon.SYNC)
         # self.PrimaryToolButton_playlog.setIcon(FluentIcon.PLAY)
@@ -71,12 +71,16 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
         try:
             self.settings = QSettings("resource/config/sys_config.ini", QSettings.IniFormat)
-            self.printerCnt = int(self.settings.value("SETUP/printer_count"))
-            self.regUrl = self.settings.value("SETUP/reg_url")
-        except:
-            log.logger.error('缺少config.ini文件！')
+            self.printerCnt = int(self.settings.value("BASE_SETTING/tag_print_times"))
+            self.regUrl = self.settings.value("BASE_SETTING/reg_url")
+        except Exception as e:
+            log.logger.error(e)
+            log.logger.error('读配置文件异常！')
             self.printerCnt = 1
             self.regUrl = 'http://iot.stage.vehiclink.com'
+
+        # 绑定信号槽函数
+        self.parent().settingInterface.BasicSetCard.reg_url_sinOut.connect(self.get_reg_url_slot)
 
         # 默认使能配网参数授权
         self.CheckBox_AuthTest.setChecked(True)
@@ -106,6 +110,11 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # 初始化成功率统计接口
         self.SuccessCnt.setText(str(self.success))
         self.FailCnt.setText(str(self.fail))
+
+    def get_reg_url_slot(self, url):
+        if url != '':
+            self.regUrl = url
+            print("注册地址变更为:" + self.regUrl)
 
     def setProcessBarColor(self, value, color):
         self.progressTestBar.setColor(color)
@@ -203,6 +212,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             self.testStart = True
                             # 清空通讯交互区窗口
                             self.LogBoswer.clear()
+                            # 清空授权结果区窗口
+                            self.AuthRES_TextEdit.clear()
 
                             ###############################################################################
                             # 创建BaseUartThread线程实例,
@@ -332,7 +343,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     def updatePassDate(self):
         self.SuccessCnt.setText(str(self.success))
         self.FailCnt.setText(str(self.fail))
-        self.PassPrecents.setText(str('%.1f' % float(self.success / (self.success + self.fail) * 100))+'%')
+        self.PassPrecents.setText(str('%.1f' % float(self.success / (self.success + self.fail) * 100)) + '%')
 
     def dealProgressBarAuth(self, xInt, xStr):
         """自定义槽，处理授权进度条数据"""
@@ -390,8 +401,11 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # 判断输入是否有效
         if not authInfo:
             return None
-
-        self.authInfo = authInfo
+        # 清空上次授权信息
+        self.AuthRES_TextEdit.clear()
+        # 获取光标位置
+        cursor = self.AuthRES_TextEdit.textCursor()
+        cursor.insertText(authInfo)
 
     def dispContent(self, sourceObject, argvStr):
         """接受输入的硬件唯一标识码，并做自定义信号发送

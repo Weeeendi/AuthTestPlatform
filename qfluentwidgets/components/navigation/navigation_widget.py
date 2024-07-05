@@ -149,7 +149,7 @@ class NavigationPushButton(NavigationWidget):
             painter.setBrush(QColor(c, c, c, 10))
             painter.drawRoundedRect(self.rect(), 5, 5)
 
-        drawIcon(self._icon, painter, QRectF(11.5+pl, 10, 16, 16))
+        drawIcon(self._icon, painter, QRectF(11.5 + pl, 10, 16, 16))
 
         # draw text
         if self.isCompacted:
@@ -157,8 +157,8 @@ class NavigationPushButton(NavigationWidget):
 
         painter.setFont(self.font())
         painter.setPen(QColor(c, c, c))
-        painter.drawText(QRect(44+pl, 0, self.width()-57-pl-pr,
-                            self.height()), Qt.AlignVCenter, self.text())
+        painter.drawText(QRect(44 + pl, 0, self.width() - 57 - pl - pr,
+                               self.height()), Qt.AlignVCenter, self.text())
 
 
 class NavigationToolButton(NavigationPushButton):
@@ -198,7 +198,7 @@ class NavigationSeparator(NavigationWidget):
 class NavigationTreeItem(NavigationPushButton):
     """ Navigation tree item widget """
 
-    itemClicked = pyqtSignal(bool, bool)    # triggerByUser, clickArrow
+    itemClicked = pyqtSignal(bool, bool)  # triggerByUser, clickArrow
 
     def __init__(self, icon: Union[str, QIcon, FIF], text: str, isSelectable: bool, parent=None):
         super().__init__(icon, text, isSelectable, parent)
@@ -213,12 +213,12 @@ class NavigationTreeItem(NavigationPushButton):
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
-        clickArrow = QRectF(self.width()-30, 8, 20, 20).contains(e.pos())
+        clickArrow = QRectF(self.width() - 30, 8, 20, 20).contains(e.pos())
         self.itemClicked.emit(True, clickArrow and not self.parent().isLeaf())
         self.update()
 
     def _canDrawIndicator(self):
-        p = self.parent()   # type: NavigationTreeWidget
+        p = self.parent()  # type: NavigationTreeWidget
         if p.isLeaf() or p.isSelected:
             return p.isSelected
 
@@ -229,8 +229,8 @@ class NavigationTreeItem(NavigationPushButton):
         return False
 
     def _margins(self):
-        p = self.parent()   # type: NavigationTreeWidget
-        return QMargins(p.nodeDepth*28, 0, 20*bool(p.treeChildren), 0)
+        p = self.parent()  # type: NavigationTreeWidget
+        return QMargins(p.nodeDepth * 28, 0, 20 * bool(p.treeChildren), 0)
 
     def paintEvent(self, e):
         super().paintEvent(e)

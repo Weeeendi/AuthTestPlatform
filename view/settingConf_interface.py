@@ -1,17 +1,16 @@
 # coding:utf-8
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QPoint, pyqtSignal
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
 
-from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, HorizontalSeparator,
-                            InfoBarPosition, ComboBox, HyperlinkButton, DoubleSpinBox, SpinBox, PillToolButton,
-                            CheckBox)
-
 # from resource.ui.SettingInterface_ui import Ui_SettingInterface
 from data_manage import TestOptions
+from qfluentwidgets import FluentIcon as FIF, InfoBarManager
+from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
+                            HyperlinkButton, DoubleSpinBox, SpinBox, PillToolButton,
+                            CheckBox)
 
 
 class SettingInterface(ScrollArea):
@@ -56,30 +55,44 @@ class SettingInterface(ScrollArea):
         shadowEffect.setOffset(0, 0)
         card.setGraphicsEffect(shadowEffect)
 
-    def errorNotice(self, notice_comm):
-        """错误提示"""
-        InfoBar.error(
-            title='ERROR',
-            content=notice_comm,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.BOTTOM_RIGHT,
-            duration=-1,  # won't disappear automatically
-            parent=self
-        )
 
-    def successNotice(self, notice_comm):
-        """成功提醒"""
-        InfoBar.success(
-            title='SUCCESS',
-            content=notice_comm,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            # position='Custom',   # NOTE: use custom info bar manager
-            duration=2000,
-            parent=self
-        )
+def errorNotice(self, notice_comm):
+    """错误提示"""
+    InfoBar.error(
+        title='ERROR',
+        content=notice_comm,
+        orient=Qt.Horizontal,
+        isClosable=False,
+        position=InfoBarPosition.BOTTOM_RIGHT,
+        duration=2000,  # won't disappear automatically
+        parent=self
+    )
+
+
+def successNotice(self, notice_comm):
+    """成功提醒"""
+    InfoBar.success(
+        title='SUCCESS',
+        content=notice_comm,
+        orient=Qt.Horizontal,
+        isClosable=False,
+        position=InfoBarPosition.TOP,
+        # position='Custom',   # NOTE: use custom info bar manager
+        duration=2000,
+        parent=self
+    )
+
+
+def createSaveInfoBar(self):
+    InfoBar.success(
+        title='提示',
+        content="已保存当前设置",
+        orient=Qt.Horizontal,
+        isClosable=False,  # disable close button
+        position=InfoBarPosition.TOP,
+        duration=2000,
+        parent=self.parent().parent()
+    )
 
 
 class SettingSelectCard(HeaderCardWidget):
@@ -106,7 +119,11 @@ class SettingSelectCard(HeaderCardWidget):
         self.gpsCheckBox = CheckBox("GPS测试", self)
         self.BLECheckBox = CheckBox("蓝牙RSSI测试", self)
         self.LayOurSetting()
-        self._setComponentState(False)
+
+        CheckBox_edits = self.findChildren(CheckBox)
+        for le in CheckBox_edits:
+            le.setDisabled(True)
+        # self._setComponentState(False)
 
     def LayOurSetting(self):
         self.rowCount = 0
@@ -131,9 +148,14 @@ class SettingSelectCard(HeaderCardWidget):
                 le.setDisabled(False)
             else:
                 le.setDisabled(True)
+        if not isChecked:
+            createSaveInfoBar(self)
 
 
 class BaseSettingCard(HeaderCardWidget):
+
+    # 自定义信号，用来发送注册地址的值
+    reg_url_sinOut = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -149,7 +171,7 @@ class BaseSettingCard(HeaderCardWidget):
         self.GridLayout = QGridLayout(self)
         self.LogLevelLabel = BodyLabel("日志等级", self)
         self.LogLevelCombo = ComboBox(self)
-        listOps = ["INFO", "DEBUG", "ERROR"]
+        listOps = ["info", "debug", "error"]
         self.LogLevelCombo.addItems(listOps)
         self.LogLevelCombo.setMinimumWidth(100)
         self.GridLayout.addWidget(self.LogLevelLabel, 0, 0, Qt.AlignLeft)
@@ -169,10 +191,21 @@ class BaseSettingCard(HeaderCardWidget):
         self.GridLayout.addWidget(self.TokenTakeAddrCombo, 2, 1, Qt.AlignRight)
         self.GridLayout.setAlignment(Qt.AlignLeft)
 
+        self.TokenTakeAddrCombo.currentTextChanged.connect(self.handle_combo_text_changed)
+
         self.viewLayout.addLayout(self.GridLayout)
         self._componentInit()
 
+        self.options = TestOptions()
+        # self.loading_data()
+
+    def handle_combo_text_changed(self):
+        # Emit your custom signal with the current text
+        text = self.TokenTakeAddrCombo.currentText()
+        self.reg_url_sinOut.emit(text)
+
     def _componentInit(self):
+
         """set lineEdit"""
         ComboBox_edits = self.findChildren(ComboBox)
         SpinBox_edits = self.findChildren(SpinBox)
@@ -180,6 +213,22 @@ class BaseSettingCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in SpinBox_edits:
             le.setDisabled(True)
+
+    def data_saving(self):
+        """保存设置"""
+        self.options.base_set.logger_level.value = self.LogLevelCombo.currentText()
+        self.options.base_set.tag_print_times.value = self.tagPrintNum.value()
+        self.options.base_set.reg_urls[0].value = self.TokenTakeAddrCombo.currentText()
+        self.options.write_basedata()
+
+    def loading_data(self):
+        """上传数据"""
+        self.options.read_basedata()
+        self.LogLevelCombo.setCurrentText(self.options.base_set.logger_level.value)
+        self.tagPrintNum.setValue(int(self.options.base_set.tag_print_times.value))
+        for item in self.options.base_set.reg_urls:
+            if item.value != '' and item.value is not None:
+                self.TokenTakeAddrCombo.addItem(item.value)
 
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
@@ -192,11 +241,15 @@ class BaseSettingCard(HeaderCardWidget):
                 le.setDisabled(False)
             for le in SpinBox_edits:
                 le.setDisabled(False)
+
         else:
             for le in ComboBox_edits:
                 le.setDisabled(True)
             for le in SpinBox_edits:
                 le.setDisabled(True)
+            # save data
+            self.data_saving()
+            createSaveInfoBar(self)
 
 
 class TestSetHeaderCard(HeaderCardWidget):
@@ -283,10 +336,14 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.GridRowCount += 1
 
         self.viewLayout.addLayout(self.QGridLayOut)
+        # self.date = TestOptions()
+        # self._loadSettingData()
         self._LineEditInit()
 
-    def _loadSettingData(self):
-        self.date = TestOptions()
+    # def _loadSettingData(self):
+    #
+    #
+    # def _saveSettingData(self):
 
     def _LineEditInit(self):
         """set lineEdit"""
@@ -296,6 +353,7 @@ class TestSetHeaderCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in DoubleLine_edits:
             le.setDisabled(True)
+
 
     def setLineEditReadOnly(self, isChecked: bool):
         # 获取所有的LineEdit控件  
@@ -308,11 +366,14 @@ class TestSetHeaderCard(HeaderCardWidget):
                 le.setDisabled(False)
             for le in DoubleLine_edits:
                 le.setDisabled(False)
+
         else:
             for le in IntLine_edits:
                 le.setDisabled(True)
             for le in DoubleLine_edits:
                 le.setDisabled(True)
+
+            createSaveInfoBar(self)
 
     def LayOurSetting(self):
         self.rowCount = 0
@@ -331,15 +392,15 @@ class TestSetHeaderCard(HeaderCardWidget):
 
     @staticmethod
     def setValueLayOut(Box, LabelWidget, SpinBoxWidget, indicatorPos=0):
-        # set layout
+        # 设置布局
         if indicatorPos == 0:
-            Box.addWidget(SpinBoxWidget, 4)
-            Box.addWidget(LabelWidget, 4)
-            Box.setAlignment(Qt.AlignRight)
+            Box.addWidget(SpinBoxWidget, 4)  # 添加SpinBoxWidget到布局中，行数为4
+            Box.addWidget(LabelWidget, 4)  # 添加LabelWidget到布局中，行数为4
+            Box.setAlignment(Qt.AlignRight)  # 设置布局中的对齐方式为右对齐
         else:
-            Box.addWidget(SpinBoxWidget, 3, Qt.AlignRight)
-            Box.addWidget(LabelWidget, 3, Qt.AlignRight)
-            Box.setAlignment(Qt.AlignRight)
+            Box.addWidget(SpinBoxWidget, 3, Qt.AlignRight)  # 添加SpinBoxWidget到布局中，行数为3，并设置右对齐
+            Box.addWidget(LabelWidget, 3, Qt.AlignRight)  # 添加LabelWidget到布局中，行数为3，并设置右对齐
+            Box.setAlignment(Qt.AlignRight)  # 设置布局中的对齐方式为右对齐
 
 
 class IntEditBox(SpinBox):

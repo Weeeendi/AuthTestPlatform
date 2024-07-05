@@ -1,0 +1,53 @@
+[
+
+  {
+    "funName": "Main_Battery",
+    "dspName": "主电池电压测试",
+    "unit": "mV",
+    "type": "MM_value",
+    "maxValue": 1,
+    "minValue": 0,
+    "enable": true,
+    "retry": 3
+  },
+  {
+    "funName": "Sub_Battery",
+    "dspName": "副电池电压测试",
+    "unit": "mV",
+    "type": "MM_value",
+    "maxValue": 1,
+    "minValue": 0,
+    "enable": true,
+    "retry": 3
+  },
+  {
+    "funName": "GPS_Signal_Strength",
+    "dspName": "GPS信号质量",
+    "type": "m_value",
+    "minValue": 3,
+    "enable": true,
+    "retry": 3
+  },
+  {
+    "funName": "LTE_Signal_Strength",
+    "dspName": "LTE信号强度",
+    "type": "m_value",
+    "minValue": 10,
+    "enable": true,
+    "retry": 3
+  },
+  {
+    "funName": "G_sensor",
+    "dspName": "三轴传感器测试",
+    "type": "bool",
+    "enable": true,
+    "retry": 3
+  },
+  {
+    "funName": "Flash_Test",
+    "dspName": "Flash测试",
+    "type": "bool",
+    "enable": true,
+    "retry": 3
+  }
+]

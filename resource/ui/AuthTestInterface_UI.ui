@@ -34,7 +34,7 @@
      <property name="spacing">
       <number>12</number>
      </property>
-     <item row="0" column="1" colspan="3">
+     <item row="0" column="2" colspan="2">
       <widget class="CardWidget" name="progressCard">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -44,13 +44,13 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>400</width>
+         <width>500</width>
          <height>0</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>500</width>
+         <width>16777215</width>
          <height>410</height>
         </size>
        </property>
@@ -361,7 +361,7 @@
        </layout>
       </widget>
      </item>
-     <item row="1" column="0" colspan="4">
+     <item row="1" column="2" rowspan="2" colspan="2">
       <widget class="CardWidget" name="LogViewerCard">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -384,13 +384,22 @@
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_7">
+          <property name="spacing">
+           <number>6</number>
+          </property>
           <property name="leftMargin">
-           <number>8</number>
+           <number>0</number>
           </property>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
             <property name="rightMargin">
-             <number>10</number>
+             <number>0</number>
             </property>
             <item>
              <spacer name="horizontalSpacer_7">
@@ -410,6 +419,18 @@
             </item>
             <item>
              <widget class="StrongBodyLabel" name="LogViewLabel">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
               <property name="text">
                <string>数据交互监视</string>
               </property>
@@ -423,10 +444,13 @@
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
               <property name="sizeHint" stdset="0">
                <size>
                 <width>40</width>
-                <height>20</height>
+                <height>0</height>
                </size>
               </property>
              </spacer>
@@ -437,10 +461,16 @@
             <item>
              <widget class="SwitchButton" name="LogSwitchButton">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
               </property>
               <property name="spacing">
                <number>12</number>
@@ -471,28 +501,12 @@
             </property>
            </widget>
           </item>
-          <item>
-           <spacer name="verticalSpacer_8">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>3</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
         </item>
        </layout>
       </widget>
      </item>
-     <item row="0" column="0">
+     <item row="0" column="0" colspan="2">
       <widget class="CardWidget" name="SettingCard">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -502,7 +516,7 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>260</width>
+         <width>200</width>
          <height>0</height>
         </size>
        </property>
@@ -869,6 +883,78 @@
              </widget>
             </item>
            </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="0" rowspan="2" colspan="2">
+      <widget class="CardWidget" name="CardWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_13">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <spacer name="horizontalSpacer_12">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>2</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="StrongBodyLabel" name="AuthRES_Label">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>授权信息</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_11">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="PlainTextEdit" name="AuthRES_TextEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="overwriteMode">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

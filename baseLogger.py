@@ -57,7 +57,7 @@ class Logger(object):
         # 获取log level
         try:
             self.settings = QSettings("resource/config/sys_config.ini", QSettings.IniFormat)
-            self.loggerLevel = self.settings.value("SETUP/logger_level")
+            self.loggerLevel = self.settings.value("BASE_SETTING/logger_level")
             level = self.loggerLevel
         except:
             level = 'info'

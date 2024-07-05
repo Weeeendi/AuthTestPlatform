@@ -115,8 +115,8 @@ class UserTestThread(QThread):
             self.uStarNum = int(self.settings.value("TEST/uStarNum_minTh"))
             self.uStarNumRetryNum = int(self.settings.value("TEST/uStarNum_retryNum"))
 
-        except Exception:
-            log.logger.error('userTest缺少config.ini文件！')
+        except IOError:
+            log.logger.error('userTest缺少user_config.ini文件！')
             self.lteTestFlag = 'false'
 
             self.flashRetryNum = 5
@@ -178,19 +178,16 @@ class UserTestThread(QThread):
                     self.stateMachine = self.stateList[self.listIndex]
                     log.logger.info('待测设备已接入!')
 
-                    if self.Auth:
-                        # 发送进度条信息
-                        self.progressBarAuth_sinOut.emit(25, 'working')
-                        if self.FactoryTest:
-                            # 初始化测试进度条
-                            self.progressBarTest_sinOut.emit(0, 'working')
+                    if self.FactoryTest:
+                        # 初始化测试进度条
+                        self.progressBarTest_sinOut.emit(25, '待测设备已接入')
 
                     else:
                         # 如果没有授权操作，发送测试进度条信息
                         if self.lteTestFlag == 'true':
-                            self.progressBarTest_sinOut.emit(10, 'working')
+                            self.progressBarTest_sinOut.emit(25, '待测设备已接入')
                         else:
-                            self.progressBarTest_sinOut.emit(25, 'working')
+                            self.progressBarTest_sinOut.emit(25, '待测设备已接入')
 
                     # 初始化授权与测试信息
                     self.nodeId = ''
@@ -740,46 +737,46 @@ class UserTestThread(QThread):
         # log.logger.debug("userTest.uartParse", str(data), len(data))
 
         # 判断起始标志
-        headidx = data.find(bytes.fromhex("66AA"))
+        headIdx = data.find(bytes.fromhex("66AA"))
         # print("userTest.uartParse", "headidx", headidx)
         # 如果没有找到起始标志，返回等待数据完整
-        if headidx < 0:
+        if headIdx < 0:
             # print("userTest.uartParse", "parse no head error")
             log.logger.debug("userTest.uartParse parse no head error")
             return True, ''
         # 当索引值大于等于总体数据长度，需要再等多一些字节数据
-        if len(data) <= headidx:
+        if len(data) <= headIdx:
             log.logger.debug("userTest.uartParse parse wait cnt bytes")
             return False, data
 
         # 可能存在断包情况，获取不到cnt信息
         try:
             # 获取数据长度
-            cnt = data[headidx + 4] * 256 + data[headidx + 5]
+            cnt = data[headIdx + 4] * 256 + data[headIdx + 5]
             # print("userTest.uartParse", "cnt", cnt)
         except:
             log.logger.debug("userTest.uartParse no cnt info")
             return False, data
 
         # 等待数据帧完整
-        if len(data) < headidx + cnt + 7:
+        if len(data) < headIdx + cnt + 7:
             log.logger.debug("userTest.uartParse parse wait complete")
             return False, data
 
         # 校验数据
-        dataCheckSum = data[headidx + cnt + 6]
-        checkTmp = self.util.uchar_byte_checksum(data[headidx:headidx + cnt + 6])
+        dataCheckSum = data[headIdx + cnt + 6]
+        checkTmp = self.util.uchar_byte_checksum(data[headIdx:headIdx + cnt + 6])
         # 如果校验失败
         if dataCheckSum != checkTmp:
             # print("userTest.uartParse", "parse checksum error", dataCheckSum, checkTmp)
             log.logger.debug("userTest.uartParse data checksum fail!")
-            return False, data[headidx + cnt + 7:]
+            return False, data[headIdx + cnt + 7:]
 
         # 校验成功，执行命令代码
         log.logger.debug("userTest.uartParse data checksum success!")
 
         # 获取2字节功能码
-        cmd = data[headidx + 2:headidx + 4]
+        cmd = data[headIdx + 2:headIdx + 4]
 
         # 创建测试协议cmd字典
         self.cmdProcessor = {
@@ -799,14 +796,14 @@ class UserTestThread(QThread):
         # 可能存在没有相应指令函数，则报错退出
         try:
             # 执行相应指令
-            self.cmdProcessor[cmd](data[headidx + 6:headidx + cnt + 6])
+            self.cmdProcessor[cmd](data[headIdx + 6:headIdx + cnt + 6])
         except:
             # print("userTest.uartParse", "parse cmd error", cmd)
             log.logger.error("userTest.uartParse parse cmd error!")
-            return False, data[headidx + cnt + 7:]
+            return False, data[headIdx + cnt + 7:]
 
         # 正确处理完一条信息，正常返回
-        return True, data[headidx + cnt + 7:]
+        return True, data[headIdx + cnt + 7:]
 
     # 接受串口收到的信息
     def uartProc(self, data):
