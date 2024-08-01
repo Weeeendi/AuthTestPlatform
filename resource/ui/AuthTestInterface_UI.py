@@ -340,7 +340,7 @@ class Ui_AuthTestInterface_UI(object):
         sizePolicy.setHeightForWidth(self.ButtonStartTest.sizePolicy().hasHeightForWidth())
         self.ButtonStartTest.setSizePolicy(sizePolicy)
         self.ButtonStartTest.setAutoDefault(True)
-        self.ButtonStartTest.setObjectName("ButtonStartTest")
+        self.ButtonStartTest.setObjectName("ButtonStartOTA")
         self.verticalLayout.addWidget(self.ButtonStartTest)
         self.verticalLayout_12.addLayout(self.verticalLayout)
         self.verticalLayout_3.addLayout(self.verticalLayout_12)

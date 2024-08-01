@@ -1,0 +1,56 @@
+{
+  "Controller_Dp_Data": [
+    {
+      "code":"base_verInfo","id": 41,"msg":"ver","defaultValue":"","desc":"","name":"控制器软件版本号",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"仪表故障",
+      "property":{"label":["overphaseCurFault",
+                            "overbusCurFault",
+                            "hallFault",
+                            "ctrlTmpFault",
+                            "motorTmpFault",
+                            "brake_TurnFault",
+                            "otherFault",
+                            "ctrlcommFault",
+                            "ctrlvolFault",
+                            "MRCFault",
+                            "torqueVolFault",
+                            "speedSensorFault",
+                            "tempSensorFault",
+                            "driveVolFault",
+                            "curFeedbackFault",
+                            "motorLeakPhaseFualt",
+                            "curUnusualFualt",
+                            "torqueVolCheckFault",
+                            "3.3VPowerError",
+                            "samplingTimeout"],"maxlen":20,"type":"bitmap"}
+    }
+  ],
+  "Dashboard_Dp_Data": [
+    {
+      "code":"base_verInfo","id":42,"msg":"ver","defaultValue":"","desc":"","name":"仪表基础信息",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"dashboard_fault","id":42,"msg":"data","defaultValue":"","desc":"","name":"仪表故障",
+      "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
+    }
+  ],
+  "BMS_Dp_Data": [
+    {
+      "code":"base_verInfo","id":40,"msg":"ver","defaultValue":"","desc":"","name":"电池基础信息",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"BMS_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
+      "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
+    }
+  ],
+  "IoT_Dp_Data": [
+    {
+      "code":"battery_percentage","defaultValue":"","desc":"","name":"电池电量","property":{"max":100,"min":0,"scale":0,"step":1,"type":"value","unit":"%"}
+    }
+  ]
+}

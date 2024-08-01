@@ -1,21 +1,20 @@
 # coding:utf-8
-import sys
-import hashlib
 import json
+import sys
 
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QFrame, QMessageBox
+from PyQt5.QtWidgets import QApplication
 from qframelesswindow import TitleBar, AcrylicWindow
 
-from qfluentwidgets import FluentIcon as FIF, SplashScreen, NavigationAvatarWidget, SplitTitleBar, setTheme, Theme, \
-    MessageBox
+from qfluentwidgets import FluentIcon as FIF, SplashScreen, NavigationAvatarWidget, SplitTitleBar, MessageBox
 from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeColor, \
-    FluentWindow, SubtitleLabel, setFont
+    FluentWindow
 from view.AuthTest_interface import AuthTestInterface
-from view.settingConf_interface import SettingInterface
 from view.ChartRecord_interface import ChartRecordInterface
+from view.DeviceState_display import DeviceStateInterface
 from view.Login_page import Ui_Form
+from view.settingConf_interface import SettingInterface
 
 
 # from baseLogger import log
@@ -210,6 +209,7 @@ class Window(FluentWindow):
         self.settingInterface = SettingInterface(self)
         self.homeInterface = AuthTestInterface(self)
         self.recordInterface = ChartRecordInterface(self)
+        self.deviceInterface = DeviceStateInterface(self)
         # self.albumInterface = Widget('Album Interface', self)
         # self.albumInterface1 = Widget('Album Interface 1', self)
 
@@ -223,6 +223,7 @@ class Window(FluentWindow):
         self.addSubInterface(self.homeInterface, FIF.HOME, 'Home')
 
         self.addSubInterface(self.recordInterface, FIF.SEARCH, 'Record')
+        self.addSubInterface(self.deviceInterface,FIF.DEVELOPER_TOOLS,"Device")
         # self.addSubInterface(self.albumInterface, FIF.ALBUM, 'Albums', NavigationItemPosition.SCROLL)
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
         self.navigationInterface.addSeparator()

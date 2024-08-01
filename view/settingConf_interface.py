@@ -1,13 +1,13 @@
 # coding:utf-8
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt, QSize, QPoint, pyqtSignal
+from PyQt5.QtCore import QSize, pyqtSignal, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
 
+import data_manage
 # from resource.ui.SettingInterface_ui import Ui_SettingInterface
-from data_manage import TestOptions
-from qfluentwidgets import FluentIcon as FIF, InfoBarManager
+from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, DoubleSpinBox, SpinBox, PillToolButton,
                             CheckBox)
@@ -109,15 +109,10 @@ class SettingSelectCard(HeaderCardWidget):
         self.headerLayout.addWidget(self.expandButton, 0, Qt.AlignRight)
 
         self.expandButton.toggled.connect(self._setComponentState)
-
-        self.flashCheckBox = CheckBox("flash测试", self)
-        self.GsensorCheckBox = CheckBox("gSensor测试", self)
-        self.mainBatteryCheckBox = CheckBox("主电池电压测试", self)
-        self.backupBatteryCheckBox = CheckBox("备用电池电压测试", self)
-        self.lteInfoCheckBox = CheckBox("蜂窝信息测试", self)
-        self.lteCSQCheckBox = CheckBox("蜂窝信号强度（CSQ）测试", self)
-        self.gpsCheckBox = CheckBox("GPS测试", self)
-        self.BLECheckBox = CheckBox("蓝牙RSSI测试", self)
+        # 读配置文件
+        self.fileData = data_manage.TestItemFactory()
+        for item in self.fileData.testItems:
+            self.fileData.create_component_enable(item, self)
         self.LayOurSetting()
 
         CheckBox_edits = self.findChildren(CheckBox)
@@ -153,7 +148,6 @@ class SettingSelectCard(HeaderCardWidget):
 
 
 class BaseSettingCard(HeaderCardWidget):
-
     # 自定义信号，用来发送注册地址的值
     reg_url_sinOut = pyqtSignal(str)
 
@@ -196,7 +190,7 @@ class BaseSettingCard(HeaderCardWidget):
         self.viewLayout.addLayout(self.GridLayout)
         self._componentInit()
 
-        self.options = TestOptions()
+        # self.options = TestOptions()
         # self.loading_data()
 
     def handle_combo_text_changed(self):
@@ -272,68 +266,9 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.QGridLayOut.setColumnStretch(0, 1)
         self.QGridLayOut.setColumnStretch(1, 1)
 
-        # flash retry
-        self.RetryFlashTestLabel = BodyLabel("Flash测试重试次数", self)
-        self.RetryFlashEdit = IntEditBox(99, self)
-        # Gsensor retry
-        self.RetryGsensorTestLabel = BodyLabel("Gsensor测试重试次数", self)
-        self.RetryGsensorEdit = IntEditBox(99, self)
-
-        # BatteryRead retry
-        self.RetryBatteryReadLabel = BodyLabel("电池测试重试次数", self)
-        self.RetryBatteryReadEdit = IntEditBox(99, self)
-
-        # Lte retry
-        self.RetryLteLabel = BodyLabel("蜂窝测试重试次数", self)
-        self.RetryLteEdit = IntEditBox(99, self)
-
-        # Main Battery MAX volt
-        self.BattMaxVoltLabel = BodyLabel("主电池上限电压阈值(mV)", self)
-        self.BattMaxVoltEdit = DoubleEditBox(99, 1, self)
-
-        # Main Battery MIN volt
-        self.BattMinVoltLabel = BodyLabel("主电池下限电压阈值(mV)", self)
-        self.BattMinVoltEdit = DoubleEditBox(99, 1, self)
-
-        # Sub Battery MAX
-        self.SubBattMaxVoltLabel = BodyLabel("备用电池上限电压阈值(mV)", self)
-        self.SubBattMaxVoltEdit = DoubleEditBox(9, 0.1, self)
-
-        # Sub Battery MIN volt
-        self.SubBattMinVoltLabel = BodyLabel("备用电池下限电压阈值(mV)", self)
-        self.SubBattMinVoltEdit = DoubleEditBox(9, 0.1, self)
-
-        self.QGridLayOut.addWidget(self.RetryFlashTestLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.RetryFlashEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.RetryGsensorTestLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.RetryGsensorEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.RetryBatteryReadLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.RetryBatteryReadEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.RetryLteLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.RetryLteEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.BattMaxVoltLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.BattMaxVoltEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.BattMinVoltLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.BattMinVoltEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.SubBattMaxVoltLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.SubBattMaxVoltEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
-
-        self.QGridLayOut.addWidget(self.SubBattMinVoltLabel, self.GridRowCount, 0, Qt.AlignLeft)
-        self.QGridLayOut.addWidget(self.SubBattMinVoltEdit, self.GridRowCount, 1, Qt.AlignRight)
-        self.GridRowCount += 1
+        self.fileData = data_manage.TestItemFactory()
+        for testParam in self.fileData.testItemsData:
+            self.fileData
 
         self.viewLayout.addLayout(self.QGridLayOut)
         # self.date = TestOptions()
@@ -353,7 +288,6 @@ class TestSetHeaderCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in DoubleLine_edits:
             le.setDisabled(True)
-
 
     def setLineEditReadOnly(self, isChecked: bool):
         # 获取所有的LineEdit控件  

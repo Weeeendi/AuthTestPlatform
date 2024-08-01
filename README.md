@@ -1,7 +1,7 @@
 <p align="center">
 </p>
   <h1 align="center">
-  PyQt-Fluent-Widgets
+  Vehiclink auth&test platform
 </h1>
 <p align="center">
   A fluent design widgets library based on PyQt5
@@ -13,43 +13,37 @@
   </a>
 
   <a style="text-decoration:none">
-    <img src="https://static.pepy.tech/personalized-badge/pyqt-fluent-widgets?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads" alt="Download"/>
-  </a>
-
-  <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820" alt="GPLv3"/>
   </a>
 
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Win32%20|%20Linux%20|%20macOS-blue?color=#4ec820" alt="Platform Win32 | Linux | macOS"/>
   </a>
-</p>
-
-</p>
 
 
-## Install
-To install lite version (`AcrylicLabel` is not available):
-```shell
-pip install PyQt-Fluent-Widgets -i https://pypi.org/simple/
-```
 
-> **Warning**
-> Don't install PyQt-Fluent-Widgets, PyQt6-Fluent-Widgets, PySide2-Fluent-Widgets and PySide6-Fluent-Widgets at the same time, because their package names are all `qfluentwidgets`.
 
-## Documentation
-Want to know more about PyQt-Fluent-Widgets? Please read the [help document](https://qfluentwidgets.com) 👈
+## 简介
+使用该软件可以对 Vbox 等 Iot 设备进行授权和产测协议
 
-## Video Demonstration
-Check out this [▶ example video](https://www.bilibili.com/video/BV12c411L73q) that shows off what PyQt-Fluent-Widgets are capable of 🎉
 
-## Work with QtDesigner
-You can use PyQt-Fluent-Widgets in QtDesigner directly by running `python ./tools/designer.py`. If the operation is successful, you should be able to see the PyQt-Fluent-Widgets in the sidebar of QtDesigner.
+> **注意**
+> 设备的授权和测试功能需要设备支持，请先确认设备是否支持，是否已经集成了测试协议.
 
-You can also download the compiled QtDesigner from [release page](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/releases). Download and unzip `FluentDesigner_v*.*.*.zip`, then run `designer/designer.exe`, you will launch the QtDesigner that has already installed plugins.
+## 文档
+如果想要了解关于产测的细节及规定请访问我们的文档
 
-> **Note**
-> It is recommended to install pyqt5-tools and PyQt-Fluent-Widgets in a virtual environment. Please make sure **PyQt-Frameless-Window >= 0.2.7**.
+[<云迹物联设备产测协议>](https://funhez50ho.feishu.cn/wiki/wikcnuglFOxcuI0V6AQSltsIPvf)
+
+
+## 产测操作视频
+查阅此视频 [▶ 云迹物联设备产测上位机操作视频](https://www.bilibili.com/video/BV12c411L73q) ，该视频展示了如何使用云迹产测上位机 🎉
+
+## 导出数据
+该工具支持导出数据，导出数据时，先选定导出的日期和对应的pid，会自动将数据导出到本地，并生成一个压缩包，压缩包中包含所有数据，包括设备信息、测试结果、测试日志等。
+
+> **提示**
+该工具支持的操作系统为：windows10以上
 
 ## License
-PyQt-Fluent-Widgets is licensed under [GPLv3](./LICENSE).
+该工具遵循 [GPLv3](./LICENSE).

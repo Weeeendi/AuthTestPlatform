@@ -7,14 +7,14 @@ from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QToolButton,
                              QVBoxLayout, QPushButton)
 
 from ..dialog_box.color_dialog import ColorDialog
-from ..widgets.combo_box import ComboBox
-from ..widgets.switch_button import SwitchButton, IndicatorPosition
-from ..widgets.slider import Slider
-from ..widgets.icon_widget import IconWidget
 from ..widgets.button import HyperlinkButton
-from ...common.style_sheet import FluentStyleSheet
+from ..widgets.combo_box import ComboBox
+from ..widgets.icon_widget import IconWidget
+from ..widgets.slider import Slider
+from ..widgets.switch_button import SwitchButton, IndicatorPosition
 from ...common.config import qconfig, isDarkTheme, ConfigItem, OptionsConfigItem
 from ...common.icon import FluentIconBase
+from ...common.style_sheet import FluentStyleSheet
 
 
 class SettingCard(QFrame):
@@ -95,7 +95,6 @@ class SettingCard(QFrame):
             painter.setPen(QColor(0, 0, 0, 19))
 
         painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
-
 
 
 class SwitchSettingCard(SettingCard):
@@ -307,7 +306,7 @@ class ColorPickerButton(QToolButton):
     def __showColorDialog(self):
         """ show color dialog """
         w = ColorDialog(self.color, self.tr(
-            'Choose ')+self.title, self.window(), self.enableAlpha)
+            'Choose ') + self.title, self.window(), self.enableAlpha)
         w.colorChanged.connect(self.__onColorChanged)
         w.exec()
 
@@ -384,7 +383,8 @@ class ColorSettingCard(SettingCard):
 class ComboBoxSettingCard(SettingCard):
     """ Setting card with a combo box """
 
-    def __init__(self, configItem: OptionsConfigItem, icon: Union[str, QIcon, FluentIconBase], title, content=None, texts=None, parent=None):
+    def __init__(self, configItem: OptionsConfigItem, icon: Union[str, QIcon, FluentIconBase], title, content=None,
+                 texts=None, parent=None):
         """
         Parameters
         ----------
