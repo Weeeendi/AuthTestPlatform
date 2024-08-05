@@ -1,8 +1,10 @@
-import sys
-import os
 import binascii
-import re
 import csv
+import os
+import re
+import sys
+from datetime import datetime
+
 import pandas as pd
 
 
@@ -114,8 +116,12 @@ class BaseUtils:
     # 将生成的授权信息记录到regList列表
     def addToRegList(self, regInfo):
 
-        repFlag = False
-        RecordFilePath = 'resource/regList.csv'
+        # repFlag = False
+        # 获取当前时间
+        current_time = datetime.now().date()
+        # 格式化日期戳
+        datestamp = current_time.strftime("%Y%m%d")
+        RecordFilePath = 'resource/regList_'+datestamp+'.csv'
 
         try:
             # 尝试读文件
