@@ -4,8 +4,9 @@ import time
 import serial
 import serial.tools.list_ports
 from PyQt5.QtCore import QFileInfo, QSize, QThread, pyqtSignal
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
+from serial.serialutil import SerialException
 
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
@@ -112,8 +113,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.Button_UpdateSerial.setIcon(FluentIcon.SYNC)
         # self.PrimaryToolButton_playlog.setIcon(FluentIcon.PLAY)
 
-        # 串口刷新设置
-        self.refresh()
         # 设置串口
         self.ser = serial.Serial(timeout=0.5)
 
@@ -126,11 +125,19 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         # 绑定刷新按键
         # self.Button_UpdateSerial.clicked.connect(self.refresh)
 
+        # 设置标签栏样式
+        self.tabWidget.setTabPosition(QTabWidget.North)  # 设置选项卡位置在顶部
+        self.tabWidget.setTabShape(QTabWidget.Rounded)  # 设置选项卡的形状为圆角
+        self.tabWidget.setFont(QFont('Microsoft YaHei Light', pointSize=15))
         # 绑定页面切换
         self.tabWidget.currentChanged.connect(self.onPageChange)
-
+        # 通过样式表设置选项卡的大小
+        self.tabWidget.setStyleSheet("QTabBar::tab { width: 150px; }")
+        self.tabWidget.setStyleSheet("QTabBar::tab:selected { color: white; background-color: black;}")
         # 绑定串口连接
         self.ButtonConnectSerial.clicked.connect(self.serialConnectChange)
+        # 绑定刷新串口
+        self.Button_UpdateSerial.clicked.connect(self.refresh)
 
         self.tabWidget.setBackgroundRole(0)
 
@@ -160,8 +167,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"ParamFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget2))
 
         self.tabWidget.setCurrentIndex(self.page)
-
-        self.DeviceTask()
+        # 串口刷新设置
+        self.refresh()
 
     def create_callback(self, widget):
         def callback():
@@ -213,8 +220,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
             try:
                 self.ser.open()  # 打开串口有可能失败，做try-except异常处理
-            except Exception:
-                showMessage("提示", "当前无串口或者串口被占用", self.nativeParentWidget())
+            except SerialException:
+                showMessage("提示", "当前无串口或者串口被占用", self)
                 return None
             self.serialOnline = 1
             self.ButtonConnectSerial.setText("Disconnect")
@@ -224,7 +231,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.serialOnline = 0
 
         self.DeviceTask()
-
 
     # 测试项设置状态变更
     def testSetStateChange(self, bool_value):
@@ -259,7 +265,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.serialThread.quit()
             self.OTAThread.quit()
 
-
     def refresh(self):
         # 查询可用的串口
         plist = list(serial.tools.list_ports.comports())
@@ -268,7 +273,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             print("No used com!")
             # 清空comboBox内容
             self.ComboBox_Serial.clear()
-            showMessage("提示", "当前无串口或者串口被占用", self.nativeParentWidget())
+            showMessage("提示", "当前无串口或者串口被占用", self)
+            self.serialOnline = 0
 
         else:
             # 把所有的可用的串口输出到comboBox中去
@@ -277,6 +283,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 plist_0 = list(plist[i])
                 self.ComboBox_Serial.addItem(str(plist_0[0]))
 
+        self.DeviceTask()
         print("刷新串口")
 
     # 作为槽函数于Stream的信号连接, 内部参数于信号发射参数相同
@@ -286,9 +293,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     def updatePercentDate(self):
         pass
 
-    # 自定义槽，处理测试进度条数据
-    def dealProgressBarTest(self, xInt, xStr):
-        pass
 
     def dealAuthData(self, authInfo):
         """自定义槽，处理授权信息"""

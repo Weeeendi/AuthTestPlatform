@@ -73,6 +73,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             self.settings = QSettings("resource/config/sys_config.ini", QSettings.IniFormat)
             self.printerCnt = int(self.settings.value("BASE_SETTING/tag_print_times"))
             self.regUrl = self.settings.value("BASE_SETTING/reg_url")
+            print(self.regUrl)
         except Exception as e:
             log.logger.error(e)
             log.logger.error('读配置文件异常！')
@@ -98,14 +99,14 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.ButtonStartTest.clicked.connect(self.startTest)
 
         # 初始化进度条
-        self.progressTestBar.setStrokeWidth(10)
+        self.progressTestBar.setStrokeWidth(8)
 
         # 绑定清除日志按键
         self.Button_Clear.setIcon(FluentIcon.BROOM)
         self.Button_Clear.clicked.connect(self.LogBoswer.clear)
 
         # Test
-        self.ProuductIdLineEdit.setText('YJ0005p4qw')
+        self.ProuductIdLineEdit.setText('YJ00048odi')
 
         # 初始化成功率统计接口
         self.SuccessCnt.setText(str(self.success))
@@ -203,7 +204,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             self.ser.open()  # 打开串口有可能失败，做try-except异常处理
                         except Exception:
                             self.testStart = False
-                            showMessage("提示", "当前无串口或者串口被占用", self.nativeParentWidget())
+                            showMessage("提示", "当前无串口或者串口被占用", self)
                             return None
 
                         else:
@@ -241,10 +242,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             self.testThread.uartWrite_sinOut.connect(self.dealSendData)
                             # 自定义信号与槽连接，接受串口接受数据，由BaseUartThread线程发送到UserTestThread线程
                             self.serialThread.revData_sinOut.connect(self.testThread.uartProc)
-                            # 自定义信号与槽连接，授权进度条数据，由UserTestThread线程发送到main主线程线程
-                            self.testThread.progressBarAuth_sinOut.connect(self.dealProgressBarAuth)
-                            # 自定义信号与槽连接，测试进度条数据，由UserTestThread线程发送到main主线程线程
-                            self.testThread.progressBarTest_sinOut.connect(self.dealProgressBarTest)
+                            # 自定义信号与槽连接，进度条数据，由UserTestThread线程发送到main主线程线程
+                            self.testThread.progressBar_sinOut.connect(self.dealProgressBar)
                             # 自定义信号与槽连接，完整授权信息，由UserTestThread线程发送到main主线程
                             self.testThread.authInfo_sinOut.connect(self.dealAuthData)
 
@@ -264,18 +263,18 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                 # log.logger.info("打印机初始化成功！")
                     else:
                         self.testStart = False
-                        showMessage('提示', 'PID错误：非YJ开头', self.nativeParentWidget())
+                        showMessage('提示', 'PID错误：非YJ开头', self)
                         return None
                 else:
                     self.testStart = False
-                    showMessage('提示', 'PID错误：PID为空或者长度错误', self.nativeParentWidget())
+                    showMessage('提示', 'PID错误：PID为空或者长度错误', self)
                     return None
             else:  # 停止授权，测试
                 self.testStart = False
                 try:
                     self.ser.close()  # 关闭串口有可能失败，做try-except异常处理
                 except:
-                    showMessage(self, '提示', '关闭串口失败', self.nativeParentWidget())
+                    showMessage(self, '提示', '关闭串口失败', self)
                     return None
                 else:
                     self.testSetStateChange(False)
@@ -314,7 +313,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             print("No used com!")
             # 清空comboBox内容
             self.ComboBox_Serial.clear()
-            showMessage("提示", "当前无串口或者串口被占用", self.nativeParentWidget())
+            showMessage("提示", "当前无串口或者串口被占用", self)
 
         else:
             # 把所有的可用的串口输出到comboBox中去
@@ -343,58 +342,26 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     def updatePassDate(self):
         self.SuccessCnt.setText(str(self.success))
         self.FailCnt.setText(str(self.fail))
-        self.PassPrecents.setText(str('%.1f' % float(self.success / (self.success + self.fail) * 100)) + '%')
+        try:
+            self.PassPrecents.setText(str('%.1f' % float(self.success / (self.success + self.fail) * 100)) + '%')
+        except ZeroDivisionError:
+            self.PassPrecents.setText('0%')
 
-    def dealProgressBarAuth(self, xInt, xStr):
-        """自定义槽，处理授权进度条数据"""
-        if xStr != 'fail':
-            # 如果是正常状态，更新进度条
-            if self.CheckBox_FuncTest.isChecked():
-                xInt = xInt / 2
+    def dealProgressBar(self, xInt, state, DescribeStr):
+        """自定义槽，处理测试进度条数据"""
+        if state:
+            # 如果是正常状态，更新进度
             self.setProcessBarColor(xInt, themeColor())
-
-        if xInt == 0 and xStr == 'fail':
-            self.processTestText.setText('授权失败')
-            self.fail += 1
-            self.updatePassDate()
-            self.setProcessBarColor(self.progressTestBar.getVal(), "red")
-
-        elif xInt == 100 and xStr == 'success':
-            self.processTestText.setText("授权成功")
-            if not self.CheckBox_FuncTest.isChecked():
+            if xInt == 100:
                 self.success += 1
-                self.updatePassDate()
-
-            if self.CheckBox_FuncTest.isChecked():
-                self.setProcessBarColor(xInt / 2, "yellow")
-            else:
                 self.setProcessBarColor(xInt, "green")
+
         else:
-            self.processTestText.setText(xStr)
-
-    # 自定义槽，处理测试进度条数据
-    def dealProgressBarTest(self, xInt, xStr):
-
-        if xStr != 'fail':
-            if self.CheckBox_AuthTest.isChecked():
-                xInt += 100
-                xInt = xInt * 100 / 200
-            # 如果是正常状态，更新进度条
-            self.setProcessBarColor(xInt, themeColor())
-
-        if xInt == 0 and xStr == 'fail':
-            self.processTestText.setText('功能测试失败')
-            self.setProcessBarColor(self.progressTestBar.getVal(), "red")
             self.fail += 1
-            self.updatePassDate()
-        elif xInt == 100 and xStr == 'success':
-            self.setProcessBarColor(xInt, "green")
-            self.processTestText.setText("功能测试成功")
-            self.success += 1
-            self.updatePassDate()
-            # self.lineEdit_deviceInfo.clear()
-        else:
-            self.processTestText.setText(xStr)
+            self.setProcessBarColor(self.progressTestBar.getVal(), "red")
+
+        self.processTestText.setText(DescribeStr)
+        self.updatePassDate()
 
     def dealAuthData(self, authInfo):
         """自定义槽，处理授权信息"""

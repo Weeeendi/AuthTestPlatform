@@ -1,12 +1,13 @@
+import codecs
+import json
 import time
+import traceback
+
+import requests
 from PyQt5.QtCore import QThread, QDateTime, Qt, pyqtSignal, QSettings
+
 import baseUtils
 from baseLogger import log
-import requests
-from requests.exceptions import SSLError
-import json
-import traceback
-import codecs
 
 
 class UserTestThread(QThread):
@@ -16,10 +17,8 @@ class UserTestThread(QThread):
     printMsg_sinOut = pyqtSignal(str, str, str)
     # 自定义信号，用来界面显示完整的授权信息
     authInfo_sinOut = pyqtSignal(str)
-    # 自定义信号，用来发送授权进度条数据
-    progressBarAuth_sinOut = pyqtSignal(int, str)
-    # 自定义信号，用来发送测试进度条数据
-    progressBarTest_sinOut = pyqtSignal(int, str)
+    # 自定义信号，用来发送进度条数据及进度描述
+    progressBar_sinOut = pyqtSignal(int, bool, str)
 
     def __init__(self, Ser, PID, Auth, manualInput, FactoryTest, regUrl):
         super(UserTestThread, self).__init__()
@@ -54,6 +53,15 @@ class UserTestThread(QThread):
         self.sendMutexFlag = True
         # 创建ACK CMD表
         self.cmdProcessor = {}
+
+        # 授权命令数量
+        self.AuthItemsNum = 3
+
+        # 测试命令数量
+        self.TestItemsNum = 5
+
+        # 当前授权通过命令数量
+        self.CurrentPassItemsNum = 0
 
         # 授权测试开始时间戳
         self.startStamp = 0
@@ -152,6 +160,15 @@ class UserTestThread(QThread):
 
         print("创建UserTestThread线程")
 
+    def testPercentCal(self):
+        # 总测试项目包含开始测试命令
+        if self.FactoryTest and self.Auth:
+            return int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 1))
+        elif self.FactoryTest:
+            return int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 1))
+        else:
+            return int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 1))
+
     # 发送测试指令
     def userTestSend(self, testCmd, testLen, testData=''):
         # 发送数据组包
@@ -178,16 +195,11 @@ class UserTestThread(QThread):
                     self.stateMachine = self.stateList[self.listIndex]
                     log.logger.info('待测设备已接入!')
 
-                    if self.FactoryTest:
-                        # 初始化测试进度条
-                        self.progressBarTest_sinOut.emit(25, '待测设备已接入')
+                    if self.lteTestFlag != 'true':
+                        self.TestItemsNum = 3
 
-                    else:
-                        # 如果没有授权操作，发送测试进度条信息
-                        if self.lteTestFlag == 'true':
-                            self.progressBarTest_sinOut.emit(25, '待测设备已接入')
-                        else:
-                            self.progressBarTest_sinOut.emit(25, '待测设备已接入')
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True,"待测设备已接入")
 
                     # 初始化授权与测试信息
                     self.nodeId = ''
@@ -212,6 +224,8 @@ class UserTestThread(QThread):
                     # 进入产测模式失败
                     self.listIndex = 0
                     self.stateMachine = self.stateList[self.listIndex]
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False,"进入产测失败")
+                    self.CurrentPassItemsNum = 0
                     log.logger.info('进入产测失败!')
 
                 # 清零周期次数变量
@@ -239,6 +253,25 @@ class UserTestThread(QThread):
                 self.stateMachine = self.stateList[self.listIndex]
                 log.logger.info('待测设备退出产测模式!')
 
+                # self.CurrentPassItemsNum += 1
+                # self.progressBar_sinOut.emit(self.testPercentCal(), True,"待测设备退出产测模式")
+
+
+                # 初始化授权与测试信息
+                self.nodeId = ''
+                self.deviceIotId = ''
+                self.deviceSecret = ''
+                self.testFlashFlag = False
+                self.testGsensorFlag = False
+                self.testAdcFlag = False
+                self.adcVolt = 0
+                self.adcSubVolt = 0
+                self.ICCID = ''
+                self.IMEI = ''
+                self.testLteFlag = False
+                self.lteCsq = 0
+                self.testGpsFlag = False
+                self.gpsUStarNum = 0
                 # 发送打印标签及授权信息
                 self.printMsg_sinOut.emit(self.nodeId, self.deviceIotId, self.PID)
 
@@ -294,15 +327,18 @@ class UserTestThread(QThread):
                     log.logger.info('设备授权信息烧录完毕！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(75, 'working')
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True,"设备授权烧录成功")
                 else:
                     # 授权信息烧录不成功，请重试
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
+                    self
                     log.logger.info('设备授权信息烧录出错！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(),False, "设备授权烧录失败")
+                    self.CurrentPassItemsNum = 0
 
                 # 清零周期次数变量
                 self.cycleCnt = 0
@@ -330,7 +366,8 @@ class UserTestThread(QThread):
                 log.logger.info('查询待测设备烧录的授权信息正确！')
 
                 # 发送进度条信息
-                self.progressBarAuth_sinOut.emit(100, 'success')
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, '授权信息查询成功')
             else:
                 # 查询设备烧录授权信息不正确
                 self.listIndex = -1
@@ -338,7 +375,8 @@ class UserTestThread(QThread):
                 log.logger.error('查询设备烧录授权信息不正确!')
 
                 # 发送进度条信息
-                self.progressBarAuth_sinOut.emit(0, 'fail')
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, '授权信息查询失败')
+                self.CurrentPassItemsNum = 0
 
             # 清零周期次数变量
             self.cycleCnt = 0
@@ -366,7 +404,8 @@ class UserTestThread(QThread):
                 log.logger.info('查询设备mac出错！')
 
                 # 发送进度条信息
-                self.progressBarAuth_sinOut.emit(0, 'fail')
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备mac出错")
+                self.CurrentPassItemsNum = 0
                 return
 
             if authtmp['productId'] == self.PID:
@@ -380,14 +419,17 @@ class UserTestThread(QThread):
                     log.logger.info('查询设备产品信息完毕！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(50, 'working')
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备产品信息完成")
                 else:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     log.logger.info('查询设备产品信息出错！')
 
+
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备产品信息出错")
+                    self.CurrentPassItemsNum = 0
 
             else:
                 # 查询设备产品信息不成功，请重试
@@ -396,7 +438,8 @@ class UserTestThread(QThread):
                 log.logger.info('查询设备产品信息PID出错！')
 
                 # 发送进度条信息
-                self.progressBarAuth_sinOut.emit(0, 'fail')
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备产品信息PID出错")
+                self.CurrentPassItemsNum = 0
 
             # 清零周期次数变量
             self.cycleCnt = 0
@@ -431,8 +474,9 @@ class UserTestThread(QThread):
                 # 重试次数清零
                 self.retryCnt = 0
 
-                # 发送测试进度条信息
-                self.progressBarTest_sinOut.emit(50, 'working')
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
 
             else:
                 self.retryCnt = self.retryCnt + 1
@@ -444,7 +488,8 @@ class UserTestThread(QThread):
                     self.stateMachine = self.stateList[self.listIndex]
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备蜂窝信息出错")
+                    self.CurrentPassItemsNum = 0
 
                     log.logger.info('查询设备蜂窝信息出错！')
                 # log.logger.debug('查询设备蜂窝信息中...')
@@ -480,11 +525,9 @@ class UserTestThread(QThread):
                 # 重试次数清零
                 self.retryCnt = 0
 
-                # 发送测试进度条信息
-                if self.lteTestFlag == 'true':
-                    self.progressBarTest_sinOut.emit(20, 'working')
-                else:
-                    self.progressBarTest_sinOut.emit(50, 'working')
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试FLASH成功")
 
             else:
                 self.retryCnt = self.retryCnt + 1
@@ -498,7 +541,8 @@ class UserTestThread(QThread):
                     log.logger.info('测试FLASH出错！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试FLASH出错")
+                    self.CurrentPassItemsNum = 0
 
             # 清零周期次数变量
             self.cycleCnt = 0
@@ -531,11 +575,9 @@ class UserTestThread(QThread):
                 # 重试次数清零
                 self.retryCnt = 0
 
-                # 发送测试进度条信息
-                if self.lteTestFlag == 'true':
-                    self.progressBarTest_sinOut.emit(30, 'working')
-                else:
-                    self.progressBarTest_sinOut.emit(75, 'working')
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), 1, "测试G-sensor成功")
 
             else:
                 self.retryCnt = self.retryCnt + 1
@@ -549,7 +591,8 @@ class UserTestThread(QThread):
                     log.logger.info('测试G-sensor出错！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试G-sensor出错")
+                    self.CurrentPassItemsNum = 0
 
             # 清零周期次数变量
             self.cycleCnt = 0
@@ -591,10 +634,8 @@ class UserTestThread(QThread):
                 self.retryCnt = 0
 
                 # 发送测试进度条信息
-                if self.lteTestFlag == 'true':
-                    self.progressBarTest_sinOut.emit(40, 'working')
-                else:
-                    self.progressBarTest_sinOut.emit(100, 'success')
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试ADC功能成功")
 
             else:
                 self.retryCnt = self.retryCnt + 1
@@ -610,7 +651,8 @@ class UserTestThread(QThread):
                     log.logger.info('测试ADC功能出错！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试ADC功能出错")
+                    self.CurrentPassItemsNum = 0
 
             # 清零周期次数变量
             self.cycleCnt = 0
@@ -646,7 +688,8 @@ class UserTestThread(QThread):
                 self.retryCnt = 0
 
                 # 发送测试进度条信息
-                self.progressBarTest_sinOut.emit(70, 'working')
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试4G功能成功")
 
             else:
                 self.retryCnt = self.retryCnt + 1
@@ -659,8 +702,8 @@ class UserTestThread(QThread):
                     self.testLteFlag = False
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
-
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试4G功能出错")
+                    self.CurrentPassItemsNum = 0
                     log.logger.info("4G CSQ: %d" % self.lteCsq)
                     log.logger.info('测试4G功能出错！')
                 log.logger.debug('测试4G功能中...')
@@ -700,8 +743,8 @@ class UserTestThread(QThread):
                 self.retryCnt = 0
 
                 # 发送测试进度条信息
-                self.progressBarTest_sinOut.emit(100, 'success')
-
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试GPS功能成功")
             else:
                 self.retryCnt = self.retryCnt + 1
                 if self.retryCnt == self.uStarNumRetryNum:
@@ -713,7 +756,8 @@ class UserTestThread(QThread):
                     self.testGpsFlag = False
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试GPS功能出错")
+                    self.CurrentPassItemsNum = 0
 
                     log.logger.info("GPS有用星数: %d" % self.gpsUStarNum)
                     log.logger.info('测试GPS功能出错！')
@@ -1034,7 +1078,10 @@ class UserTestThread(QThread):
                     log.logger.info('AA02设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(0, 'fail')
+
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
+
                     # 等待
                     time.sleep(3)
 
@@ -1072,7 +1119,8 @@ class UserTestThread(QThread):
                     log.logger.info('AA00设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1095,7 +1143,8 @@ class UserTestThread(QThread):
                     log.logger.info('AA01设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarAuth_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1121,7 +1170,8 @@ class UserTestThread(QThread):
                     log.logger.info('0001设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1147,7 +1197,10 @@ class UserTestThread(QThread):
                     log.logger.info('0002设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
+
+
                     # 等待
                     time.sleep(3)
 
@@ -1173,7 +1226,8 @@ class UserTestThread(QThread):
                     log.logger.info('0006设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1199,7 +1253,8 @@ class UserTestThread(QThread):
                     log.logger.info('AA03设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1225,7 +1280,8 @@ class UserTestThread(QThread):
                     log.logger.info('0020设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 
@@ -1251,7 +1307,8 @@ class UserTestThread(QThread):
                     log.logger.info('0021设备通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBarTest_sinOut.emit(0, 'fail')
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.CurrentPassItemsNum = 0
                     # 等待
                     time.sleep(3)
 

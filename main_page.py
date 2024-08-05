@@ -223,7 +223,7 @@ class Window(FluentWindow):
         self.addSubInterface(self.homeInterface, FIF.HOME, 'Home')
 
         self.addSubInterface(self.recordInterface, FIF.SEARCH, 'Record')
-        self.addSubInterface(self.deviceInterface,FIF.DEVELOPER_TOOLS,"Device")
+        self.addSubInterface(self.deviceInterface, FIF.DEVELOPER_TOOLS, "Device")
         # self.addSubInterface(self.albumInterface, FIF.ALBUM, 'Albums', NavigationItemPosition.SCROLL)
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
         self.navigationInterface.addSeparator()

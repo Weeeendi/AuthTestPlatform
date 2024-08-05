@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>919</width>
-    <height>667</height>
+    <height>701</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -137,8 +137,26 @@
      </item>
      <item row="0" column="0" rowspan="3" colspan="3">
       <widget class="QTabWidget" name="tabWidget">
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="tabPosition">
+        <enum>QTabWidget::North</enum>
+       </property>
+       <property name="tabShape">
+        <enum>QTabWidget::Rounded</enum>
+       </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
+       </property>
+       <property name="elideMode">
+        <enum>Qt::ElideLeft</enum>
+       </property>
+       <property name="usesScrollButtons">
+        <bool>true</bool>
        </property>
        <widget class="QWidget" name="DASH_TAB">
         <attribute name="title">
@@ -227,6 +245,9 @@
                   <property name="topMargin">
                    <number>10</number>
                   </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
                   <item row="0" column="0">
                    <widget class="BodyLabel" name="BodyLabel_PID">
                     <property name="sizePolicy">
@@ -253,7 +274,7 @@
                    </widget>
                   </item>
                   <item row="0" column="1">
-                   <widget class="LineEdit" name="ProuductIdLineEdit">
+                   <widget class="LineEdit" name="HWVersion">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -268,6 +289,9 @@
                     </property>
                     <property name="text">
                      <string/>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
                     </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
@@ -300,7 +324,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="LineEdit" name="LicenseLineEdit">
+                   <widget class="LineEdit" name="ParameterVersion">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -316,6 +340,9 @@
                     <property name="text">
                      <string/>
                     </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
                     </property>
@@ -329,7 +356,11 @@
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="LineEdit" name="LineEdit"/>
+                   <widget class="LineEdit" name="FirmwareVersion">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="3" column="0">
                    <widget class="BodyLabel" name="BodyLabel_2">
@@ -339,7 +370,11 @@
                    </widget>
                   </item>
                   <item row="3" column="1">
-                   <widget class="LineEdit" name="LineEdit_2"/>
+                   <widget class="LineEdit" name="BootVersion">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="4" column="0">
                    <widget class="BodyLabel" name="BodyLabel_3">
@@ -349,7 +384,11 @@
                    </widget>
                   </item>
                   <item row="4" column="1">
-                   <widget class="LineEdit" name="LineEdit_3"/>
+                   <widget class="LineEdit" name="SN">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -536,6 +575,16 @@
                  </spacer>
                 </item>
                 <item>
+                 <widget class="BodyLabel" name="BodyLabel_13">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="PrimaryPushButton" name="ButtonStartOTA">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -669,7 +718,7 @@
                    <string>Waiting for device connect......</string>
                   </property>
                   <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
                 </item>
@@ -789,6 +838,9 @@
                   <property name="topMargin">
                    <number>10</number>
                   </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
                   <item row="0" column="0">
                    <widget class="BodyLabel" name="BodyLabel_PID_2">
                     <property name="sizePolicy">
@@ -815,7 +867,7 @@
                    </widget>
                   </item>
                   <item row="0" column="1">
-                   <widget class="LineEdit" name="ProuductIdLineEdit_2">
+                   <widget class="LineEdit" name="HWVersion_2">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -830,6 +882,9 @@
                     </property>
                     <property name="text">
                      <string/>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
                     </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
@@ -862,7 +917,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="LineEdit" name="LicenseLineEdit_2">
+                   <widget class="LineEdit" name="ParameterVersion_2">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -878,6 +933,9 @@
                     <property name="text">
                      <string/>
                     </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
                     </property>
@@ -891,7 +949,11 @@
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="LineEdit" name="LineEdit_4"/>
+                   <widget class="LineEdit" name="FirmwareVersion_2">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="3" column="0">
                    <widget class="BodyLabel" name="BodyLabel_5">
@@ -901,7 +963,11 @@
                    </widget>
                   </item>
                   <item row="3" column="1">
-                   <widget class="LineEdit" name="LineEdit_5"/>
+                   <widget class="LineEdit" name="BootVersion_2">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="4" column="0">
                    <widget class="BodyLabel" name="BodyLabel_6">
@@ -911,7 +977,11 @@
                    </widget>
                   </item>
                   <item row="4" column="1">
-                   <widget class="LineEdit" name="LineEdit_6"/>
+                   <widget class="LineEdit" name="SN_2">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -1098,6 +1168,16 @@
                  </spacer>
                 </item>
                 <item>
+                 <widget class="BodyLabel" name="OTAStateLabel_2">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="PrimaryPushButton" name="ButtonStartTest_2">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -1221,7 +1301,7 @@
                    <string>Waiting for device connect......</string>
                   </property>
                   <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
                 </item>
@@ -1347,6 +1427,9 @@
                   <property name="topMargin">
                    <number>10</number>
                   </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
                   <item row="0" column="0">
                    <widget class="BodyLabel" name="BodyLabel_PID_3">
                     <property name="sizePolicy">
@@ -1373,7 +1456,7 @@
                    </widget>
                   </item>
                   <item row="0" column="1">
-                   <widget class="LineEdit" name="ProuductIdLineEdit_3">
+                   <widget class="LineEdit" name="HWVersion_3">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -1388,6 +1471,9 @@
                     </property>
                     <property name="text">
                      <string/>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
                     </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
@@ -1420,7 +1506,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="LineEdit" name="LicenseLineEdit_3">
+                   <widget class="LineEdit" name="ParameterVersion_3">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -1436,6 +1522,9 @@
                     <property name="text">
                      <string/>
                     </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
                     </property>
@@ -1449,7 +1538,11 @@
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="LineEdit" name="LineEdit_7"/>
+                   <widget class="LineEdit" name="FirmwareVersion_3">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="3" column="0">
                    <widget class="BodyLabel" name="BodyLabel_8">
@@ -1459,7 +1552,11 @@
                    </widget>
                   </item>
                   <item row="3" column="1">
-                   <widget class="LineEdit" name="LineEdit_8"/>
+                   <widget class="LineEdit" name="BootVersion_3">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="4" column="0">
                    <widget class="BodyLabel" name="BodyLabel_9">
@@ -1469,7 +1566,7 @@
                    </widget>
                   </item>
                   <item row="4" column="1">
-                   <widget class="LineEdit" name="LineEdit_9"/>
+                   <widget class="LineEdit" name="SN_3"/>
                   </item>
                  </layout>
                 </item>
@@ -1656,6 +1753,16 @@
                  </spacer>
                 </item>
                 <item>
+                 <widget class="BodyLabel" name="OTAStateLabel_3">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="PrimaryPushButton" name="ButtonStartTest_3">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -1776,7 +1883,7 @@
                    <string>Waiting for device connect......</string>
                   </property>
                   <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
                 </item>
@@ -1902,6 +2009,9 @@
                   <property name="topMargin">
                    <number>10</number>
                   </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
                   <item row="0" column="0">
                    <widget class="BodyLabel" name="BodyLabel_PID_4">
                     <property name="sizePolicy">
@@ -1928,7 +2038,7 @@
                    </widget>
                   </item>
                   <item row="0" column="1">
-                   <widget class="LineEdit" name="ProuductIdLineEdit_4">
+                   <widget class="LineEdit" name="HWVersion_4">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -1943,6 +2053,9 @@
                     </property>
                     <property name="text">
                      <string/>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
                     </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
@@ -1975,7 +2088,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="LineEdit" name="LicenseLineEdit_4">
+                   <widget class="LineEdit" name="ParameterVersion_4">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -1991,6 +2104,9 @@
                     <property name="text">
                      <string/>
                     </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
                     <property name="clearButtonEnabled">
                      <bool>true</bool>
                     </property>
@@ -2004,7 +2120,11 @@
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="LineEdit" name="LineEdit_10"/>
+                   <widget class="LineEdit" name="FirmwareVersion_4">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="3" column="0">
                    <widget class="BodyLabel" name="BodyLabel_11">
@@ -2014,7 +2134,11 @@
                    </widget>
                   </item>
                   <item row="3" column="1">
-                   <widget class="LineEdit" name="LineEdit_11"/>
+                   <widget class="LineEdit" name="BootVersion_4">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item row="4" column="0">
                    <widget class="BodyLabel" name="BodyLabel_12">
@@ -2024,7 +2148,17 @@
                    </widget>
                   </item>
                   <item row="4" column="1">
-                   <widget class="LineEdit" name="LineEdit_12"/>
+                   <widget class="LineEdit" name="SN_4">
+                    <property name="maxLength">
+                     <number>32767</number>
+                    </property>
+                    <property name="dragEnabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -2211,6 +2345,16 @@
                  </spacer>
                 </item>
                 <item>
+                 <widget class="BodyLabel" name="OTAStateLabel_4">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="PrimaryPushButton" name="ButtonStartTest_4">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2331,7 +2475,7 @@
                    <string>Waiting for device connect......</string>
                   </property>
                   <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
                 </item>
@@ -2346,7 +2490,144 @@
                  </widget>
                 </item>
                 <item row="2" column="0" colspan="2">
-                 <widget class="TableView" name="DataTableView_4"/>
+                 <widget class="TableView" name="DataTableView_4">
+                  <property name="styleSheet">
+                   <string notr="true">QTableView {
+    background: transparent;
+    outline: none;
+    border: none;
+    /* font: 13px 'Segoe UI', 'Microsoft YaHei'; */
+    selection-background-color: transparent;
+    alternate-background-color: transparent;
+}
+
+QTableView[isBorderVisible=true] {
+    border: 1px solid rgba(0, 0, 0, 15);
+}
+
+QTableView::item {
+    background: transparent;
+    border: 0px;
+    padding-left: 16px;
+    padding-right: 16px;
+    height: 35px;
+}
+
+
+QTableView::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.48);
+    background-color: rgba(0, 0, 0, 0.022);
+}
+
+QTableView::indicator:hover {
+    border: 1px solid rgba(0, 0, 0, 0.56);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+QTableView::indicator:pressed {
+    border: 1px solid rgba(0, 0, 0, 0.27);
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+QTableView::indicator:checked,
+QTableView::indicator:indeterminate {
+    border: 1px solid #009faa;
+    background-color: #009faa;
+}
+
+QTableView::indicator:checked {
+    image: url(:/qfluentwidgets/images/check_box/Accept_white.svg);
+}
+
+QTableView::indicator:indeterminate {
+    image: url(:/qfluentwidgets/images/check_box/PartialAccept_white.svg);
+}
+
+QTableView::indicator:checked:hover,
+QTableView::indicator:indeterminate:hover {
+    border: 1px solid #00a7b3;
+    background-color: #00a7b3;
+}
+
+QTableView::indicator:checked:pressed,
+QTableView::indicator:indeterminate:pressed {
+    border: 1px solid #3eabb3;
+    background-color: #3eabb3;
+}
+
+QTableView::indicator:disabled {
+    border: 1px solid rgba(0, 0, 0, 0.27);
+    background-color: transparent;
+}
+
+QTableView::indicator:checked:disabled,
+QTableView::indicator:indeterminate:disabled {
+    border: 1px solid rgb(199, 199, 199);
+    background-color: rgb(199, 199, 199);
+}
+
+
+QHeaderView {
+    background-color: transparent;
+}
+
+QHeaderView::section {
+    background-color: transparent;
+    color: rgb(96, 96, 96);
+    padding-left: 5px;
+    padding-right: 5px;
+    border: 1px solid rgba(0, 0, 0, 15);
+    font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+}
+
+QHeaderView::section:horizontal {
+    border-left: none;
+    height: 33px;
+}
+
+QTableView[isBorderVisible=true] QHeaderView::section:horizontal {
+    border-top: none;
+}
+
+QHeaderView::section:horizontal:last {
+    border-right: none;
+}
+
+QHeaderView::section:vertical {
+    border-top: none;
+}
+
+QHeaderView::section:checked {
+    background-color: transparent;
+}
+
+QHeaderView::down-arrow {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    margin-right: 6px;
+    image: url(:/qfluentwidgets/images/table_view/Down_black.svg);
+}
+
+QHeaderView::up-arrow {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    margin-right: 6px;
+    image: url(:/qfluentwidgets/images/table_view/Up_black.svg);
+}
+
+QTableCornerButton::section {
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 15);
+}
+
+QTableCornerButton::section:pressed {
+    background-color: rgba(0, 0, 0, 12);
+}</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>
@@ -2455,11 +2736,11 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>ProuductIdLineEdit</tabstop>
-  <tabstop>LicenseLineEdit</tabstop>
-  <tabstop>LineEdit</tabstop>
-  <tabstop>LineEdit_2</tabstop>
-  <tabstop>LineEdit_3</tabstop>
+  <tabstop>HWVersion</tabstop>
+  <tabstop>ParameterVersion</tabstop>
+  <tabstop>FirmwareVersion</tabstop>
+  <tabstop>BootVersion</tabstop>
+  <tabstop>SN</tabstop>
   <tabstop>CheckBox_Param</tabstop>
   <tabstop>ParamFileName</tabstop>
   <tabstop>ParamFileToolButton</tabstop>

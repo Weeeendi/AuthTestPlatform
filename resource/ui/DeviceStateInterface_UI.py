@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DeviceStateInterface_UI(object):
     def setupUi(self, DeviceStateInterface_UI):
         DeviceStateInterface_UI.setObjectName("DeviceStateInterface_UI")
-        DeviceStateInterface_UI.resize(919, 667)
+        DeviceStateInterface_UI.resize(919, 701)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout(DeviceStateInterface_UI)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.gridLayout = QtWidgets.QGridLayout()
@@ -66,6 +66,12 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_6.addLayout(self.horizontalLayout_5)
         self.gridLayout.addWidget(self.ConnectCard, 3, 0, 1, 3)
         self.tabWidget = QtWidgets.QTabWidget(DeviceStateInterface_UI)
+        self.tabWidget.setAutoFillBackground(False)
+        self.tabWidget.setStyleSheet("")
+        self.tabWidget.setTabPosition(QtWidgets.QTabWidget.North)
+        self.tabWidget.setTabShape(QtWidgets.QTabWidget.Rounded)
+        self.tabWidget.setElideMode(QtCore.Qt.ElideLeft)
+        self.tabWidget.setUsesScrollButtons(True)
         self.tabWidget.setObjectName("tabWidget")
         self.DASH_TAB = QtWidgets.QWidget()
         self.DASH_TAB.setObjectName("DASH_TAB")
@@ -100,7 +106,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout.setContentsMargins(5, 10, -1, -1)
         self.verticalLayout.setObjectName("verticalLayout")
         self.formLayout = QtWidgets.QFormLayout()
-        self.formLayout.setContentsMargins(-1, 10, -1, -1)
+        self.formLayout.setContentsMargins(-1, 10, -1, 10)
         self.formLayout.setObjectName("formLayout")
         self.BodyLabel_PID = BodyLabel(self.SettingCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -112,17 +118,18 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_PID.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_PID.setObjectName("BodyLabel_PID")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_PID)
-        self.ProuductIdLineEdit = LineEdit(self.SettingCard)
+        self.HWVersion = LineEdit(self.SettingCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ProuductIdLineEdit.sizePolicy().hasHeightForWidth())
-        self.ProuductIdLineEdit.setSizePolicy(sizePolicy)
-        self.ProuductIdLineEdit.setMinimumSize(QtCore.QSize(180, 33))
-        self.ProuductIdLineEdit.setText("")
-        self.ProuductIdLineEdit.setClearButtonEnabled(True)
-        self.ProuductIdLineEdit.setObjectName("ProuductIdLineEdit")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.ProuductIdLineEdit)
+        sizePolicy.setHeightForWidth(self.HWVersion.sizePolicy().hasHeightForWidth())
+        self.HWVersion.setSizePolicy(sizePolicy)
+        self.HWVersion.setMinimumSize(QtCore.QSize(180, 33))
+        self.HWVersion.setText("")
+        self.HWVersion.setReadOnly(True)
+        self.HWVersion.setClearButtonEnabled(True)
+        self.HWVersion.setObjectName("HWVersion")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion)
         self.BodyLabel_MAC = BodyLabel(self.SettingCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -133,35 +140,39 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_MAC.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_MAC.setObjectName("BodyLabel_MAC")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_MAC)
-        self.LicenseLineEdit = LineEdit(self.SettingCard)
+        self.ParameterVersion = LineEdit(self.SettingCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.LicenseLineEdit.sizePolicy().hasHeightForWidth())
-        self.LicenseLineEdit.setSizePolicy(sizePolicy)
-        self.LicenseLineEdit.setMinimumSize(QtCore.QSize(154, 33))
-        self.LicenseLineEdit.setText("")
-        self.LicenseLineEdit.setClearButtonEnabled(True)
-        self.LicenseLineEdit.setObjectName("LicenseLineEdit")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.LicenseLineEdit)
+        sizePolicy.setHeightForWidth(self.ParameterVersion.sizePolicy().hasHeightForWidth())
+        self.ParameterVersion.setSizePolicy(sizePolicy)
+        self.ParameterVersion.setMinimumSize(QtCore.QSize(154, 33))
+        self.ParameterVersion.setText("")
+        self.ParameterVersion.setReadOnly(True)
+        self.ParameterVersion.setClearButtonEnabled(True)
+        self.ParameterVersion.setObjectName("ParameterVersion")
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.ParameterVersion)
         self.BodyLabel = BodyLabel(self.SettingCard)
         self.BodyLabel.setObjectName("BodyLabel")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.BodyLabel)
-        self.LineEdit = LineEdit(self.SettingCard)
-        self.LineEdit.setObjectName("LineEdit")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.LineEdit)
+        self.FirmwareVersion = LineEdit(self.SettingCard)
+        self.FirmwareVersion.setReadOnly(True)
+        self.FirmwareVersion.setObjectName("FirmwareVersion")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.FirmwareVersion)
         self.BodyLabel_2 = BodyLabel(self.SettingCard)
         self.BodyLabel_2.setObjectName("BodyLabel_2")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_2)
-        self.LineEdit_2 = LineEdit(self.SettingCard)
-        self.LineEdit_2.setObjectName("LineEdit_2")
-        self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.LineEdit_2)
+        self.BootVersion = LineEdit(self.SettingCard)
+        self.BootVersion.setReadOnly(True)
+        self.BootVersion.setObjectName("BootVersion")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.BootVersion)
         self.BodyLabel_3 = BodyLabel(self.SettingCard)
         self.BodyLabel_3.setObjectName("BodyLabel_3")
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_3)
-        self.LineEdit_3 = LineEdit(self.SettingCard)
-        self.LineEdit_3.setObjectName("LineEdit_3")
-        self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.LineEdit_3)
+        self.SN = LineEdit(self.SettingCard)
+        self.SN.setReadOnly(True)
+        self.SN.setObjectName("SN")
+        self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN)
         self.verticalLayout.addLayout(self.formLayout)
         spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem3)
@@ -232,6 +243,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout.addWidget(self.UpdateProgressBar)
         spacerItem6 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem6)
+        self.BodyLabel_13 = BodyLabel(self.SettingCard)
+        self.BodyLabel_13.setText("")
+        self.BodyLabel_13.setAlignment(QtCore.Qt.AlignCenter)
+        self.BodyLabel_13.setObjectName("BodyLabel_13")
+        self.verticalLayout.addWidget(self.BodyLabel_13)
         self.ButtonStartOTA = PrimaryPushButton(self.SettingCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -284,7 +300,7 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setHeightForWidth(self.connStateLabel.sizePolicy().hasHeightForWidth())
         self.connStateLabel.setSizePolicy(sizePolicy)
         self.connStateLabel.setMinimumSize(QtCore.QSize(0, 0))
-        self.connStateLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.connStateLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel.setObjectName("connStateLabel")
         self.DeviceStateLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.connStateLabel)
         self.DataTableView = TableView(self.DeviceCard)
@@ -330,7 +346,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_7.setContentsMargins(5, 10, -1, -1)
         self.verticalLayout_7.setObjectName("verticalLayout_7")
         self.formLayout_2 = QtWidgets.QFormLayout()
-        self.formLayout_2.setContentsMargins(-1, 10, -1, -1)
+        self.formLayout_2.setContentsMargins(-1, 10, -1, 10)
         self.formLayout_2.setObjectName("formLayout_2")
         self.BodyLabel_PID_2 = BodyLabel(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -342,17 +358,18 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_PID_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_PID_2.setObjectName("BodyLabel_PID_2")
         self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_PID_2)
-        self.ProuductIdLineEdit_2 = LineEdit(self.SettingCard_2)
+        self.HWVersion_2 = LineEdit(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ProuductIdLineEdit_2.sizePolicy().hasHeightForWidth())
-        self.ProuductIdLineEdit_2.setSizePolicy(sizePolicy)
-        self.ProuductIdLineEdit_2.setMinimumSize(QtCore.QSize(180, 33))
-        self.ProuductIdLineEdit_2.setText("")
-        self.ProuductIdLineEdit_2.setClearButtonEnabled(True)
-        self.ProuductIdLineEdit_2.setObjectName("ProuductIdLineEdit_2")
-        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.ProuductIdLineEdit_2)
+        sizePolicy.setHeightForWidth(self.HWVersion_2.sizePolicy().hasHeightForWidth())
+        self.HWVersion_2.setSizePolicy(sizePolicy)
+        self.HWVersion_2.setMinimumSize(QtCore.QSize(180, 33))
+        self.HWVersion_2.setText("")
+        self.HWVersion_2.setReadOnly(True)
+        self.HWVersion_2.setClearButtonEnabled(True)
+        self.HWVersion_2.setObjectName("HWVersion_2")
+        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_2)
         self.BodyLabel_MAC_2 = BodyLabel(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -363,35 +380,39 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_MAC_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_MAC_2.setObjectName("BodyLabel_MAC_2")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_MAC_2)
-        self.LicenseLineEdit_2 = LineEdit(self.SettingCard_2)
+        self.ParameterVersion_2 = LineEdit(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.LicenseLineEdit_2.sizePolicy().hasHeightForWidth())
-        self.LicenseLineEdit_2.setSizePolicy(sizePolicy)
-        self.LicenseLineEdit_2.setMinimumSize(QtCore.QSize(154, 33))
-        self.LicenseLineEdit_2.setText("")
-        self.LicenseLineEdit_2.setClearButtonEnabled(True)
-        self.LicenseLineEdit_2.setObjectName("LicenseLineEdit_2")
-        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.LicenseLineEdit_2)
+        sizePolicy.setHeightForWidth(self.ParameterVersion_2.sizePolicy().hasHeightForWidth())
+        self.ParameterVersion_2.setSizePolicy(sizePolicy)
+        self.ParameterVersion_2.setMinimumSize(QtCore.QSize(154, 33))
+        self.ParameterVersion_2.setText("")
+        self.ParameterVersion_2.setReadOnly(True)
+        self.ParameterVersion_2.setClearButtonEnabled(True)
+        self.ParameterVersion_2.setObjectName("ParameterVersion_2")
+        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.ParameterVersion_2)
         self.BodyLabel_4 = BodyLabel(self.SettingCard_2)
         self.BodyLabel_4.setObjectName("BodyLabel_4")
         self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_4)
-        self.LineEdit_4 = LineEdit(self.SettingCard_2)
-        self.LineEdit_4.setObjectName("LineEdit_4")
-        self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.LineEdit_4)
+        self.FirmwareVersion_2 = LineEdit(self.SettingCard_2)
+        self.FirmwareVersion_2.setReadOnly(True)
+        self.FirmwareVersion_2.setObjectName("FirmwareVersion_2")
+        self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.FirmwareVersion_2)
         self.BodyLabel_5 = BodyLabel(self.SettingCard_2)
         self.BodyLabel_5.setObjectName("BodyLabel_5")
         self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_5)
-        self.LineEdit_5 = LineEdit(self.SettingCard_2)
-        self.LineEdit_5.setObjectName("LineEdit_5")
-        self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.LineEdit_5)
+        self.BootVersion_2 = LineEdit(self.SettingCard_2)
+        self.BootVersion_2.setReadOnly(True)
+        self.BootVersion_2.setObjectName("BootVersion_2")
+        self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.BootVersion_2)
         self.BodyLabel_6 = BodyLabel(self.SettingCard_2)
         self.BodyLabel_6.setObjectName("BodyLabel_6")
         self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_6)
-        self.LineEdit_6 = LineEdit(self.SettingCard_2)
-        self.LineEdit_6.setObjectName("LineEdit_6")
-        self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.LineEdit_6)
+        self.SN_2 = LineEdit(self.SettingCard_2)
+        self.SN_2.setReadOnly(True)
+        self.SN_2.setObjectName("SN_2")
+        self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_2)
         self.verticalLayout_7.addLayout(self.formLayout_2)
         spacerItem12 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_7.addItem(spacerItem12)
@@ -462,6 +483,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_7.addWidget(self.UpdateProgressBar_2)
         spacerItem15 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_7.addItem(spacerItem15)
+        self.OTAStateLabel_2 = BodyLabel(self.SettingCard_2)
+        self.OTAStateLabel_2.setText("")
+        self.OTAStateLabel_2.setAlignment(QtCore.Qt.AlignCenter)
+        self.OTAStateLabel_2.setObjectName("OTAStateLabel_2")
+        self.verticalLayout_7.addWidget(self.OTAStateLabel_2)
         self.ButtonStartTest_2 = PrimaryPushButton(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -510,7 +536,7 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setHeightForWidth(self.connStateLabel_2.sizePolicy().hasHeightForWidth())
         self.connStateLabel_2.setSizePolicy(sizePolicy)
         self.connStateLabel_2.setMinimumSize(QtCore.QSize(0, 0))
-        self.connStateLabel_2.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.connStateLabel_2.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_2.setObjectName("connStateLabel_2")
         self.DeviceStateLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_2)
         self.connStateIcon_2 = IconInfoBadge(self.DeviceCard_2)
@@ -559,7 +585,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_16.setContentsMargins(5, 10, -1, -1)
         self.verticalLayout_16.setObjectName("verticalLayout_16")
         self.formLayout_3 = QtWidgets.QFormLayout()
-        self.formLayout_3.setContentsMargins(-1, 10, -1, -1)
+        self.formLayout_3.setContentsMargins(-1, 10, -1, 10)
         self.formLayout_3.setObjectName("formLayout_3")
         self.BodyLabel_PID_3 = BodyLabel(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -571,17 +597,18 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_PID_3.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_PID_3.setObjectName("BodyLabel_PID_3")
         self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_PID_3)
-        self.ProuductIdLineEdit_3 = LineEdit(self.SettingCard_3)
+        self.HWVersion_3 = LineEdit(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ProuductIdLineEdit_3.sizePolicy().hasHeightForWidth())
-        self.ProuductIdLineEdit_3.setSizePolicy(sizePolicy)
-        self.ProuductIdLineEdit_3.setMinimumSize(QtCore.QSize(180, 33))
-        self.ProuductIdLineEdit_3.setText("")
-        self.ProuductIdLineEdit_3.setClearButtonEnabled(True)
-        self.ProuductIdLineEdit_3.setObjectName("ProuductIdLineEdit_3")
-        self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.ProuductIdLineEdit_3)
+        sizePolicy.setHeightForWidth(self.HWVersion_3.sizePolicy().hasHeightForWidth())
+        self.HWVersion_3.setSizePolicy(sizePolicy)
+        self.HWVersion_3.setMinimumSize(QtCore.QSize(180, 33))
+        self.HWVersion_3.setText("")
+        self.HWVersion_3.setReadOnly(True)
+        self.HWVersion_3.setClearButtonEnabled(True)
+        self.HWVersion_3.setObjectName("HWVersion_3")
+        self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_3)
         self.BodyLabel_MAC_3 = BodyLabel(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -592,35 +619,38 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_MAC_3.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_MAC_3.setObjectName("BodyLabel_MAC_3")
         self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_MAC_3)
-        self.LicenseLineEdit_3 = LineEdit(self.SettingCard_3)
+        self.ParameterVersion_3 = LineEdit(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.LicenseLineEdit_3.sizePolicy().hasHeightForWidth())
-        self.LicenseLineEdit_3.setSizePolicy(sizePolicy)
-        self.LicenseLineEdit_3.setMinimumSize(QtCore.QSize(154, 33))
-        self.LicenseLineEdit_3.setText("")
-        self.LicenseLineEdit_3.setClearButtonEnabled(True)
-        self.LicenseLineEdit_3.setObjectName("LicenseLineEdit_3")
-        self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.LicenseLineEdit_3)
+        sizePolicy.setHeightForWidth(self.ParameterVersion_3.sizePolicy().hasHeightForWidth())
+        self.ParameterVersion_3.setSizePolicy(sizePolicy)
+        self.ParameterVersion_3.setMinimumSize(QtCore.QSize(154, 33))
+        self.ParameterVersion_3.setText("")
+        self.ParameterVersion_3.setReadOnly(True)
+        self.ParameterVersion_3.setClearButtonEnabled(True)
+        self.ParameterVersion_3.setObjectName("ParameterVersion_3")
+        self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.ParameterVersion_3)
         self.BodyLabel_7 = BodyLabel(self.SettingCard_3)
         self.BodyLabel_7.setObjectName("BodyLabel_7")
         self.formLayout_3.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_7)
-        self.LineEdit_7 = LineEdit(self.SettingCard_3)
-        self.LineEdit_7.setObjectName("LineEdit_7")
-        self.formLayout_3.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.LineEdit_7)
+        self.FirmwareVersion_3 = LineEdit(self.SettingCard_3)
+        self.FirmwareVersion_3.setReadOnly(True)
+        self.FirmwareVersion_3.setObjectName("FirmwareVersion_3")
+        self.formLayout_3.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.FirmwareVersion_3)
         self.BodyLabel_8 = BodyLabel(self.SettingCard_3)
         self.BodyLabel_8.setObjectName("BodyLabel_8")
         self.formLayout_3.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_8)
-        self.LineEdit_8 = LineEdit(self.SettingCard_3)
-        self.LineEdit_8.setObjectName("LineEdit_8")
-        self.formLayout_3.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.LineEdit_8)
+        self.BootVersion_3 = LineEdit(self.SettingCard_3)
+        self.BootVersion_3.setReadOnly(True)
+        self.BootVersion_3.setObjectName("BootVersion_3")
+        self.formLayout_3.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.BootVersion_3)
         self.BodyLabel_9 = BodyLabel(self.SettingCard_3)
         self.BodyLabel_9.setObjectName("BodyLabel_9")
         self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_9)
-        self.LineEdit_9 = LineEdit(self.SettingCard_3)
-        self.LineEdit_9.setObjectName("LineEdit_9")
-        self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.LineEdit_9)
+        self.SN_3 = LineEdit(self.SettingCard_3)
+        self.SN_3.setObjectName("SN_3")
+        self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_3)
         self.verticalLayout_16.addLayout(self.formLayout_3)
         spacerItem21 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_16.addItem(spacerItem21)
@@ -691,6 +721,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_16.addWidget(self.UpdateProgressBar_3)
         spacerItem24 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_16.addItem(spacerItem24)
+        self.OTAStateLabel_3 = BodyLabel(self.SettingCard_3)
+        self.OTAStateLabel_3.setText("")
+        self.OTAStateLabel_3.setAlignment(QtCore.Qt.AlignCenter)
+        self.OTAStateLabel_3.setObjectName("OTAStateLabel_3")
+        self.verticalLayout_16.addWidget(self.OTAStateLabel_3)
         self.ButtonStartTest_3 = PrimaryPushButton(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -739,7 +774,7 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setHeightForWidth(self.connStateLabel_3.sizePolicy().hasHeightForWidth())
         self.connStateLabel_3.setSizePolicy(sizePolicy)
         self.connStateLabel_3.setMinimumSize(QtCore.QSize(0, 0))
-        self.connStateLabel_3.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.connStateLabel_3.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_3.setObjectName("connStateLabel_3")
         self.DeviceStateLayout_3.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_3)
         self.connStateIcon_3 = IconInfoBadge(self.DeviceCard_3)
@@ -788,7 +823,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_21.setContentsMargins(5, 10, -1, -1)
         self.verticalLayout_21.setObjectName("verticalLayout_21")
         self.formLayout_4 = QtWidgets.QFormLayout()
-        self.formLayout_4.setContentsMargins(-1, 10, -1, -1)
+        self.formLayout_4.setContentsMargins(-1, 10, -1, 10)
         self.formLayout_4.setObjectName("formLayout_4")
         self.BodyLabel_PID_4 = BodyLabel(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -800,17 +835,18 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_PID_4.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_PID_4.setObjectName("BodyLabel_PID_4")
         self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_PID_4)
-        self.ProuductIdLineEdit_4 = LineEdit(self.SettingCard_4)
+        self.HWVersion_4 = LineEdit(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ProuductIdLineEdit_4.sizePolicy().hasHeightForWidth())
-        self.ProuductIdLineEdit_4.setSizePolicy(sizePolicy)
-        self.ProuductIdLineEdit_4.setMinimumSize(QtCore.QSize(180, 33))
-        self.ProuductIdLineEdit_4.setText("")
-        self.ProuductIdLineEdit_4.setClearButtonEnabled(True)
-        self.ProuductIdLineEdit_4.setObjectName("ProuductIdLineEdit_4")
-        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.ProuductIdLineEdit_4)
+        sizePolicy.setHeightForWidth(self.HWVersion_4.sizePolicy().hasHeightForWidth())
+        self.HWVersion_4.setSizePolicy(sizePolicy)
+        self.HWVersion_4.setMinimumSize(QtCore.QSize(180, 33))
+        self.HWVersion_4.setText("")
+        self.HWVersion_4.setReadOnly(True)
+        self.HWVersion_4.setClearButtonEnabled(True)
+        self.HWVersion_4.setObjectName("HWVersion_4")
+        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_4)
         self.BodyLabel_MAC_4 = BodyLabel(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -821,35 +857,41 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_MAC_4.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.BodyLabel_MAC_4.setObjectName("BodyLabel_MAC_4")
         self.formLayout_4.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_MAC_4)
-        self.LicenseLineEdit_4 = LineEdit(self.SettingCard_4)
+        self.ParameterVersion_4 = LineEdit(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.LicenseLineEdit_4.sizePolicy().hasHeightForWidth())
-        self.LicenseLineEdit_4.setSizePolicy(sizePolicy)
-        self.LicenseLineEdit_4.setMinimumSize(QtCore.QSize(154, 33))
-        self.LicenseLineEdit_4.setText("")
-        self.LicenseLineEdit_4.setClearButtonEnabled(True)
-        self.LicenseLineEdit_4.setObjectName("LicenseLineEdit_4")
-        self.formLayout_4.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.LicenseLineEdit_4)
+        sizePolicy.setHeightForWidth(self.ParameterVersion_4.sizePolicy().hasHeightForWidth())
+        self.ParameterVersion_4.setSizePolicy(sizePolicy)
+        self.ParameterVersion_4.setMinimumSize(QtCore.QSize(154, 33))
+        self.ParameterVersion_4.setText("")
+        self.ParameterVersion_4.setReadOnly(True)
+        self.ParameterVersion_4.setClearButtonEnabled(True)
+        self.ParameterVersion_4.setObjectName("ParameterVersion_4")
+        self.formLayout_4.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.ParameterVersion_4)
         self.BodyLabel_10 = BodyLabel(self.SettingCard_4)
         self.BodyLabel_10.setObjectName("BodyLabel_10")
         self.formLayout_4.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_10)
-        self.LineEdit_10 = LineEdit(self.SettingCard_4)
-        self.LineEdit_10.setObjectName("LineEdit_10")
-        self.formLayout_4.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.LineEdit_10)
+        self.FirmwareVersion_4 = LineEdit(self.SettingCard_4)
+        self.FirmwareVersion_4.setReadOnly(True)
+        self.FirmwareVersion_4.setObjectName("FirmwareVersion_4")
+        self.formLayout_4.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.FirmwareVersion_4)
         self.BodyLabel_11 = BodyLabel(self.SettingCard_4)
         self.BodyLabel_11.setObjectName("BodyLabel_11")
         self.formLayout_4.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_11)
-        self.LineEdit_11 = LineEdit(self.SettingCard_4)
-        self.LineEdit_11.setObjectName("LineEdit_11")
-        self.formLayout_4.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.LineEdit_11)
+        self.BootVersion_4 = LineEdit(self.SettingCard_4)
+        self.BootVersion_4.setReadOnly(True)
+        self.BootVersion_4.setObjectName("BootVersion_4")
+        self.formLayout_4.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.BootVersion_4)
         self.BodyLabel_12 = BodyLabel(self.SettingCard_4)
         self.BodyLabel_12.setObjectName("BodyLabel_12")
         self.formLayout_4.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_12)
-        self.LineEdit_12 = LineEdit(self.SettingCard_4)
-        self.LineEdit_12.setObjectName("LineEdit_12")
-        self.formLayout_4.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.LineEdit_12)
+        self.SN_4 = LineEdit(self.SettingCard_4)
+        self.SN_4.setMaxLength(32767)
+        self.SN_4.setDragEnabled(False)
+        self.SN_4.setReadOnly(True)
+        self.SN_4.setObjectName("SN_4")
+        self.formLayout_4.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_4)
         self.verticalLayout_21.addLayout(self.formLayout_4)
         spacerItem30 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_21.addItem(spacerItem30)
@@ -920,6 +962,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_21.addWidget(self.UpdateProgressBar_4)
         spacerItem33 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_21.addItem(spacerItem33)
+        self.OTAStateLabel_4 = BodyLabel(self.SettingCard_4)
+        self.OTAStateLabel_4.setText("")
+        self.OTAStateLabel_4.setAlignment(QtCore.Qt.AlignCenter)
+        self.OTAStateLabel_4.setObjectName("OTAStateLabel_4")
+        self.verticalLayout_21.addWidget(self.OTAStateLabel_4)
         self.ButtonStartTest_4 = PrimaryPushButton(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -968,7 +1015,7 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setHeightForWidth(self.connStateLabel_4.sizePolicy().hasHeightForWidth())
         self.connStateLabel_4.setSizePolicy(sizePolicy)
         self.connStateLabel_4.setMinimumSize(QtCore.QSize(0, 0))
-        self.connStateLabel_4.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.connStateLabel_4.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_4.setObjectName("connStateLabel_4")
         self.DeviceStateLayout_4.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_4)
         self.connStateIcon_4 = IconInfoBadge(self.DeviceCard_4)
@@ -976,6 +1023,140 @@ class Ui_DeviceStateInterface_UI(object):
         self.connStateIcon_4.setObjectName("connStateIcon_4")
         self.DeviceStateLayout_4.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.connStateIcon_4)
         self.DataTableView_4 = TableView(self.DeviceCard_4)
+        self.DataTableView_4.setStyleSheet("QTableView {\n"
+"    background: transparent;\n"
+"    outline: none;\n"
+"    border: none;\n"
+"    /* font: 13px \'Segoe UI\', \'Microsoft YaHei\'; */\n"
+"    selection-background-color: transparent;\n"
+"    alternate-background-color: transparent;\n"
+"}\n"
+"\n"
+"QTableView[isBorderVisible=true] {\n"
+"    border: 1px solid rgba(0, 0, 0, 15);\n"
+"}\n"
+"\n"
+"QTableView::item {\n"
+"    background: transparent;\n"
+"    border: 0px;\n"
+"    padding-left: 16px;\n"
+"    padding-right: 16px;\n"
+"    height: 35px;\n"
+"}\n"
+"\n"
+"\n"
+"QTableView::indicator {\n"
+"    width: 18px;\n"
+"    height: 18px;\n"
+"    border-radius: 5px;\n"
+"    border: 1px solid rgba(0, 0, 0, 0.48);\n"
+"    background-color: rgba(0, 0, 0, 0.022);\n"
+"}\n"
+"\n"
+"QTableView::indicator:hover {\n"
+"    border: 1px solid rgba(0, 0, 0, 0.56);\n"
+"    background-color: rgba(0, 0, 0, 0.05);\n"
+"}\n"
+"\n"
+"QTableView::indicator:pressed {\n"
+"    border: 1px solid rgba(0, 0, 0, 0.27);\n"
+"    background-color: rgba(0, 0, 0, 0.12);\n"
+"}\n"
+"\n"
+"QTableView::indicator:checked,\n"
+"QTableView::indicator:indeterminate {\n"
+"    border: 1px solid #009faa;\n"
+"    background-color: #009faa;\n"
+"}\n"
+"\n"
+"QTableView::indicator:checked {\n"
+"    image: url(:/qfluentwidgets/images/check_box/Accept_white.svg);\n"
+"}\n"
+"\n"
+"QTableView::indicator:indeterminate {\n"
+"    image: url(:/qfluentwidgets/images/check_box/PartialAccept_white.svg);\n"
+"}\n"
+"\n"
+"QTableView::indicator:checked:hover,\n"
+"QTableView::indicator:indeterminate:hover {\n"
+"    border: 1px solid #00a7b3;\n"
+"    background-color: #00a7b3;\n"
+"}\n"
+"\n"
+"QTableView::indicator:checked:pressed,\n"
+"QTableView::indicator:indeterminate:pressed {\n"
+"    border: 1px solid #3eabb3;\n"
+"    background-color: #3eabb3;\n"
+"}\n"
+"\n"
+"QTableView::indicator:disabled {\n"
+"    border: 1px solid rgba(0, 0, 0, 0.27);\n"
+"    background-color: transparent;\n"
+"}\n"
+"\n"
+"QTableView::indicator:checked:disabled,\n"
+"QTableView::indicator:indeterminate:disabled {\n"
+"    border: 1px solid rgb(199, 199, 199);\n"
+"    background-color: rgb(199, 199, 199);\n"
+"}\n"
+"\n"
+"\n"
+"QHeaderView {\n"
+"    background-color: transparent;\n"
+"}\n"
+"\n"
+"QHeaderView::section {\n"
+"    background-color: transparent;\n"
+"    color: rgb(96, 96, 96);\n"
+"    padding-left: 5px;\n"
+"    padding-right: 5px;\n"
+"    border: 1px solid rgba(0, 0, 0, 15);\n"
+"    font: 13px \'Segoe UI\', \'Microsoft YaHei\', \'PingFang SC\';\n"
+"}\n"
+"\n"
+"QHeaderView::section:horizontal {\n"
+"    border-left: none;\n"
+"    height: 33px;\n"
+"}\n"
+"\n"
+"QTableView[isBorderVisible=true] QHeaderView::section:horizontal {\n"
+"    border-top: none;\n"
+"}\n"
+"\n"
+"QHeaderView::section:horizontal:last {\n"
+"    border-right: none;\n"
+"}\n"
+"\n"
+"QHeaderView::section:vertical {\n"
+"    border-top: none;\n"
+"}\n"
+"\n"
+"QHeaderView::section:checked {\n"
+"    background-color: transparent;\n"
+"}\n"
+"\n"
+"QHeaderView::down-arrow {\n"
+"    subcontrol-origin: padding;\n"
+"    subcontrol-position: center right;\n"
+"    margin-right: 6px;\n"
+"    image: url(:/qfluentwidgets/images/table_view/Down_black.svg);\n"
+"}\n"
+"\n"
+"QHeaderView::up-arrow {\n"
+"    subcontrol-origin: padding;\n"
+"    subcontrol-position: center right;\n"
+"    margin-right: 6px;\n"
+"    image: url(:/qfluentwidgets/images/table_view/Up_black.svg);\n"
+"}\n"
+"\n"
+"QTableCornerButton::section {\n"
+"    background-color: transparent;\n"
+"    border: 1px solid rgba(0, 0, 0, 15);\n"
+"}\n"
+"\n"
+"QTableCornerButton::section:pressed {\n"
+"    background-color: rgba(0, 0, 0, 12);\n"
+"}")
         self.DataTableView_4.setObjectName("DataTableView_4")
         self.DeviceStateLayout_4.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.DataTableView_4)
         self.verticalLayout_18.addLayout(self.DeviceStateLayout_4)
@@ -989,13 +1170,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_3.addLayout(self.gridLayout)
 
         self.retranslateUi(DeviceStateInterface_UI)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(3)
         QtCore.QMetaObject.connectSlotsByName(DeviceStateInterface_UI)
-        DeviceStateInterface_UI.setTabOrder(self.ProuductIdLineEdit, self.LicenseLineEdit)
-        DeviceStateInterface_UI.setTabOrder(self.LicenseLineEdit, self.LineEdit)
-        DeviceStateInterface_UI.setTabOrder(self.LineEdit, self.LineEdit_2)
-        DeviceStateInterface_UI.setTabOrder(self.LineEdit_2, self.LineEdit_3)
-        DeviceStateInterface_UI.setTabOrder(self.LineEdit_3, self.CheckBox_Param)
+        DeviceStateInterface_UI.setTabOrder(self.HWVersion, self.ParameterVersion)
+        DeviceStateInterface_UI.setTabOrder(self.ParameterVersion, self.FirmwareVersion)
+        DeviceStateInterface_UI.setTabOrder(self.FirmwareVersion, self.BootVersion)
+        DeviceStateInterface_UI.setTabOrder(self.BootVersion, self.SN)
+        DeviceStateInterface_UI.setTabOrder(self.SN, self.CheckBox_Param)
         DeviceStateInterface_UI.setTabOrder(self.CheckBox_Param, self.ParamFileName)
         DeviceStateInterface_UI.setTabOrder(self.ParamFileName, self.ParamFileToolButton)
         DeviceStateInterface_UI.setTabOrder(self.ParamFileToolButton, self.CheckBox_Firmware)
