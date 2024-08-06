@@ -1,4 +1,5 @@
 # coding:utf-8
+import json
 import time
 
 import serial
@@ -17,7 +18,7 @@ def showMessage(title, content, parent=None):
 
 
 class DataPoint:
-    def __init__(self, code, dpid, msg, default_value, desc, name, property):
+    def __init__(self, code, dpid, msg, default_value, desc, name, property, page):
         self.code = code
         self.id = dpid
         self.msg = msg
@@ -25,6 +26,7 @@ class DataPoint:
         self.desc = desc
         self.name = name
         self.property = property
+        self.page = page  #所属的页面
 
     def __repr__(self):
         return f"DataPoint(code={self.code}, id={self.id}, msg={self.msg}, defaultValue={self.default_value}, desc={self.desc}, name={self.name}, property={self.property})"
@@ -170,6 +172,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         # 串口刷新设置
         self.refresh()
 
+
     def create_callback(self, widget):
         def callback():
             self.obtainPath(widget)
@@ -286,13 +289,28 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.DeviceTask()
         print("刷新串口")
 
-    # 作为槽函数于Stream的信号连接, 内部参数于信号发射参数相同
-    def onDpDataChanged(self, dpFrame):
-        print("receive dp data", dpFrame)
+    def InitDataPointList(self):
+        self.DpDict = json.loads("dataPointCfg.json")
+
+    def find_category_by_id(data, target_id):
+        # 遍历数据中的每一个大类别
+        for category, items in data.items():
+            # 在每个大类别中遍历每个项目
+            for item in items:
+                # 检查当前项目的id是否匹配目标id
+                if item.get("id") == target_id:
+                    return category  # 返回匹配的组别名称
+        return None  # 如果没有找到，返回Non
+
+    def onDpDataChanged(self, DataPointParam: DataPoint):
+        group = self.find_category_by_id(self.DpDict, DataPointParam.id)
+        if group:
+
+
+            self.DeviceTask()
 
     def updatePercentDate(self):
         pass
-
 
     def dealAuthData(self, authInfo):
         """自定义槽，处理授权信息"""

@@ -1,11 +1,11 @@
 {
   "Controller_Dp_Data": [
     {
-      "code":"base_verInfo","id": 41,"msg":"ver","defaultValue":"","desc":"","name":"控制器软件版本号",
+      "code":"base_verInfo","id": 41,"msg":"ver","defaultValue":"","desc":"","name":"控制器基础信息",
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"仪表故障",
+      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"控制器故障",
       "property":{"label":["overphaseCurFault",
                             "overbusCurFault",
                             "hallFault",
@@ -45,12 +45,41 @@
     },
     {
       "code":"BMS_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
-      "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
+      "property":{"label":[ "charge_over_vol_fault",
+                            "charge_over_cur_fault",
+                            "charge_over_tmp_fault",
+                            "charge_low_tmp_fault",
+                            "disc_under_cur_fault",
+                            "disc_over_cur_fault",
+                            "disc_over_tmp_fault",
+                            "disc_low_tmp_fault",
+                            "battery_tmp_diff_fault",
+                            "battery_vol_diff_fault",
+                            "battery_total_vol_fault",
+                            "afe_chip_err",
+                            "estimate_chip_err",
+                            "storage_chip_err",
+                            "rtc_chip_err",
+                            "discharge_mosfet_err",
+                            "charge_mosfet_err",
+                            "celltemp_sensor_err",
+                            "mostemp_sensor_err",
+                            "discharge_fuse_err",
+                            "charge_fuse_err",
+                            "mcu_chip_err"],"maxlen":2,"type":"bitmap"}
+    },
+    {
+      "code":"battery_percentage_1","id":22,"msg":"data","defaultValue":"","desc":"","name":"电池电量","property":{"max":100,"min":0,"scale":0,"step":1,"type":"value","unit":"%"}
     }
   ],
   "IoT_Dp_Data": [
     {
-      "code":"battery_percentage","defaultValue":"","desc":"","name":"电池电量","property":{"max":100,"min":0,"scale":0,"step":1,"type":"value","unit":"%"}
+      "code":"base_verInfo","id":30,"msg":"ver","defaultValue":"","desc":"","name":"iot基础信息",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"IoT_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "property":{"label":["smart_gsensor_fault","smart_flash_fault","smart_4g_fault","smart_ble_fault"],"maxlen":4,"type":"bitmap"}
     }
   ]
 }

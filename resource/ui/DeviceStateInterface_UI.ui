@@ -137,6 +137,9 @@
      </item>
      <item row="0" column="0" rowspan="3" colspan="3">
       <widget class="QTabWidget" name="tabWidget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
@@ -150,7 +153,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <property name="elideMode">
         <enum>Qt::ElideLeft</enum>
@@ -275,6 +278,9 @@
                   </item>
                   <item row="0" column="1">
                    <widget class="LineEdit" name="HWVersion">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -300,6 +306,9 @@
                   </item>
                   <item row="1" column="0">
                    <widget class="BodyLabel" name="BodyLabel_MAC">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                       <horstretch>0</horstretch>
@@ -325,6 +334,9 @@
                   </item>
                   <item row="1" column="1">
                    <widget class="LineEdit" name="ParameterVersion">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -364,6 +376,9 @@
                   </item>
                   <item row="3" column="0">
                    <widget class="BodyLabel" name="BodyLabel_2">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string>Bootloader Version</string>
                     </property>
@@ -371,6 +386,9 @@
                   </item>
                   <item row="3" column="1">
                    <widget class="LineEdit" name="BootVersion">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
                     <property name="readOnly">
                      <bool>true</bool>
                     </property>
@@ -462,10 +480,17 @@
                    <number>0</number>
                   </property>
                   <item>
-                   <widget class="LineEdit" name="ParamFileName"/>
+                   <widget class="LineEdit" name="ParamFileName">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item>
                    <widget class="ToolButton" name="ParamFileToolButton">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -719,13 +744,6 @@
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0" colspan="2">
-                 <widget class="TableView" name="DataTableView">
-                  <property name="gridStyle">
-                   <enum>Qt::SolidLine</enum>
                   </property>
                  </widget>
                 </item>
@@ -1283,6 +1301,16 @@
                 <property name="rightMargin">
                  <number>0</number>
                 </property>
+                <item row="1" column="0">
+                 <widget class="IconInfoBadge" name="connStateIcon_2">
+                  <property name="textFormat">
+                   <enum>Qt::AutoText</enum>
+                  </property>
+                  <property name="level" stdset="0">
+                   <string>Success</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="1">
                  <widget class="BodyLabel" name="connStateLabel_2">
                   <property name="sizePolicy">
@@ -1304,19 +1332,6 @@
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="IconInfoBadge" name="connStateIcon_2">
-                  <property name="textFormat">
-                   <enum>Qt::AutoText</enum>
-                  </property>
-                  <property name="level" stdset="0">
-                   <string>Success</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0" colspan="2">
-                 <widget class="TableView" name="DataTableView_2"/>
                 </item>
                </layout>
               </item>
@@ -1865,6 +1880,16 @@
                 <property name="topMargin">
                  <number>6</number>
                 </property>
+                <item row="1" column="0">
+                 <widget class="IconInfoBadge" name="connStateIcon_3">
+                  <property name="textFormat">
+                   <enum>Qt::AutoText</enum>
+                  </property>
+                  <property name="level" stdset="0">
+                   <string>Success</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="1">
                  <widget class="BodyLabel" name="connStateLabel_3">
                   <property name="sizePolicy">
@@ -1886,19 +1911,6 @@
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
                  </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="IconInfoBadge" name="connStateIcon_3">
-                  <property name="textFormat">
-                   <enum>Qt::AutoText</enum>
-                  </property>
-                  <property name="level" stdset="0">
-                   <string>Success</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0" colspan="2">
-                 <widget class="TableView" name="DataTableView_3"/>
                 </item>
                </layout>
               </item>
@@ -2457,6 +2469,16 @@
                 <property name="topMargin">
                  <number>6</number>
                 </property>
+                <item row="1" column="0">
+                 <widget class="IconInfoBadge" name="connStateIcon_4">
+                  <property name="textFormat">
+                   <enum>Qt::AutoText</enum>
+                  </property>
+                  <property name="level" stdset="0">
+                   <string>Success</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="1">
                  <widget class="BodyLabel" name="connStateLabel_4">
                   <property name="sizePolicy">
@@ -2476,156 +2498,6 @@
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="IconInfoBadge" name="connStateIcon_4">
-                  <property name="textFormat">
-                   <enum>Qt::AutoText</enum>
-                  </property>
-                  <property name="level" stdset="0">
-                   <string>Success</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0" colspan="2">
-                 <widget class="TableView" name="DataTableView_4">
-                  <property name="styleSheet">
-                   <string notr="true">QTableView {
-    background: transparent;
-    outline: none;
-    border: none;
-    /* font: 13px 'Segoe UI', 'Microsoft YaHei'; */
-    selection-background-color: transparent;
-    alternate-background-color: transparent;
-}
-
-QTableView[isBorderVisible=true] {
-    border: 1px solid rgba(0, 0, 0, 15);
-}
-
-QTableView::item {
-    background: transparent;
-    border: 0px;
-    padding-left: 16px;
-    padding-right: 16px;
-    height: 35px;
-}
-
-
-QTableView::indicator {
-    width: 18px;
-    height: 18px;
-    border-radius: 5px;
-    border: 1px solid rgba(0, 0, 0, 0.48);
-    background-color: rgba(0, 0, 0, 0.022);
-}
-
-QTableView::indicator:hover {
-    border: 1px solid rgba(0, 0, 0, 0.56);
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-QTableView::indicator:pressed {
-    border: 1px solid rgba(0, 0, 0, 0.27);
-    background-color: rgba(0, 0, 0, 0.12);
-}
-
-QTableView::indicator:checked,
-QTableView::indicator:indeterminate {
-    border: 1px solid #009faa;
-    background-color: #009faa;
-}
-
-QTableView::indicator:checked {
-    image: url(:/qfluentwidgets/images/check_box/Accept_white.svg);
-}
-
-QTableView::indicator:indeterminate {
-    image: url(:/qfluentwidgets/images/check_box/PartialAccept_white.svg);
-}
-
-QTableView::indicator:checked:hover,
-QTableView::indicator:indeterminate:hover {
-    border: 1px solid #00a7b3;
-    background-color: #00a7b3;
-}
-
-QTableView::indicator:checked:pressed,
-QTableView::indicator:indeterminate:pressed {
-    border: 1px solid #3eabb3;
-    background-color: #3eabb3;
-}
-
-QTableView::indicator:disabled {
-    border: 1px solid rgba(0, 0, 0, 0.27);
-    background-color: transparent;
-}
-
-QTableView::indicator:checked:disabled,
-QTableView::indicator:indeterminate:disabled {
-    border: 1px solid rgb(199, 199, 199);
-    background-color: rgb(199, 199, 199);
-}
-
-
-QHeaderView {
-    background-color: transparent;
-}
-
-QHeaderView::section {
-    background-color: transparent;
-    color: rgb(96, 96, 96);
-    padding-left: 5px;
-    padding-right: 5px;
-    border: 1px solid rgba(0, 0, 0, 15);
-    font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
-}
-
-QHeaderView::section:horizontal {
-    border-left: none;
-    height: 33px;
-}
-
-QTableView[isBorderVisible=true] QHeaderView::section:horizontal {
-    border-top: none;
-}
-
-QHeaderView::section:horizontal:last {
-    border-right: none;
-}
-
-QHeaderView::section:vertical {
-    border-top: none;
-}
-
-QHeaderView::section:checked {
-    background-color: transparent;
-}
-
-QHeaderView::down-arrow {
-    subcontrol-origin: padding;
-    subcontrol-position: center right;
-    margin-right: 6px;
-    image: url(:/qfluentwidgets/images/table_view/Down_black.svg);
-}
-
-QHeaderView::up-arrow {
-    subcontrol-origin: padding;
-    subcontrol-position: center right;
-    margin-right: 6px;
-    image: url(:/qfluentwidgets/images/table_view/Up_black.svg);
-}
-
-QTableCornerButton::section {
-    background-color: transparent;
-    border: 1px solid rgba(0, 0, 0, 15);
-}
-
-QTableCornerButton::section:pressed {
-    background-color: rgba(0, 0, 0, 12);
-}</string>
                   </property>
                  </widget>
                 </item>
@@ -2727,11 +2599,6 @@ QTableCornerButton::section:pressed {
   <customwidget>
    <class>LineEdit</class>
    <extends>QLineEdit</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>TableView</class>
-   <extends>QTableView</extends>
    <header>qfluentwidgets</header>
   </customwidget>
  </customwidgets>
