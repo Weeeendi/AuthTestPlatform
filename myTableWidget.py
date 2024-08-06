@@ -2,17 +2,28 @@ import json
 import sys
 
 import pandas as pd
-from PyQt5.QtCore import Qt, QAbstractTableModel
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QStyledItemDelegate
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex
+from PyQt5.QtGui import QPalette
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QStyleOptionViewItem
 
 from baseLogger import log
-from qfluentwidgets import TableView
+from qfluentwidgets import TableView, TableItemDelegate, isDarkTheme
 
 
-class AlignDelegate(QStyledItemDelegate):
-    def paint(self, painter, option, index):
-        option.displayAlignment = Qt.AlignCenter
-        super().paint(painter, option, index)
+class CustomTableItemDelegate(TableItemDelegate):
+    """ Custom table item delegate """
+
+    def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex):
+        super().initStyleOption(option, index)
+        if index.column() != 1:
+            return
+
+        if isDarkTheme():
+            option.palette.setColor(QPalette.Text, Qt.white)
+            option.palette.setColor(QPalette.HighlightedText, Qt.white)
+        else:
+            option.palette.setColor(QPalette.Text, Qt.blue)
+            option.palette.setColor(QPalette.HighlightedText, Qt.blue)
 
 
 class myTableModel(TableView):
@@ -20,13 +31,24 @@ class myTableModel(TableView):
         super().__init__()
 
         self.jsonData = jsonData
+        self.dpList = []
 
         df = self.__fillTableByJson()
         self.TableModel = PandasModel(df)
-
         self.setModel(self.TableModel)
+        self.setItemDelegate(CustomTableItemDelegate(self))
+        self.verticalHeader().hide()
 
-        self.resizeColumnsToContents()
+    # def paintEvent(self, event):
+    #     painter = QPainter(self)
+    #     painter.setRenderHint(QPainter.Antialiasing)
+    #     rect = self.rect()
+    #     painter.save()
+    #     painter.setBrush(QBrush(QColor(255, 255, 255)))
+    #     painter.setPen(Qt.NoPen)
+    #     painter.drawRoundedRect(rect, self.corner_radius, self.corner_radius)
+    #     painter.restore()
+    #     super().paintEvent(event)
 
     def __fillTableByJson(self):
         # 存储所有去重后的name
@@ -42,7 +64,8 @@ class myTableModel(TableView):
             dpid = int(item.get("id"))
             itype = item.get("property").get("type")
             value = item.get("defaultValue") if item.get("defaultValue") is not None else item.get("value", "")
-            unit = item.get("property").get("unit") if item.get("property").get("unit") is not None else item.get("property").get("unit", "")
+            unit = item.get("property").get("unit") if item.get("property").get("unit") is not None else item.get(
+                "property").get("unit", "")
             # 如果name还未被处理过，添加到集合和数据列表
             if name and name not in unique_names:
                 unique_names.add(name)
@@ -51,7 +74,7 @@ class myTableModel(TableView):
         # 将数据列表转换为DataFrame
         return pd.DataFrame(data_list)
 
-    def updateData(self, id, type,value):
+    def updateData(self, id, type, value):
         row = PandasModel.search(self.TableModel, 1, id)
         if row is not None:
             if PandasModel.getData(self.TableModel, row, 2) != type:
@@ -59,7 +82,7 @@ class myTableModel(TableView):
                 return
 
             self.TableModel.update_data(row, 3, value)
-            self.resizeColumnsToContents()
+            # self.resizeColumnsToContents()
         else:
             log.logger.error("数据非法,不在列表中的数据")
             log.logger.error(id)
@@ -68,7 +91,19 @@ class myTableModel(TableView):
     def resizeEvent(self, event):
         # 调整列宽
         super().resizeEvent(event)  # 调用父类的resizeEvent方法以确保窗口大小的自适应
+
+        header = self.horizontalHeader()
+
+        # 设置列宽模式为Interactive，允许用户手动调整列宽
+        header.setSectionResizeMode(QHeaderView.Interactive)
+
+        # 首次调整列宽以适应内容
         self.resizeColumnsToContents()
+
+        # 确保列宽至少是min_section_size
+        min_section_size = 80  # 设置最小列宽
+        for section in range(header.count()):
+            header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 
 
 class PandasModel(QAbstractTableModel):
@@ -99,7 +134,7 @@ class PandasModel(QAbstractTableModel):
                 return self._data.index[section]
         return None
 
-    def getData(self, row,col):
+    def getData(self, row, col):
         # 查找DataFrame中的数据
         value = self._data.iat[row, col]
         return value
@@ -132,8 +167,8 @@ if __name__ == '__main__':
 
     ex = myTableModel(jsondata["BMS_Dp_Data"])
 
-    ex.updateData(41, "string","{version:1.0.0}")
-    ex.updateData(29, "string",40)
+    ex.updateData(41, "string", "{version:1.0.0}")
+    ex.updateData(29, "string", 40)
     # 设置窗口布局
     layout = QHBoxLayout()
     layout.addWidget(ex)

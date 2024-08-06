@@ -5,27 +5,8 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"控制器故障",
-      "property":{"label":["overphaseCurFault",
-                            "overbusCurFault",
-                            "hallFault",
-                            "ctrlTmpFault",
-                            "motorTmpFault",
-                            "brake_TurnFault",
-                            "otherFault",
-                            "ctrlcommFault",
-                            "ctrlvolFault",
-                            "MRCFault",
-                            "torqueVolFault",
-                            "speedSensorFault",
-                            "tempSensorFault",
-                            "driveVolFault",
-                            "curFeedbackFault",
-                            "motorLeakPhaseFualt",
-                            "curUnusualFualt",
-                            "torqueVolCheckFault",
-                            "3.3VPowerError",
-                            "samplingTimeout"],"maxlen":20,"type":"bitmap"}
+      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"0","desc":"","name":"控制器故障",
+      "property":{"maxlen":20,"type":"bitmap"}
     }
   ],
   "Dashboard_Dp_Data": [
@@ -34,7 +15,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"dashboard_fault","id":42,"msg":"data","defaultValue":"","desc":"","name":"仪表故障",
+      "code":"dashboard_fault","id":42,"msg":"data","defaultValue":"0","desc":"","name":"仪表故障",
       "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
     }
   ],
@@ -44,29 +25,8 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"BMS_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
-      "property":{"label":[ "charge_over_vol_fault",
-                            "charge_over_cur_fault",
-                            "charge_over_tmp_fault",
-                            "charge_low_tmp_fault",
-                            "disc_under_cur_fault",
-                            "disc_over_cur_fault",
-                            "disc_over_tmp_fault",
-                            "disc_low_tmp_fault",
-                            "battery_tmp_diff_fault",
-                            "battery_vol_diff_fault",
-                            "battery_total_vol_fault",
-                            "afe_chip_err",
-                            "estimate_chip_err",
-                            "storage_chip_err",
-                            "rtc_chip_err",
-                            "discharge_mosfet_err",
-                            "charge_mosfet_err",
-                            "celltemp_sensor_err",
-                            "mostemp_sensor_err",
-                            "discharge_fuse_err",
-                            "charge_fuse_err",
-                            "mcu_chip_err"],"maxlen":2,"type":"bitmap"}
+      "code":"BMS_fault","id":32,"msg":"data","defaultValue":"0","desc":"","name":"电池故障",
+      "property":{"maxlen":2,"type":"bitmap"}
     },
     {
       "code":"battery_percentage_1","id":22,"msg":"data","defaultValue":"","desc":"","name":"电池电量","property":{"max":100,"min":0,"scale":0,"step":1,"type":"value","unit":"%"}
@@ -78,8 +38,8 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"IoT_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
-      "property":{"label":["smart_gsensor_fault","smart_flash_fault","smart_4g_fault","smart_ble_fault"],"maxlen":4,"type":"bitmap"}
+      "code":"IoT_fault","id":31,"msg":"data","defaultValue":"0","desc":"","name":"iot故障",
+      "property":{"maxlen":4,"type":"bitmap"}
     }
   ]
 }

@@ -9,6 +9,8 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
 from serial.serialutil import SerialException
 
+from baseLogger import log
+from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
@@ -18,18 +20,12 @@ def showMessage(title, content, parent=None):
 
 
 class DataPoint:
-    def __init__(self, code, dpid, msg, default_value, desc, name, property, page):
-        self.code = code
+    def __init__(self, dpid, msgtype, type, value, page):
         self.id = dpid
-        self.msg = msg
-        self.default_value = default_value
-        self.desc = desc
-        self.name = name
-        self.property = property
-        self.page = page  #所属的页面
-
-    def __repr__(self):
-        return f"DataPoint(code={self.code}, id={self.id}, msg={self.msg}, defaultValue={self.default_value}, desc={self.desc}, name={self.name}, property={self.property})"
+        self.msg = msgtype
+        self.type = type
+        self.value = value
+        self.page = page
 
 
 class deviceOnline:
@@ -41,6 +37,16 @@ class deviceOnline:
         self.IotOnline = IoT
 
 
+def find_category_by_id(data, target_id):
+    # 遍历数据中的每一个大类别
+    for category, items in data.items():
+        # 在每个大类别中遍历每个项目
+        for item in items:
+            # 检查当前项目的id是否匹配目标id
+            if item.get("id") == target_id:
+                return category  # 返回匹配的组别名称
+
+
 class DeviceStateTask(QThread):
     trigger = pyqtSignal(str, str)
     stateSignal = pyqtSignal(deviceOnline)
@@ -48,11 +54,41 @@ class DeviceStateTask(QThread):
 
     def __init__(self, parent=None):
         super(DeviceStateTask, self).__init__(parent=parent)
+
+        self.FilterDict = self.parent().DpDict
+
         self.trigger.connect(self.parent().light_callback)
+        self.dataPointSignal.connect(self.parent().updateDpValueCallback)
         self.stateSignal.connect(self.onStateChange)
         self.state = self.parent().online
         self.page = self.parent().page
         self.running = 1
+
+        self.dpDateRevList = []
+
+    def DpProcess(self, dpid, dptype, value):
+        group = find_category_by_id(self.FilterDict, dpid)
+
+        if group is not None:
+            if group == "Dashboard_Dp_Data":
+                page = 0
+            elif group == "Controller_Dp_Data":
+                page = 1
+            elif group == "BMS_Dp_Data":
+                page = 2
+            elif group == "IOT_Dp_Data":
+                page = 3
+            else:
+                return
+            items = self.FilterDict[group]
+
+            for item in items:
+                if item.get("id") == dpid:
+                    dp = DataPoint(dpid, item.get('msg'), dptype, value, page)
+                    self.dataPointSignal.emit(dp)
+                    return
+
+        log.logger.warning("error msg, dpid:%s,type:%s,value:%s" % (dpid, dptype, str(value)))
 
     def onStateChange(self, deviceOnlineParam):
         self.state = deviceOnlineParam
@@ -88,6 +124,8 @@ class DeviceStateTask(QThread):
             overtimeCnt += 1
 
             if exitFlag:
+                self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
+                self.DpProcess(22,"value","50")
                 break
 
             text = "Waiting for device connection " + (overtimeCnt % 7) * "."
@@ -102,6 +140,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+
+        self.DpDict = None
         self.task = None
         self.page = 0
         self.tabPages = 4
@@ -118,6 +158,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         # 设置串口
         self.ser = serial.Serial(timeout=0.5)
 
+        # 初始化dp列表
+        self.InitDataPointList()
         # 组件状态初始化
         self.InitModuleConfig()
 
@@ -157,6 +199,9 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.ParamFileToolButton.clicked.connect(lambda: self.obtainPath(self.ParamFileName))
                 self.FirmFileToolButton.clicked.connect(lambda: self.obtainPath(self.FirmFileName))
 
+                setattr(self, f"dpTableView", myTableModel(self.DpDict['Dashboard_Dp_Data']))
+                getattr(self, f"DeviceStateLayout").addWidget(getattr(self, f"dpTableView"))
+
             else:
                 self.setShadowEffect(getattr(self, f"DeviceCard_{tab + 1}"))
                 self.setShadowEffect(getattr(self, f"SettingCard_{tab + 1}"))
@@ -167,11 +212,39 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"FirmFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget))
                 widget2 = getattr(self, f"ParamFileName_{tab + 1}")
                 getattr(self, f"ParamFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget2))
+                if tab == 1:
+                    groupStr = "Controller_Dp_Data"
+                if tab == 2:
+                    groupStr = "BMS_Dp_Data"
+                if tab == 3:
+                    groupStr = "IoT_Dp_Data"
+
+                setattr(self, f"dpTableView_{tab}", myTableModel(self.DpDict[groupStr]))
+                getattr(self, f"DeviceStateLayout_{tab + 1}").addWidget(getattr(self, f"dpTableView_{tab}"))
 
         self.tabWidget.setCurrentIndex(self.page)
         # 串口刷新设置
         self.refresh()
 
+    def updateDpValueCallback(self, DpParam):
+
+        if DpParam.msg == 'ver':
+            try:
+                param = json.loads(DpParam.value)
+            except Exception as e:
+                log.logging.error(e)
+                return
+            if DpParam.page == 0:
+                getattr(self, f"HWVersion").setText(param.get('hard_ver', ''))
+                getattr(self, f"FirmwareVersion").setText(param.get('soft_ver', ''))
+                getattr(self, f"SN").setText(param.get('sn', ''))
+            else:
+                getattr(self, f"HWVersion_{DpParam.page+1}").setText(param.get('hard_ver', ''))
+                getattr(self, f"FirmwareVersion_{DpParam.page+1}").setText(param.get('soft_ver', ''))
+                getattr(self, f"SN_{DpParam.page+1}").setText(param.get('sn', ''))
+
+        if DpParam.msg == 'data':
+            getattr(self, f"dpTableView_{DpParam.page}").updateData(DpParam.id, DpParam.type, DpParam.value)
 
     def create_callback(self, widget):
         def callback():
@@ -290,23 +363,12 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         print("刷新串口")
 
     def InitDataPointList(self):
-        self.DpDict = json.loads("dataPointCfg.json")
-
-    def find_category_by_id(data, target_id):
-        # 遍历数据中的每一个大类别
-        for category, items in data.items():
-            # 在每个大类别中遍历每个项目
-            for item in items:
-                # 检查当前项目的id是否匹配目标id
-                if item.get("id") == target_id:
-                    return category  # 返回匹配的组别名称
-        return None  # 如果没有找到，返回Non
+        with open('resource/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
+            self.DpDict = json.loads(file.read())
 
     def onDpDataChanged(self, DataPointParam: DataPoint):
         group = self.find_category_by_id(self.DpDict, DataPointParam.id)
         if group:
-
-
             self.DeviceTask()
 
     def updatePercentDate(self):

@@ -12,7 +12,7 @@ from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeCol
     FluentWindow
 from view.AuthTest_interface import AuthTestInterface
 from view.ChartRecord_interface import ChartRecordInterface
-from view.DeviceState_display import DeviceStateInterface
+from view.DeviceState_interface import DeviceStateInterface
 from view.Login_page import Ui_Form
 from view.settingConf_interface import SettingInterface
 

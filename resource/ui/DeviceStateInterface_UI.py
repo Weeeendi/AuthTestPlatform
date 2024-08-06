@@ -66,6 +66,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.verticalLayout_6.addLayout(self.horizontalLayout_5)
         self.gridLayout.addWidget(self.ConnectCard, 3, 0, 1, 3)
         self.tabWidget = QtWidgets.QTabWidget(DeviceStateInterface_UI)
+        self.tabWidget.setEnabled(True)
         self.tabWidget.setAutoFillBackground(False)
         self.tabWidget.setStyleSheet("")
         self.tabWidget.setTabPosition(QtWidgets.QTabWidget.North)
@@ -83,8 +84,8 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.SettingCard.sizePolicy().hasHeightForWidth())
         self.SettingCard.setSizePolicy(sizePolicy)
-        self.SettingCard.setMinimumSize(QtCore.QSize(200, 0))
-        self.SettingCard.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.SettingCard.setMinimumSize(QtCore.QSize(350, 0))
+        self.SettingCard.setMaximumSize(QtCore.QSize(400, 16777215))
         self.SettingCard.setStyleSheet("")
         self.SettingCard.setObjectName("SettingCard")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.SettingCard)
@@ -119,6 +120,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_PID.setObjectName("BodyLabel_PID")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_PID)
         self.HWVersion = LineEdit(self.SettingCard)
+        self.HWVersion.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -127,10 +129,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.HWVersion.setMinimumSize(QtCore.QSize(180, 33))
         self.HWVersion.setText("")
         self.HWVersion.setReadOnly(True)
-        self.HWVersion.setClearButtonEnabled(True)
+        self.HWVersion.setClearButtonEnabled(False)
         self.HWVersion.setObjectName("HWVersion")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion)
         self.BodyLabel_MAC = BodyLabel(self.SettingCard)
+        self.BodyLabel_MAC.setEnabled(False)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -141,6 +144,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.BodyLabel_MAC.setObjectName("BodyLabel_MAC")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_MAC)
         self.ParameterVersion = LineEdit(self.SettingCard)
+        self.ParameterVersion.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -160,9 +164,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.FirmwareVersion.setObjectName("FirmwareVersion")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.FirmwareVersion)
         self.BodyLabel_2 = BodyLabel(self.SettingCard)
+        self.BodyLabel_2.setEnabled(False)
         self.BodyLabel_2.setObjectName("BodyLabel_2")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.BodyLabel_2)
         self.BootVersion = LineEdit(self.SettingCard)
+        self.BootVersion.setEnabled(True)
         self.BootVersion.setReadOnly(True)
         self.BootVersion.setObjectName("BootVersion")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.BootVersion)
@@ -199,9 +205,11 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout.setContentsMargins(-1, 0, -1, -1)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.ParamFileName = LineEdit(self.SettingCard)
+        self.ParamFileName.setEnabled(True)
         self.ParamFileName.setObjectName("ParamFileName")
         self.horizontalLayout.addWidget(self.ParamFileName)
         self.ParamFileToolButton = ToolButton(self.SettingCard)
+        self.ParamFileToolButton.setEnabled(True)
         self.ParamFileToolButton.setText("")
         self.ParamFileToolButton.setObjectName("ParamFileToolButton")
         self.horizontalLayout.addWidget(self.ParamFileToolButton)
@@ -286,13 +294,16 @@ class Ui_DeviceStateInterface_UI(object):
         spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_4.addItem(spacerItem8)
         self.verticalLayout_2.addLayout(self.horizontalLayout_4)
-        self.DeviceStateLayout = QtWidgets.QFormLayout()
+        self.DeviceStateLayout = QtWidgets.QVBoxLayout()
         self.DeviceStateLayout.setContentsMargins(6, 6, -1, 3)
         self.DeviceStateLayout.setObjectName("DeviceStateLayout")
+        self.horizontalLayout_27 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_27.setContentsMargins(-1, 5, -1, -1)
+        self.horizontalLayout_27.setObjectName("horizontalLayout_27")
         self.connStateIcon = IconInfoBadge(self.DeviceCard)
         self.connStateIcon.setTextFormat(QtCore.Qt.AutoText)
         self.connStateIcon.setObjectName("connStateIcon")
-        self.DeviceStateLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.connStateIcon)
+        self.horizontalLayout_27.addWidget(self.connStateIcon)
         self.connStateLabel = BodyLabel(self.DeviceCard)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -302,14 +313,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.connStateLabel.setMinimumSize(QtCore.QSize(0, 0))
         self.connStateLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel.setObjectName("connStateLabel")
-        self.DeviceStateLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.connStateLabel)
-        self.DataTableView = TableView(self.DeviceCard)
-        self.DataTableView.setGridStyle(QtCore.Qt.SolidLine)
-        self.DataTableView.setObjectName("DataTableView")
-        self.DeviceStateLayout.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.DataTableView)
+        self.horizontalLayout_27.addWidget(self.connStateLabel)
+        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_27.addItem(spacerItem9)
+        self.DeviceStateLayout.addLayout(self.horizontalLayout_27)
         self.verticalLayout_2.addLayout(self.DeviceStateLayout)
-        spacerItem9 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_2.addItem(spacerItem9)
+        spacerItem10 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_2.addItem(spacerItem10)
         self.verticalLayout_4.addLayout(self.verticalLayout_2)
         self.horizontalLayout_8.addWidget(self.DeviceCard)
         self.tabWidget.addTab(self.DASH_TAB, "")
@@ -323,8 +333,8 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.SettingCard_2.sizePolicy().hasHeightForWidth())
         self.SettingCard_2.setSizePolicy(sizePolicy)
-        self.SettingCard_2.setMinimumSize(QtCore.QSize(200, 0))
-        self.SettingCard_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.SettingCard_2.setMinimumSize(QtCore.QSize(350, 0))
+        self.SettingCard_2.setMaximumSize(QtCore.QSize(400, 16777215))
         self.SettingCard_2.setStyleSheet("")
         self.SettingCard_2.setObjectName("SettingCard_2")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.SettingCard_2)
@@ -334,13 +344,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_9 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_9.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_9.setObjectName("horizontalLayout_9")
-        spacerItem10 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_9.addItem(spacerItem10)
+        spacerItem11 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_9.addItem(spacerItem11)
         self.ParamConfLabel_2 = StrongBodyLabel(self.SettingCard_2)
         self.ParamConfLabel_2.setObjectName("ParamConfLabel_2")
         self.horizontalLayout_9.addWidget(self.ParamConfLabel_2)
-        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_9.addItem(spacerItem11)
+        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_9.addItem(spacerItem12)
         self.verticalLayout_13.addLayout(self.horizontalLayout_9)
         self.verticalLayout_7 = QtWidgets.QVBoxLayout()
         self.verticalLayout_7.setContentsMargins(5, 10, -1, -1)
@@ -367,7 +377,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.HWVersion_2.setMinimumSize(QtCore.QSize(180, 33))
         self.HWVersion_2.setText("")
         self.HWVersion_2.setReadOnly(True)
-        self.HWVersion_2.setClearButtonEnabled(True)
+        self.HWVersion_2.setClearButtonEnabled(False)
         self.HWVersion_2.setObjectName("HWVersion_2")
         self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_2)
         self.BodyLabel_MAC_2 = BodyLabel(self.SettingCard_2)
@@ -414,8 +424,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.SN_2.setObjectName("SN_2")
         self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_2)
         self.verticalLayout_7.addLayout(self.formLayout_2)
-        spacerItem12 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_7.addItem(spacerItem12)
+        spacerItem13 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_7.addItem(spacerItem13)
         self.HorizontalSeparator_2 = HorizontalSeparator(self.SettingCard_2)
         self.HorizontalSeparator_2.setObjectName("HorizontalSeparator_2")
         self.verticalLayout_7.addWidget(self.HorizontalSeparator_2)
@@ -428,8 +438,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.StrongBodyLabel_2.setMinimumSize(QtCore.QSize(0, 0))
         self.StrongBodyLabel_2.setObjectName("StrongBodyLabel_2")
         self.verticalLayout_7.addWidget(self.StrongBodyLabel_2)
-        spacerItem13 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_7.addItem(spacerItem13)
+        spacerItem14 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_7.addItem(spacerItem14)
         self.CheckBox_Param_2 = CheckBox(self.SettingCard_2)
         self.CheckBox_Param_2.setEnabled(True)
         self.CheckBox_Param_2.setIconSize(QtCore.QSize(8, 8))
@@ -460,8 +470,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.FirmFileToolButton_2.setObjectName("FirmFileToolButton_2")
         self.horizontalLayout_11.addWidget(self.FirmFileToolButton_2)
         self.verticalLayout_7.addLayout(self.horizontalLayout_11)
-        spacerItem14 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_7.addItem(spacerItem14)
+        spacerItem15 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_7.addItem(spacerItem15)
         self.UpdateProgressBar_2 = ProgressBar(self.SettingCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -481,8 +491,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.UpdateProgressBar_2.setVal(0.0)
         self.UpdateProgressBar_2.setObjectName("UpdateProgressBar_2")
         self.verticalLayout_7.addWidget(self.UpdateProgressBar_2)
-        spacerItem15 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_7.addItem(spacerItem15)
+        spacerItem16 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_7.addItem(spacerItem16)
         self.OTAStateLabel_2 = BodyLabel(self.SettingCard_2)
         self.OTAStateLabel_2.setText("")
         self.OTAStateLabel_2.setAlignment(QtCore.Qt.AlignCenter)
@@ -518,17 +528,24 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_12 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_12.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_12.setObjectName("horizontalLayout_12")
-        spacerItem16 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_12.addItem(spacerItem16)
+        spacerItem17 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_12.addItem(spacerItem17)
         self.DataProgressLabel_2 = StrongBodyLabel(self.DeviceCard_2)
         self.DataProgressLabel_2.setObjectName("DataProgressLabel_2")
         self.horizontalLayout_12.addWidget(self.DataProgressLabel_2)
-        spacerItem17 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_12.addItem(spacerItem17)
+        spacerItem18 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_12.addItem(spacerItem18)
         self.verticalLayout_9.addLayout(self.horizontalLayout_12)
-        self.DeviceStateLayout_2 = QtWidgets.QFormLayout()
+        self.DeviceStateLayout_2 = QtWidgets.QVBoxLayout()
         self.DeviceStateLayout_2.setContentsMargins(6, 6, 0, -1)
         self.DeviceStateLayout_2.setObjectName("DeviceStateLayout_2")
+        self.horizontalLayout_24 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_24.setContentsMargins(-1, 5, -1, -1)
+        self.horizontalLayout_24.setObjectName("horizontalLayout_24")
+        self.connStateIcon_2 = IconInfoBadge(self.DeviceCard_2)
+        self.connStateIcon_2.setTextFormat(QtCore.Qt.AutoText)
+        self.connStateIcon_2.setObjectName("connStateIcon_2")
+        self.horizontalLayout_24.addWidget(self.connStateIcon_2)
         self.connStateLabel_2 = BodyLabel(self.DeviceCard_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -538,17 +555,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.connStateLabel_2.setMinimumSize(QtCore.QSize(0, 0))
         self.connStateLabel_2.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_2.setObjectName("connStateLabel_2")
-        self.DeviceStateLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_2)
-        self.connStateIcon_2 = IconInfoBadge(self.DeviceCard_2)
-        self.connStateIcon_2.setTextFormat(QtCore.Qt.AutoText)
-        self.connStateIcon_2.setObjectName("connStateIcon_2")
-        self.DeviceStateLayout_2.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.connStateIcon_2)
-        self.DataTableView_2 = TableView(self.DeviceCard_2)
-        self.DataTableView_2.setObjectName("DataTableView_2")
-        self.DeviceStateLayout_2.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.DataTableView_2)
+        self.horizontalLayout_24.addWidget(self.connStateLabel_2)
+        spacerItem19 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_24.addItem(spacerItem19)
+        self.DeviceStateLayout_2.addLayout(self.horizontalLayout_24)
         self.verticalLayout_9.addLayout(self.DeviceStateLayout_2)
-        spacerItem18 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_9.addItem(spacerItem18)
+        spacerItem20 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_9.addItem(spacerItem20)
         self.verticalLayout_8.addLayout(self.verticalLayout_9)
         self.horizontalLayout_13.addWidget(self.DeviceCard_2)
         self.tabWidget.addTab(self.MCU_TAB, "")
@@ -562,8 +575,8 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.SettingCard_3.sizePolicy().hasHeightForWidth())
         self.SettingCard_3.setSizePolicy(sizePolicy)
-        self.SettingCard_3.setMinimumSize(QtCore.QSize(200, 0))
-        self.SettingCard_3.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.SettingCard_3.setMinimumSize(QtCore.QSize(350, 0))
+        self.SettingCard_3.setMaximumSize(QtCore.QSize(400, 16777215))
         self.SettingCard_3.setStyleSheet("")
         self.SettingCard_3.setObjectName("SettingCard_3")
         self.verticalLayout_14 = QtWidgets.QVBoxLayout(self.SettingCard_3)
@@ -573,13 +586,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_15 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_15.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_15.setObjectName("horizontalLayout_15")
-        spacerItem19 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_15.addItem(spacerItem19)
+        spacerItem21 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_15.addItem(spacerItem21)
         self.ParamConfLabel_3 = StrongBodyLabel(self.SettingCard_3)
         self.ParamConfLabel_3.setObjectName("ParamConfLabel_3")
         self.horizontalLayout_15.addWidget(self.ParamConfLabel_3)
-        spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_15.addItem(spacerItem20)
+        spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_15.addItem(spacerItem22)
         self.verticalLayout_15.addLayout(self.horizontalLayout_15)
         self.verticalLayout_16 = QtWidgets.QVBoxLayout()
         self.verticalLayout_16.setContentsMargins(5, 10, -1, -1)
@@ -606,7 +619,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.HWVersion_3.setMinimumSize(QtCore.QSize(180, 33))
         self.HWVersion_3.setText("")
         self.HWVersion_3.setReadOnly(True)
-        self.HWVersion_3.setClearButtonEnabled(True)
+        self.HWVersion_3.setClearButtonEnabled(False)
         self.HWVersion_3.setObjectName("HWVersion_3")
         self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_3)
         self.BodyLabel_MAC_3 = BodyLabel(self.SettingCard_3)
@@ -652,8 +665,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.SN_3.setObjectName("SN_3")
         self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_3)
         self.verticalLayout_16.addLayout(self.formLayout_3)
-        spacerItem21 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_16.addItem(spacerItem21)
+        spacerItem23 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_16.addItem(spacerItem23)
         self.HorizontalSeparator_3 = HorizontalSeparator(self.SettingCard_3)
         self.HorizontalSeparator_3.setObjectName("HorizontalSeparator_3")
         self.verticalLayout_16.addWidget(self.HorizontalSeparator_3)
@@ -666,8 +679,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.StrongBodyLabel_3.setMinimumSize(QtCore.QSize(0, 0))
         self.StrongBodyLabel_3.setObjectName("StrongBodyLabel_3")
         self.verticalLayout_16.addWidget(self.StrongBodyLabel_3)
-        spacerItem22 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_16.addItem(spacerItem22)
+        spacerItem24 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_16.addItem(spacerItem24)
         self.CheckBox_Param_3 = CheckBox(self.SettingCard_3)
         self.CheckBox_Param_3.setEnabled(True)
         self.CheckBox_Param_3.setIconSize(QtCore.QSize(8, 8))
@@ -698,8 +711,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.FirmFileToolButton_3.setObjectName("FirmFileToolButton_3")
         self.horizontalLayout_17.addWidget(self.FirmFileToolButton_3)
         self.verticalLayout_16.addLayout(self.horizontalLayout_17)
-        spacerItem23 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_16.addItem(spacerItem23)
+        spacerItem25 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_16.addItem(spacerItem25)
         self.UpdateProgressBar_3 = ProgressBar(self.SettingCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -719,8 +732,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.UpdateProgressBar_3.setVal(0.0)
         self.UpdateProgressBar_3.setObjectName("UpdateProgressBar_3")
         self.verticalLayout_16.addWidget(self.UpdateProgressBar_3)
-        spacerItem24 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_16.addItem(spacerItem24)
+        spacerItem26 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_16.addItem(spacerItem26)
         self.OTAStateLabel_3 = BodyLabel(self.SettingCard_3)
         self.OTAStateLabel_3.setText("")
         self.OTAStateLabel_3.setAlignment(QtCore.Qt.AlignCenter)
@@ -756,17 +769,24 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_14 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_14.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
-        spacerItem25 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_14.addItem(spacerItem25)
+        spacerItem27 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_14.addItem(spacerItem27)
         self.DataProgressLabel_3 = StrongBodyLabel(self.DeviceCard_3)
         self.DataProgressLabel_3.setObjectName("DataProgressLabel_3")
         self.horizontalLayout_14.addWidget(self.DataProgressLabel_3)
-        spacerItem26 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_14.addItem(spacerItem26)
+        spacerItem28 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_14.addItem(spacerItem28)
         self.verticalLayout_11.addLayout(self.horizontalLayout_14)
-        self.DeviceStateLayout_3 = QtWidgets.QFormLayout()
+        self.DeviceStateLayout_3 = QtWidgets.QVBoxLayout()
         self.DeviceStateLayout_3.setContentsMargins(6, 6, -1, -1)
         self.DeviceStateLayout_3.setObjectName("DeviceStateLayout_3")
+        self.horizontalLayout_25 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_25.setContentsMargins(-1, 5, -1, -1)
+        self.horizontalLayout_25.setObjectName("horizontalLayout_25")
+        self.connStateIcon_3 = IconInfoBadge(self.DeviceCard_3)
+        self.connStateIcon_3.setTextFormat(QtCore.Qt.AutoText)
+        self.connStateIcon_3.setObjectName("connStateIcon_3")
+        self.horizontalLayout_25.addWidget(self.connStateIcon_3)
         self.connStateLabel_3 = BodyLabel(self.DeviceCard_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -776,17 +796,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.connStateLabel_3.setMinimumSize(QtCore.QSize(0, 0))
         self.connStateLabel_3.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_3.setObjectName("connStateLabel_3")
-        self.DeviceStateLayout_3.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_3)
-        self.connStateIcon_3 = IconInfoBadge(self.DeviceCard_3)
-        self.connStateIcon_3.setTextFormat(QtCore.Qt.AutoText)
-        self.connStateIcon_3.setObjectName("connStateIcon_3")
-        self.DeviceStateLayout_3.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.connStateIcon_3)
-        self.DataTableView_3 = TableView(self.DeviceCard_3)
-        self.DataTableView_3.setObjectName("DataTableView_3")
-        self.DeviceStateLayout_3.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.DataTableView_3)
+        self.horizontalLayout_25.addWidget(self.connStateLabel_3)
+        spacerItem29 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_25.addItem(spacerItem29)
+        self.DeviceStateLayout_3.addLayout(self.horizontalLayout_25)
         self.verticalLayout_11.addLayout(self.DeviceStateLayout_3)
-        spacerItem27 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_11.addItem(spacerItem27)
+        spacerItem30 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_11.addItem(spacerItem30)
         self.verticalLayout_10.addLayout(self.verticalLayout_11)
         self.horizontalLayout_18.addWidget(self.DeviceCard_3)
         self.tabWidget.addTab(self.BMS_TAB, "")
@@ -800,8 +816,8 @@ class Ui_DeviceStateInterface_UI(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.SettingCard_4.sizePolicy().hasHeightForWidth())
         self.SettingCard_4.setSizePolicy(sizePolicy)
-        self.SettingCard_4.setMinimumSize(QtCore.QSize(200, 0))
-        self.SettingCard_4.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.SettingCard_4.setMinimumSize(QtCore.QSize(350, 0))
+        self.SettingCard_4.setMaximumSize(QtCore.QSize(400, 16777215))
         self.SettingCard_4.setStyleSheet("")
         self.SettingCard_4.setObjectName("SettingCard_4")
         self.verticalLayout_19 = QtWidgets.QVBoxLayout(self.SettingCard_4)
@@ -811,13 +827,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_20 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_20.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_20.setObjectName("horizontalLayout_20")
-        spacerItem28 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_20.addItem(spacerItem28)
+        spacerItem31 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_20.addItem(spacerItem31)
         self.ParamConfLabel_4 = StrongBodyLabel(self.SettingCard_4)
         self.ParamConfLabel_4.setObjectName("ParamConfLabel_4")
         self.horizontalLayout_20.addWidget(self.ParamConfLabel_4)
-        spacerItem29 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_20.addItem(spacerItem29)
+        spacerItem32 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_20.addItem(spacerItem32)
         self.verticalLayout_20.addLayout(self.horizontalLayout_20)
         self.verticalLayout_21 = QtWidgets.QVBoxLayout()
         self.verticalLayout_21.setContentsMargins(5, 10, -1, -1)
@@ -844,7 +860,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.HWVersion_4.setMinimumSize(QtCore.QSize(180, 33))
         self.HWVersion_4.setText("")
         self.HWVersion_4.setReadOnly(True)
-        self.HWVersion_4.setClearButtonEnabled(True)
+        self.HWVersion_4.setClearButtonEnabled(False)
         self.HWVersion_4.setObjectName("HWVersion_4")
         self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.HWVersion_4)
         self.BodyLabel_MAC_4 = BodyLabel(self.SettingCard_4)
@@ -893,8 +909,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.SN_4.setObjectName("SN_4")
         self.formLayout_4.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.SN_4)
         self.verticalLayout_21.addLayout(self.formLayout_4)
-        spacerItem30 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_21.addItem(spacerItem30)
+        spacerItem33 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_21.addItem(spacerItem33)
         self.HorizontalSeparator_4 = HorizontalSeparator(self.SettingCard_4)
         self.HorizontalSeparator_4.setObjectName("HorizontalSeparator_4")
         self.verticalLayout_21.addWidget(self.HorizontalSeparator_4)
@@ -907,8 +923,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.StrongBodyLabel_4.setMinimumSize(QtCore.QSize(0, 0))
         self.StrongBodyLabel_4.setObjectName("StrongBodyLabel_4")
         self.verticalLayout_21.addWidget(self.StrongBodyLabel_4)
-        spacerItem31 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_21.addItem(spacerItem31)
+        spacerItem34 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_21.addItem(spacerItem34)
         self.CheckBox_Param_4 = CheckBox(self.SettingCard_4)
         self.CheckBox_Param_4.setEnabled(True)
         self.CheckBox_Param_4.setIconSize(QtCore.QSize(8, 8))
@@ -939,8 +955,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.FirmFileToolButton_4.setObjectName("FirmFileToolButton_4")
         self.horizontalLayout_22.addWidget(self.FirmFileToolButton_4)
         self.verticalLayout_21.addLayout(self.horizontalLayout_22)
-        spacerItem32 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_21.addItem(spacerItem32)
+        spacerItem35 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_21.addItem(spacerItem35)
         self.UpdateProgressBar_4 = ProgressBar(self.SettingCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -960,8 +976,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.UpdateProgressBar_4.setVal(0.0)
         self.UpdateProgressBar_4.setObjectName("UpdateProgressBar_4")
         self.verticalLayout_21.addWidget(self.UpdateProgressBar_4)
-        spacerItem33 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_21.addItem(spacerItem33)
+        spacerItem36 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_21.addItem(spacerItem36)
         self.OTAStateLabel_4 = BodyLabel(self.SettingCard_4)
         self.OTAStateLabel_4.setText("")
         self.OTAStateLabel_4.setAlignment(QtCore.Qt.AlignCenter)
@@ -997,17 +1013,24 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_19 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_19.setContentsMargins(5, -1, -1, -1)
         self.horizontalLayout_19.setObjectName("horizontalLayout_19")
-        spacerItem34 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_19.addItem(spacerItem34)
+        spacerItem37 = QtWidgets.QSpacerItem(2, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_19.addItem(spacerItem37)
         self.DataProgressLabel_4 = StrongBodyLabel(self.DeviceCard_4)
         self.DataProgressLabel_4.setObjectName("DataProgressLabel_4")
         self.horizontalLayout_19.addWidget(self.DataProgressLabel_4)
-        spacerItem35 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_19.addItem(spacerItem35)
+        spacerItem38 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_19.addItem(spacerItem38)
         self.verticalLayout_18.addLayout(self.horizontalLayout_19)
-        self.DeviceStateLayout_4 = QtWidgets.QFormLayout()
+        self.DeviceStateLayout_4 = QtWidgets.QVBoxLayout()
         self.DeviceStateLayout_4.setContentsMargins(6, 6, -1, -1)
         self.DeviceStateLayout_4.setObjectName("DeviceStateLayout_4")
+        self.horizontalLayout_26 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_26.setContentsMargins(-1, 5, -1, -1)
+        self.horizontalLayout_26.setObjectName("horizontalLayout_26")
+        self.connStateIcon_4 = IconInfoBadge(self.DeviceCard_4)
+        self.connStateIcon_4.setTextFormat(QtCore.Qt.AutoText)
+        self.connStateIcon_4.setObjectName("connStateIcon_4")
+        self.horizontalLayout_26.addWidget(self.connStateIcon_4)
         self.connStateLabel_4 = BodyLabel(self.DeviceCard_4)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -1017,151 +1040,13 @@ class Ui_DeviceStateInterface_UI(object):
         self.connStateLabel_4.setMinimumSize(QtCore.QSize(0, 0))
         self.connStateLabel_4.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.connStateLabel_4.setObjectName("connStateLabel_4")
-        self.DeviceStateLayout_4.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.connStateLabel_4)
-        self.connStateIcon_4 = IconInfoBadge(self.DeviceCard_4)
-        self.connStateIcon_4.setTextFormat(QtCore.Qt.AutoText)
-        self.connStateIcon_4.setObjectName("connStateIcon_4")
-        self.DeviceStateLayout_4.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.connStateIcon_4)
-        self.DataTableView_4 = TableView(self.DeviceCard_4)
-        self.DataTableView_4.setStyleSheet("QTableView {\n"
-"    background: transparent;\n"
-"    outline: none;\n"
-"    border: none;\n"
-"    /* font: 13px \'Segoe UI\', \'Microsoft YaHei\'; */\n"
-"    selection-background-color: transparent;\n"
-"    alternate-background-color: transparent;\n"
-"}\n"
-"\n"
-"QTableView[isBorderVisible=true] {\n"
-"    border: 1px solid rgba(0, 0, 0, 15);\n"
-"}\n"
-"\n"
-"QTableView::item {\n"
-"    background: transparent;\n"
-"    border: 0px;\n"
-"    padding-left: 16px;\n"
-"    padding-right: 16px;\n"
-"    height: 35px;\n"
-"}\n"
-"\n"
-"\n"
-"QTableView::indicator {\n"
-"    width: 18px;\n"
-"    height: 18px;\n"
-"    border-radius: 5px;\n"
-"    border: 1px solid rgba(0, 0, 0, 0.48);\n"
-"    background-color: rgba(0, 0, 0, 0.022);\n"
-"}\n"
-"\n"
-"QTableView::indicator:hover {\n"
-"    border: 1px solid rgba(0, 0, 0, 0.56);\n"
-"    background-color: rgba(0, 0, 0, 0.05);\n"
-"}\n"
-"\n"
-"QTableView::indicator:pressed {\n"
-"    border: 1px solid rgba(0, 0, 0, 0.27);\n"
-"    background-color: rgba(0, 0, 0, 0.12);\n"
-"}\n"
-"\n"
-"QTableView::indicator:checked,\n"
-"QTableView::indicator:indeterminate {\n"
-"    border: 1px solid #009faa;\n"
-"    background-color: #009faa;\n"
-"}\n"
-"\n"
-"QTableView::indicator:checked {\n"
-"    image: url(:/qfluentwidgets/images/check_box/Accept_white.svg);\n"
-"}\n"
-"\n"
-"QTableView::indicator:indeterminate {\n"
-"    image: url(:/qfluentwidgets/images/check_box/PartialAccept_white.svg);\n"
-"}\n"
-"\n"
-"QTableView::indicator:checked:hover,\n"
-"QTableView::indicator:indeterminate:hover {\n"
-"    border: 1px solid #00a7b3;\n"
-"    background-color: #00a7b3;\n"
-"}\n"
-"\n"
-"QTableView::indicator:checked:pressed,\n"
-"QTableView::indicator:indeterminate:pressed {\n"
-"    border: 1px solid #3eabb3;\n"
-"    background-color: #3eabb3;\n"
-"}\n"
-"\n"
-"QTableView::indicator:disabled {\n"
-"    border: 1px solid rgba(0, 0, 0, 0.27);\n"
-"    background-color: transparent;\n"
-"}\n"
-"\n"
-"QTableView::indicator:checked:disabled,\n"
-"QTableView::indicator:indeterminate:disabled {\n"
-"    border: 1px solid rgb(199, 199, 199);\n"
-"    background-color: rgb(199, 199, 199);\n"
-"}\n"
-"\n"
-"\n"
-"QHeaderView {\n"
-"    background-color: transparent;\n"
-"}\n"
-"\n"
-"QHeaderView::section {\n"
-"    background-color: transparent;\n"
-"    color: rgb(96, 96, 96);\n"
-"    padding-left: 5px;\n"
-"    padding-right: 5px;\n"
-"    border: 1px solid rgba(0, 0, 0, 15);\n"
-"    font: 13px \'Segoe UI\', \'Microsoft YaHei\', \'PingFang SC\';\n"
-"}\n"
-"\n"
-"QHeaderView::section:horizontal {\n"
-"    border-left: none;\n"
-"    height: 33px;\n"
-"}\n"
-"\n"
-"QTableView[isBorderVisible=true] QHeaderView::section:horizontal {\n"
-"    border-top: none;\n"
-"}\n"
-"\n"
-"QHeaderView::section:horizontal:last {\n"
-"    border-right: none;\n"
-"}\n"
-"\n"
-"QHeaderView::section:vertical {\n"
-"    border-top: none;\n"
-"}\n"
-"\n"
-"QHeaderView::section:checked {\n"
-"    background-color: transparent;\n"
-"}\n"
-"\n"
-"QHeaderView::down-arrow {\n"
-"    subcontrol-origin: padding;\n"
-"    subcontrol-position: center right;\n"
-"    margin-right: 6px;\n"
-"    image: url(:/qfluentwidgets/images/table_view/Down_black.svg);\n"
-"}\n"
-"\n"
-"QHeaderView::up-arrow {\n"
-"    subcontrol-origin: padding;\n"
-"    subcontrol-position: center right;\n"
-"    margin-right: 6px;\n"
-"    image: url(:/qfluentwidgets/images/table_view/Up_black.svg);\n"
-"}\n"
-"\n"
-"QTableCornerButton::section {\n"
-"    background-color: transparent;\n"
-"    border: 1px solid rgba(0, 0, 0, 15);\n"
-"}\n"
-"\n"
-"QTableCornerButton::section:pressed {\n"
-"    background-color: rgba(0, 0, 0, 12);\n"
-"}")
-        self.DataTableView_4.setObjectName("DataTableView_4")
-        self.DeviceStateLayout_4.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.DataTableView_4)
+        self.horizontalLayout_26.addWidget(self.connStateLabel_4)
+        spacerItem39 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_26.addItem(spacerItem39)
+        self.DeviceStateLayout_4.addLayout(self.horizontalLayout_26)
         self.verticalLayout_18.addLayout(self.DeviceStateLayout_4)
-        spacerItem36 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_18.addItem(spacerItem36)
+        spacerItem40 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_18.addItem(spacerItem40)
         self.verticalLayout_17.addLayout(self.verticalLayout_18)
         self.horizontalLayout_23.addWidget(self.DeviceCard_4)
         self.tabWidget.addTab(self.IOT_TAB, "")
@@ -1170,7 +1055,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.horizontalLayout_3.addLayout(self.gridLayout)
 
         self.retranslateUi(DeviceStateInterface_UI)
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(DeviceStateInterface_UI)
         DeviceStateInterface_UI.setTabOrder(self.HWVersion, self.ParameterVersion)
         DeviceStateInterface_UI.setTabOrder(self.ParameterVersion, self.FirmwareVersion)
@@ -1215,8 +1100,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.CheckBox_Firmware_2.setText(_translate("DeviceStateInterface_UI", "Firmware Image"))
         self.ButtonStartTest_2.setText(_translate("DeviceStateInterface_UI", "Softwate Update"))
         self.DataProgressLabel_2.setText(_translate("DeviceStateInterface_UI", "Device State"))
-        self.connStateLabel_2.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.connStateIcon_2.setProperty("level", _translate("DeviceStateInterface_UI", "Success"))
+        self.connStateLabel_2.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.MCU_TAB), _translate("DeviceStateInterface_UI", "Controller"))
         self.ParamConfLabel_3.setText(_translate("DeviceStateInterface_UI", "Version"))
         self.BodyLabel_PID_3.setText(_translate("DeviceStateInterface_UI", "HW Version"))
@@ -1229,8 +1114,8 @@ class Ui_DeviceStateInterface_UI(object):
         self.CheckBox_Firmware_3.setText(_translate("DeviceStateInterface_UI", "Firmware Image"))
         self.ButtonStartTest_3.setText(_translate("DeviceStateInterface_UI", "Softwate Update"))
         self.DataProgressLabel_3.setText(_translate("DeviceStateInterface_UI", "Device State"))
-        self.connStateLabel_3.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.connStateIcon_3.setProperty("level", _translate("DeviceStateInterface_UI", "Success"))
+        self.connStateLabel_3.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.BMS_TAB), _translate("DeviceStateInterface_UI", "BMS"))
         self.ParamConfLabel_4.setText(_translate("DeviceStateInterface_UI", "Version"))
         self.BodyLabel_PID_4.setText(_translate("DeviceStateInterface_UI", "HW Version"))
@@ -1243,7 +1128,7 @@ class Ui_DeviceStateInterface_UI(object):
         self.CheckBox_Firmware_4.setText(_translate("DeviceStateInterface_UI", "Firmware Image"))
         self.ButtonStartTest_4.setText(_translate("DeviceStateInterface_UI", "Softwate Update"))
         self.DataProgressLabel_4.setText(_translate("DeviceStateInterface_UI", "Device State"))
-        self.connStateLabel_4.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.connStateIcon_4.setProperty("level", _translate("DeviceStateInterface_UI", "Success"))
+        self.connStateLabel_4.setText(_translate("DeviceStateInterface_UI", "Waiting for device connect......"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.IOT_TAB), _translate("DeviceStateInterface_UI", "IoT"))
-from qfluentwidgets import BodyLabel, CardWidget, CheckBox, ComboBox, HorizontalSeparator, IconInfoBadge, LineEdit, PrimaryPushButton, PrimaryToolButton, ProgressBar, StrongBodyLabel, TableView, ToolButton
+from qfluentwidgets import BodyLabel, CardWidget, CheckBox, ComboBox, HorizontalSeparator, IconInfoBadge, LineEdit, PrimaryPushButton, PrimaryToolButton, ProgressBar, StrongBodyLabel, ToolButton
