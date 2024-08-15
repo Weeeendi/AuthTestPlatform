@@ -3,6 +3,7 @@ import csv
 import os
 import re
 import sys
+import zlib
 from datetime import datetime
 
 import pandas as pd
@@ -11,7 +12,8 @@ import pandas as pd
 class BaseUtils:
 
     # ascii码转hex字符串
-    def asciiB2HexString(self, strB):
+    @staticmethod
+    def asciiB2HexString(strB):
         # 判断输入strB是否有效
         if not strB or len(strB) == 0:
             return False
@@ -21,7 +23,8 @@ class BaseUtils:
         return re.sub(r"(?<=\w)(?=(?:\w\w)+$)", "", strHex.decode())
 
     # hex字符串转ascii码
-    def hexStringB2Hex(self, hexString):
+    @staticmethod
+    def hexStringB2Hex(hexString):
         dataList = hexString.split(" ")
         j = 0
         for i in dataList:
@@ -40,7 +43,8 @@ class BaseUtils:
         return data
 
     # 累加无符号hex字符串，返回hex字符串
-    def uchar_checksum(self, data):
+    @staticmethod
+    def uchar_checksum(data):
 
         checksum = 0
         # 转换为16进制数据
@@ -56,8 +60,21 @@ class BaseUtils:
 
         return strHex.upper()
 
+    @staticmethod
+    def calculate_file_info(file_path):
+        total_size = os.path.getsize(file_path)
+        crc = 0
+        with open(file_path, 'rb') as file:
+            while chunk := file.read(4096):  # 读取文件的一部分
+                crc = zlib.crc32(chunk, crc)
+        return total_size, crc & 0xFFFFFFFF  # CRC32返回一个有符号整数，可能需要转换
+
+
+
+
     # 累加无符号字节串，返回低8位累加和，bytes类型
-    def uchar_byte_checksum(self, data):
+    @staticmethod
+    def uchar_byte_checksum(data):
 
         checksum = 0
 
@@ -68,7 +85,8 @@ class BaseUtils:
         return checksum
 
     # 转换一段字节串为hex字符串，
-    def byteToHexString(self, bins, spaceFlag=True):
+    @staticmethod
+    def byteToHexString(bins, spaceFlag=True):
         # 判断输入bins是否有效
         if not bins or len(bins) == 0:
             return None
@@ -80,7 +98,8 @@ class BaseUtils:
             return ''.join(["%02X" % x for x in bins]).strip()
 
     # 转换一段hex字符串为一段字节串
-    def HexStringToByte(self, hexStr):
+    @staticmethod
+    def HexStringToByte(hexStr):
         # 判断输入hexStr是否有效
         if not hexStr or len(hexStr) == 0:
             return None
@@ -88,7 +107,8 @@ class BaseUtils:
         return bytes.fromhex(hexStr)
 
     # str to bytes,    "example"  --->  b"example"
-    def StrToBytes(self, sStr):
+    @staticmethod
+    def StrToBytes(sStr):
         # 判断输入sStr是否有效
         if not sStr or len(sStr) == 0:
             return None
@@ -96,14 +116,16 @@ class BaseUtils:
         return bytes(sStr, encoding="utf8")
 
     # bytes to str,    b"example"  --->  "example"
-    def BytesToStr(self, bBytes):
+    @staticmethod
+    def BytesToStr(bBytes):
         # 判断输入bBytes是否有效
         if not bBytes or len(bBytes) == 0:
             return None
 
         return str(bBytes, encoding="utf8")
 
-    def resource_path(self, relative_path):
+    @staticmethod
+    def resource_path(relative_path):
         """获取程序中所需文件资源的绝对路径"""
         try:
             # PyInstaller创建临时文件夹,将路径存储于_MEIPASS
@@ -114,7 +136,8 @@ class BaseUtils:
         return os.path.join(base_path, relative_path)
 
     # 将生成的授权信息记录到regList列表
-    def addToRegList(self, regInfo):
+    @staticmethod
+    def addToRegList(regInfo):
 
         # repFlag = False
         # 获取当前时间

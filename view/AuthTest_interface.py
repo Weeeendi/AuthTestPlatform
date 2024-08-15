@@ -162,7 +162,19 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
     def initialSerial(self):
         # 默认 115200 波特率，8位数据位，1位停止位，无校验
-        self.ser.port = self.ComboBox_Serial.currentText()
+        text = self.ComboBox_Serial.currentText()
+
+        for i in range(len(text)):
+            if text[i] == ')':
+                text = text[:i+1]
+                break
+
+        for port in serial.tools.list_ports.comports():
+            if port.description == text:
+                self.ser.port = port.device
+                break
+
+        # self.ser.port = self.ComboBox_Serial.currentText()
         self.ser.baudrate = 115200
         self.ser.bytesize = 8
         self.ser.stopbits = 1
@@ -307,7 +319,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         """刷新串口"""
 
         # 查询可用的串口
-        plist = list(serial.tools.list_ports.comports())
+        plist = serial.tools.list_ports.comports()
 
         if len(plist) <= 0:
             print("No used com!")
@@ -318,9 +330,16 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         else:
             # 把所有的可用的串口输出到comboBox中去
             self.ComboBox_Serial.clear()
-            for i in range(0, len(plist)):
-                plist_0 = list(plist[i])
-                self.ComboBox_Serial.addItem(str(plist_0[0]))
+            port_status = ""
+            for port in plist:
+                try:
+                    ser = serial.Serial(port.device)
+                    ser.close()
+                    port_status = "Available"
+
+                except serial.SerialException:
+                    port_status = "Busy"
+                self.ComboBox_Serial.addItem(port.description + " - " + port_status)
 
         print("刷新串口")
 

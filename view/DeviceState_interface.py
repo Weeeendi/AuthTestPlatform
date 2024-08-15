@@ -9,11 +9,14 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
 from serial.serialutil import SerialException
 
+from DeviceStateChk import DeviceStateChkThread, deviceOnline
 from baseLogger import log
+from baseUart import BaseUartThread
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
+CONNOVERTIME = 5*10
 
 def showMessage(title, content, parent=None):
     MessageBox(title, content, parent).show()
@@ -28,15 +31,6 @@ class DataPoint:
         self.page = page
 
 
-class deviceOnline:
-    # 构造函数
-    def __init__(self, BashBoard, Controller, BMS, IoT):
-        self.bashBoardOnline = BashBoard
-        self.controllerOnline = Controller
-        self.BMSOnline = BMS
-        self.IotOnline = IoT
-
-
 def find_category_by_id(data, target_id):
     # 遍历数据中的每一个大类别
     for category, items in data.items():
@@ -47,6 +41,30 @@ def find_category_by_id(data, target_id):
                 return category  # 返回匹配的组别名称
 
 
+class Queue:
+    def __init__(self):
+        self.items = []
+
+    def is_empty(self):
+        return not bool(self.items)
+
+    def enqueue(self, item):
+        self.items.append(item)
+
+    def dequeue(self):
+        if self.is_empty():
+            return "Queue is empty"
+        return self.items.pop(0)
+
+    def peek(self):
+        if self.is_empty():
+            return "Queue is empty"
+        return self.items[0]
+
+    def size(self):
+        return len(self.items)
+
+
 class DeviceStateTask(QThread):
     trigger = pyqtSignal(str, str)
     stateSignal = pyqtSignal(deviceOnline)
@@ -55,85 +73,115 @@ class DeviceStateTask(QThread):
     def __init__(self, parent=None):
         super(DeviceStateTask, self).__init__(parent=parent)
 
+        self.ChkConnFlag = True
         self.FilterDict = self.parent().DpDict
 
         self.trigger.connect(self.parent().light_callback)
         self.dataPointSignal.connect(self.parent().updateDpValueCallback)
-        self.stateSignal.connect(self.onStateChange)
-        self.state = self.parent().online
+
+        self.overTimeConn = deviceOnline(0,0,0,0)
         self.page = self.parent().page
         self.running = 1
 
-        self.dpDateRevList = []
+        # 創建串口線程
+        self.uartThread = DeviceStateChkThread()
+        self.uartThread.DS_dPRevSignal.connect(self.DpRev)
 
-    def DpProcess(self, dpid, dptype, value):
+        self.dpDateRevList = Queue()
+
+    def DpRev(self, data):
+        self.dpDateRevList.enqueue(data)
+
+    def DpProcess(self):
+
+        if self.dpDateRevList.is_empty():
+            return
+        data = self.dpDateRevList.dequeue()
+        dpid = int(data.dpid)
+        dptype = str(data.type)  # data.type
+        value = data.value
         group = find_category_by_id(self.FilterDict, dpid)
 
         if group is not None:
             if group == "Dashboard_Dp_Data":
                 page = 0
+                self.overTimeConn.dashBoardOnline = CONNOVERTIME
             elif group == "Controller_Dp_Data":
                 page = 1
+                self.overTimeConn.controllerOnline = CONNOVERTIME
             elif group == "BMS_Dp_Data":
                 page = 2
+                self.overTimeConn.BMSOnline = CONNOVERTIME
             elif group == "IOT_Dp_Data":
                 page = 3
+                self.overTimeConn.IotOnline = CONNOVERTIME
             else:
                 return
+
             items = self.FilterDict[group]
+
+
+            for i in range(len(self.overTimeConn)):
+                if self.overTimeConn[i] > 0:
+                    self.overTimeConn[i] -= 1
 
             for item in items:
                 if item.get("id") == dpid:
                     dp = DataPoint(dpid, item.get('msg'), dptype, value, page)
                     self.dataPointSignal.emit(dp)
                     return
+            
+
 
         log.logger.warning("error msg, dpid:%s,type:%s,value:%s" % (dpid, dptype, str(value)))
 
-    def onStateChange(self, deviceOnlineParam):
-        self.state = deviceOnlineParam
-
     def run(self):
-        overtimeCnt = 0
-        exitFlag = 0
-
-        text = "Waiting for device connection......"
-        color = "#f4ea2a"
+        self.overtimeCnt = 0
+        self.text = "Waiting for device connection......"
+        self.color = "#f4ea2a"
 
         while self.running:
-            if not self.parent().serialOnline:
-                text = "Serial is not Connection"
-                color = "#e6e6e6"
-                exitFlag = 1
+            if self.ChkConnFlag:
+                if not self.parent().serialOnline:
+                    self.text = "Serial is not Connection"
+                    self.color = "#e6e6e6"
+                    self.ChkConnFlag = False
 
-            if (self.state.IotOnline and self.page == 3) or \
-                    (self.state.BMSOnline and self.page == 2) or \
-                    (self.state.controllerOnline and self.page == 1) or \
-                    (self.state.bashBoardOnline and self.page == 0):
-                color = "#1afa29"
-                text = "Device is connection"
-                exitFlag = 1
+                if (self.overTimeConn.IotOnline and self.page == 3) or \
+                        (self.overTimeConn.BMSOnline and self.page == 2) or \
+                        (self.overTimeConn.controllerOnline and self.page == 1) or \
+                        (self.overTimeConn.dashBoardOnline and self.page == 0):
+                    self.color = "#1afa29"
+                    self.text = "Device is connection"
+                    self.ChkConnFlag = False
 
-            if overtimeCnt >= 30:
-                exitFlag = 1
-                color = "#d81e06"
-                text = "Device connection overtime"
+                if self.overtimeCnt >= 30:
+                    self.ChkConnFlag = False
+                    self.color = "#d81e06"
+                    self.text = "Device connection overtime"
 
-            self.trigger.emit(color, text)
+                self.trigger.emit(self.color, self.text)
+
+                self.overtimeCnt += 1
+
+                # if exitFlag:
+                # self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
+                # self.DpProcess(22,"value","50")
+                # break
+
+                self.text = "Waiting for device connection " + (self.overtimeCnt % 7) * "."
+
+            self.DpProcess()
             time.sleep(0.1)
-            overtimeCnt += 1
-
-            if exitFlag:
-                self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
-                self.DpProcess(22,"value","50")
-                break
-
-            text = "Waiting for device connection " + (overtimeCnt % 7) * "."
-
-        return
 
     def stop(self):
         self.running = 0
+
+    def startCheckConnect(self):
+        self.ChkConnFlag = True
+        self.text = "Waiting for device connection......"
+        self.color = "#f4ea2a"
+        self.overtimeCnt = 0
 
 
 class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
@@ -147,7 +195,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.tabPages = 4
         self.setupUi(self)
 
-        self.online = deviceOnline(0, 0, 0, 0)
+        self.online = deviceOnline(0, 1, 0, 0)
 
         self.serialOnline = 0
 
@@ -239,9 +287,9 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"FirmwareVersion").setText(param.get('soft_ver', ''))
                 getattr(self, f"SN").setText(param.get('sn', ''))
             else:
-                getattr(self, f"HWVersion_{DpParam.page+1}").setText(param.get('hard_ver', ''))
-                getattr(self, f"FirmwareVersion_{DpParam.page+1}").setText(param.get('soft_ver', ''))
-                getattr(self, f"SN_{DpParam.page+1}").setText(param.get('sn', ''))
+                getattr(self, f"HWVersion_{DpParam.page + 1}").setText(param.get('hard_ver', ''))
+                getattr(self, f"FirmwareVersion_{DpParam.page + 1}").setText(param.get('soft_ver', ''))
+                getattr(self, f"SN_{DpParam.page + 1}").setText(param.get('sn', ''))
 
         if DpParam.msg == 'data':
             getattr(self, f"dpTableView_{DpParam.page}").updateData(DpParam.id, DpParam.type, DpParam.value)
@@ -264,10 +312,12 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
     def DeviceTask(self):
         try:
-            if self.task.isRunning():
-                self.task.stop()
-        except Exception as e:
-            print(e)
+            if self.task.running:
+                self.task.startCheckConnect()
+                return
+        except Exception:
+            pass
+
         self.task = DeviceStateTask(self)
         self.task.start()
 
@@ -301,10 +351,23 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 return None
             self.serialOnline = 1
             self.ButtonConnectSerial.setText("Disconnect")
+
+            # 创建BaseUartThread线程实例,
+            self.serialThread = BaseUartThread(self.ser)
+            # 启动BaseUartThread线程实例
+            self.serialThread.start()
+
+            self.uartThread = DeviceStateChkThread()
+            self.uartThread.DS_uartWrite_sinOut.connect(self.serialThread.uartWrite)
+
+            self.uartThread.start()
+            self.testSetStateChange(True)
+
         else:
             self.ser.close()
             self.ButtonConnectSerial.setText("Connect")
             self.serialOnline = 0
+            self.testSetStateChange(False)
 
         self.DeviceTask()
 
@@ -329,7 +392,18 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
     def initialSerial(self):
         # 默认 115200 波特率，8位数据位，1位停止位，无校验
-        self.ser.port = self.ComboBox_Serial.currentText()
+        text = self.ComboBox_Serial.currentText()
+
+        for i in range(len(text)):
+            if text[i] == ')':
+                text = text[:i+1]
+                break
+
+        for port in serial.tools.list_ports.comports():
+            if port.description == text:
+                self.ser.port = port.device
+                break
+
         self.ser.baudrate = 115200
         self.ser.bytesize = 8
         self.ser.stopbits = 1
@@ -343,7 +417,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
     def refresh(self):
         # 查询可用的串口
-        plist = list(serial.tools.list_ports.comports())
+        plist = serial.tools.list_ports.comports()
 
         if len(plist) <= 0:
             print("No used com!")
@@ -355,9 +429,16 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         else:
             # 把所有的可用的串口输出到comboBox中去
             self.ComboBox_Serial.clear()
-            for i in range(0, len(plist)):
-                plist_0 = list(plist[i])
-                self.ComboBox_Serial.addItem(str(plist_0[0]))
+            port_status = ""
+            for port in plist:
+                try:
+                    ser = serial.Serial(port.device)
+                    ser.close()
+                    port_status = "Available"
+
+                except serial.SerialException:
+                    port_status = "Busy"
+                self.ComboBox_Serial.addItem(port.description + " - " + port_status)
 
         self.DeviceTask()
         print("刷新串口")
@@ -366,24 +447,10 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         with open('resource/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
             self.DpDict = json.loads(file.read())
 
-    def onDpDataChanged(self, DataPointParam: DataPoint):
-        group = self.find_category_by_id(self.DpDict, DataPointParam.id)
-        if group:
-            self.DeviceTask()
 
     def updatePercentDate(self):
         pass
 
-    def dealAuthData(self, authInfo):
-        """自定义槽，处理授权信息"""
-        # 判断输入是否有效
-        if not authInfo:
-            return None
-        # 清空上次授权信息
-        self.AuthRES_TextEdit.clear()
-        # 获取光标位置
-        cursor = self.AuthRES_TextEdit.textCursor()
-        cursor.insertText(authInfo)
 
     def setShadowEffect(self, card: QWidget):
         shadowEffect = QGraphicsDropShadowEffect(self)

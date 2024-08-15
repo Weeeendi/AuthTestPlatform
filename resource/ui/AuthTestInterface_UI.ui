@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>935</width>
-    <height>600</height>
+    <height>601</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -627,7 +627,14 @@
                </widget>
               </item>
               <item>
-               <widget class="ComboBox" name="ComboBox_Serial"/>
+               <widget class="ComboBox" name="ComboBox_Serial">
+                <property name="minimumSize">
+                 <size>
+                  <width>200</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
               </item>
               <item alignment="Qt::AlignVCenter">
                <widget class="PrimaryToolButton" name="Button_UpdateSerial">

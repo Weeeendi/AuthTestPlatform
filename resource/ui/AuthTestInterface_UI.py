@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_AuthTestInterface_UI(object):
     def setupUi(self, AuthTestInterface_UI):
         AuthTestInterface_UI.setObjectName("AuthTestInterface_UI")
-        AuthTestInterface_UI.resize(935, 600)
+        AuthTestInterface_UI.resize(935, 601)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout(AuthTestInterface_UI)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.gridLayout = QtWidgets.QGridLayout()
@@ -243,6 +243,7 @@ class Ui_AuthTestInterface_UI(object):
         self.BodyLabel_Serial.setObjectName("BodyLabel_Serial")
         self.horizontalLayout_6.addWidget(self.BodyLabel_Serial)
         self.ComboBox_Serial = ComboBox(self.SettingCard)
+        self.ComboBox_Serial.setMinimumSize(QtCore.QSize(200, 0))
         self.ComboBox_Serial.setObjectName("ComboBox_Serial")
         self.horizontalLayout_6.addWidget(self.ComboBox_Serial)
         self.Button_UpdateSerial = PrimaryToolButton(self.SettingCard)
