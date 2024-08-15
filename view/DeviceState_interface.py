@@ -16,7 +16,8 @@ from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
-CONNOVERTIME = 5*10
+CONN_OVERTIME = 5 * 10
+
 
 def showMessage(title, content, parent=None):
     MessageBox(title, content, parent).show()
@@ -53,126 +54,170 @@ class Queue:
 
     def dequeue(self):
         if self.is_empty():
-            return "Queue is empty"
+            return None
         return self.items.pop(0)
 
     def peek(self):
         if self.is_empty():
-            return "Queue is empty"
+            return None
         return self.items[0]
 
     def size(self):
         return len(self.items)
 
 
+def tranType2Str(data: bytes, typeInt: int):
+    if typeInt == 0:
+        # 假设0表示的是原始的十六进制表示
+        data = data.hex()
+        return data, "raw"
+    elif typeInt == 1:
+        # 假设1表示的是布尔值，这里假设数据长度为1字节
+        if len(data) > 0:
+            return bool(data[0]), "bool"
+        else:
+            return None, "bool"
+    elif typeInt == 2:
+        # 假设2表示的是某种值，可能是整数，这里假设为整数
+        if data:
+            return int.from_bytes(data, byteorder='big'), "value"
+        else:
+            return None, "value"
+    elif typeInt == 3:
+        # 假设3表示的是ASCII编码的字符串
+        try:
+            data = data.decode('ascii')
+            return data, "string"
+        except UnicodeDecodeError:
+            return None, "string"
+
+    elif typeInt == 4:
+        # 假设4表示的是枚举值，作为整数返回
+        if data:
+            return int.from_bytes(data, byteorder='big'), "enum"
+        else:
+            return None, "enum"
+    elif typeInt == 5:
+        # 假设5表示的是位图，转换为二进制（bin）字符串
+        bits = bin(int.from_bytes(data, byteorder='big'))[2:]  # 从'int'转为二进制字符串表示
+        # 补充前导零，使长度为8的倍数
+        bits = bits.zfill(8 * ((len(bits) + 7) // 8))
+        return bits, "bitmap"
+    else:
+        # 未知类型
+        return "unknown", "unknown"
+
+
 class DeviceStateTask(QThread):
-    trigger = pyqtSignal(str, str)
+    LightTrigger = pyqtSignal(str, str)
     stateSignal = pyqtSignal(deviceOnline)
     dataPointSignal = pyqtSignal(DataPoint)
 
     def __init__(self, parent=None):
         super(DeviceStateTask, self).__init__(parent=parent)
 
+        self.color = "#e6e6e6"
+        self.text = "Serial is not Connection"
         self.ChkConnFlag = True
         self.FilterDict = self.parent().DpDict
 
-        self.trigger.connect(self.parent().light_callback)
+        self.LightTrigger.connect(self.parent().light_callback)
         self.dataPointSignal.connect(self.parent().updateDpValueCallback)
 
-        self.overTimeConn = deviceOnline(0,0,0,0)
+        self.overTimeConn = deviceOnline(0, 0, 0, 0)
         self.page = self.parent().page
         self.running = 1
 
-        # 創建串口線程
-        self.uartThread = DeviceStateChkThread()
-        self.uartThread.DS_dPRevSignal.connect(self.DpRev)
-
         self.dpDateRevList = Queue()
+        # 創建串口線程
 
-    def DpRev(self, data):
-        self.dpDateRevList.enqueue(data)
-
-    def DpProcess(self):
-
-        if self.dpDateRevList.is_empty():
-            return
-        data = self.dpDateRevList.dequeue()
+    def DpProcess(self, data):
         dpid = int(data.dpid)
-        dptype = str(data.type)  # data.type
-        value = data.value
+        value, dptype = tranType2Str(data.value, data.type)  # data.type
+
+        if value is None or value == "unknown":
+            log.logger.warning("error msg, dpid:%s,type:%s,value:%s" % (dpid, dptype, str(value)))
+            return
+
         group = find_category_by_id(self.FilterDict, dpid)
 
         if group is not None:
             if group == "Dashboard_Dp_Data":
                 page = 0
-                self.overTimeConn.dashBoardOnline = CONNOVERTIME
+                self.overTimeConn.dashBoardOnline = CONN_OVERTIME
             elif group == "Controller_Dp_Data":
                 page = 1
-                self.overTimeConn.controllerOnline = CONNOVERTIME
+                self.overTimeConn.controllerOnline = CONN_OVERTIME
             elif group == "BMS_Dp_Data":
                 page = 2
-                self.overTimeConn.BMSOnline = CONNOVERTIME
+                self.overTimeConn.BMSOnline = CONN_OVERTIME
             elif group == "IOT_Dp_Data":
                 page = 3
-                self.overTimeConn.IotOnline = CONNOVERTIME
+                self.overTimeConn.IotOnline = CONN_OVERTIME
             else:
                 return
 
             items = self.FilterDict[group]
-
-
-            for i in range(len(self.overTimeConn)):
-                if self.overTimeConn[i] > 0:
-                    self.overTimeConn[i] -= 1
 
             for item in items:
                 if item.get("id") == dpid:
                     dp = DataPoint(dpid, item.get('msg'), dptype, value, page)
                     self.dataPointSignal.emit(dp)
                     return
-            
-
 
         log.logger.warning("error msg, dpid:%s,type:%s,value:%s" % (dpid, dptype, str(value)))
 
     def run(self):
         self.overtimeCnt = 0
-        self.text = "Waiting for device connection......"
-        self.color = "#f4ea2a"
+        text = "Serial is not Connection"
+        color = "#e6e6e6"
+        #         # self.LightTrigger.emit(self.color, self.text)
 
         while self.running:
-            if self.ChkConnFlag:
-                if not self.parent().serialOnline:
-                    self.text = "Serial is not Connection"
-                    self.color = "#e6e6e6"
+
+            if self.parent().serialOnline:
+
+                if (self.overTimeConn.IotOnline > 0 and self.page == 3) or \
+                        (self.overTimeConn.BMSOnline > 0 and self.page == 2) or \
+                        (self.overTimeConn.controllerOnline > 0 and self.page == 1) or \
+                        (self.overTimeConn.dashBoardOnline > 0 and self.page == 0):
+                    color = "#1afa29"
+                    text = "Device is connection"
                     self.ChkConnFlag = False
+                    self.LightTrigger.emit(self.color, self.text)
 
-                if (self.overTimeConn.IotOnline and self.page == 3) or \
-                        (self.overTimeConn.BMSOnline and self.page == 2) or \
-                        (self.overTimeConn.controllerOnline and self.page == 1) or \
-                        (self.overTimeConn.dashBoardOnline and self.page == 0):
-                    self.color = "#1afa29"
-                    self.text = "Device is connection"
-                    self.ChkConnFlag = False
+                elif self.ChkConnFlag:
+                    self.overtimeCnt += 1
 
-                if self.overtimeCnt >= 30:
-                    self.ChkConnFlag = False
-                    self.color = "#d81e06"
-                    self.text = "Device connection overtime"
+                    # if exitFlag:
+                    # self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
+                    # self.DpProcess(22,"value","50")
+                    # break
 
-                self.trigger.emit(self.color, self.text)
+                    text = "Waiting for device connection " + (self.overtimeCnt % 7) * "."
+                    color = "#f4ea2a"
+                    time.sleep(0.1)
 
-                self.overtimeCnt += 1
+                    if self.overtimeCnt >= 30:
+                        self.ChkConnFlag = False
+                        color = "#d81e06"
+                        text = "Device connection overtime"
+            else:
+                color = "#e6e6e6"
+                text = "Serial is not Connection"
+                self.overTimeConn.clearAll()
 
-                # if exitFlag:
-                # self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
-                # self.DpProcess(22,"value","50")
-                # break
+            if text != self.text or color != self.color:
+                self.text = text
+                self.color = color
+                self.LightTrigger.emit(self.color, self.text)
 
-                self.text = "Waiting for device connection " + (self.overtimeCnt % 7) * "."
-
-            self.DpProcess()
-            time.sleep(0.1)
+            # self.overTimeConn.decrementAll()
+            page = self.parent().page
+            if page != self.page:
+                self.page = page
+                self.ChkConnFlag = True
+            time.sleep(0.01)
 
     def stop(self):
         self.running = 0
@@ -194,9 +239,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.page = 0
         self.tabPages = 4
         self.setupUi(self)
-
-        self.online = deviceOnline(0, 1, 0, 0)
-
         self.serialOnline = 0
 
         # set the icon of button
@@ -270,9 +312,16 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 setattr(self, f"dpTableView_{tab}", myTableModel(self.DpDict[groupStr]))
                 getattr(self, f"DeviceStateLayout_{tab + 1}").addWidget(getattr(self, f"dpTableView_{tab}"))
 
+        for tab in range(self.tabPages):
+            self.page = tab
+            self.light_callback("#e6e6e6", "Serial is not Connection")
+
+        self.page = 0
+
         self.tabWidget.setCurrentIndex(self.page)
         # 串口刷新设置
         self.refresh()
+        self.DeviceTask()
 
     def updateDpValueCallback(self, DpParam):
 
@@ -311,13 +360,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             return None
 
     def DeviceTask(self):
-        try:
-            if self.task.running:
-                self.task.startCheckConnect()
-                return
-        except Exception:
-            pass
-
         self.task = DeviceStateTask(self)
         self.task.start()
 
@@ -337,7 +379,16 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     def onPageChange(self):
         self.page = self.tabWidget.currentIndex()
         print("current page is " + str(self.page))
-        self.DeviceTask()
+        if self.serialOnline == 1:
+            self.light_callback("#e6e6e6", "Serial is not Connection")
+
+        try:
+            if self.task.running:
+                self.task.startCheckConnect()
+                return
+        except Exception as e:
+            log.logger.error(e)
+            pass
 
     def serialConnectChange(self):
         # 开始/停止按钮-状态切换
@@ -349,17 +400,20 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             except SerialException:
                 showMessage("提示", "当前无串口或者串口被占用", self)
                 return None
+
             self.serialOnline = 1
             self.ButtonConnectSerial.setText("Disconnect")
 
             # 创建BaseUartThread线程实例,
             self.serialThread = BaseUartThread(self.ser)
+            self.uartThread = DeviceStateChkThread()
+
+            self.serialThread.revData_sinOut.connect(self.uartThread.uartProc)
+            self.uartThread.DS_uartWrite_sinOut.connect(self.serialThread.uartWrite)
+            self.uartThread.DS_dPRevSignal_sinOut.connect(self.task.DpProcess)
+
             # 启动BaseUartThread线程实例
             self.serialThread.start()
-
-            self.uartThread = DeviceStateChkThread()
-            self.uartThread.DS_uartWrite_sinOut.connect(self.serialThread.uartWrite)
-
             self.uartThread.start()
             self.testSetStateChange(True)
 
@@ -369,7 +423,13 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.serialOnline = 0
             self.testSetStateChange(False)
 
-        self.DeviceTask()
+        try:
+            if self.task.running:
+                self.task.startCheckConnect()
+                return
+        except Exception as e:
+            log.logger.error(e)
+            pass
 
     # 测试项设置状态变更
     def testSetStateChange(self, bool_value):
@@ -396,7 +456,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         for i in range(len(text)):
             if text[i] == ')':
-                text = text[:i+1]
+                text = text[:i + 1]
                 break
 
         for port in serial.tools.list_ports.comports():
@@ -413,7 +473,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     def closeEvent(self, event):
         if self.ser.isOpen():
             self.serialThread.quit()
-            self.OTAThread.quit()
+            self.uartThread.quit()
 
     def refresh(self):
         # 查询可用的串口
@@ -447,10 +507,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         with open('resource/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
             self.DpDict = json.loads(file.read())
 
-
     def updatePercentDate(self):
         pass
-
 
     def setShadowEffect(self, card: QWidget):
         shadowEffect = QGraphicsDropShadowEffect(self)

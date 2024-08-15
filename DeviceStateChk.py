@@ -19,11 +19,27 @@ class MachineState(Enum):
 
 class deviceOnline:
     # 构造函数
-    def __init__(self, DashBoard, Controller, BMS, IoT):
+    def __init__(self, DashBoard: int, Controller: int, BMS: int, IoT: int):
         self.dashBoardOnline = DashBoard
         self.controllerOnline = Controller
         self.BMSOnline = BMS
         self.IotOnline = IoT
+
+    def clearAll(self):
+        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
+        for attr in attrs:
+            if hasattr(self, attr):  # 确保对象有这个属性
+                setattr(self, attr, 0)
+
+    def decrementAll(self):
+        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
+        for attr in attrs:
+            if hasattr(self, attr):  # 确保对象有这个属性
+                current_value = getattr(self, attr)
+                if isinstance(current_value, int) and current_value > 0:  # 确保值是整数
+                    setattr(self, attr, current_value - 1)
+                # else:
+                #     print(f"Cannot decrement {attr}: not an integer")
 
 
 class Frame:
@@ -36,10 +52,10 @@ class Frame:
     CMD = 2
     DATA_LEN = 2
     DATA = 2
-    CRC = 2
+    CHK_SUM = 1
 
     DATA_START = HEAD + SN + ACK_SN + CMD + DATA_LEN
-    LEN_EXPDATA = DATA_START + CRC
+    LEN_EXPDATA = DATA_START + CHK_SUM
 
 
 class OTAState:
@@ -48,8 +64,41 @@ class OTAState:
     Success = 3
 
 
+def calc_crc16(data: bytes, poly: int = 0x1021) -> int:
+    """
+    Calculate the CRC16-modbus checksum value.
+
+    This function calculates the CRC16-modbus checksum value for the given data.
+
+    Args:
+        data (bytes): The data to calculate the checksum for.
+        poly (int, optional): The polynomial to use. Defaults to 0x1021.
+
+    Returns:
+        int: The calculated checksum value.
+    """
+    crc = 0x0000
+    # Iterate over each byte in the data
+    for b in data:
+        # XOR the current byte with the current CRC value
+        crc ^= (b << 8)
+        # Iterate 8 times to process each bit in the current byte
+        for _ in range(8):
+            # If the current bit is 1, XOR the CRC value with the polynomial
+            if crc & 0x8000:
+                crc = (crc << 1) ^ poly
+            # If the current bit is 0, just shift the CRC value
+            else:
+                crc = crc << 1
+    # Perform two more iterations to finalize the CRC value
+    crc = (crc << 1) ^ poly
+    crc = crc << 1
+    return crc
+
+
 class OTA_PCB:
-    def __init__(self, devType, FileSize, FileCrc32, BlockCnt, CurrentPackageSize, PkgCnt):
+    def __init__(self, devType, FileSize, FileCrc32, BlockCnt, PkgCnt):
+        self.OTAState = 0
         self.devType = devType
         self.FileSize = FileSize
         self.BlockSize = 5120
@@ -93,7 +142,10 @@ class DeviceStateChkThread(QThread):
     DS_progressBar_sinOut = pyqtSignal(int, bool, str)
 
     # 自定义信号，用来发送接收到的dp
-    DS_dPRevSignal = pyqtSignal(DataPointRev)
+    DS_dPRevSignal_sinOut = pyqtSignal(DataPointRev)
+
+    # 自定义信号，用来发送后端提醒
+    DS_NotionSignal_sinOut = pyqtSignal(bool, str)
 
     def __init__(self):
         super(DeviceStateChkThread, self).__init__()
@@ -111,9 +163,6 @@ class DeviceStateChkThread(QThread):
         # 定义发送互斥量
         self.sendMutexFlag = True
 
-        # 创建ACK CMD表
-        self.cmdProcessor = {}
-
         # 创建sn和 acksn
         self.sn = 0
         self.acksn = 0
@@ -123,6 +172,21 @@ class DeviceStateChkThread(QThread):
 
         # 创建列表索引
         self.listIndex = 0
+
+        # 创建测试协议cmd字典
+        self.cmdProcessor = {
+            bytes.fromhex("0000"): self.cmd_shakeHand,
+            bytes.fromhex("0001"): self.cmd_heartJump,
+            bytes.fromhex("0002"): self.cmd_dataPointSend,
+            bytes.fromhex("0003"): self.cmd_chkDataPoint,
+            bytes.fromhex("0005"): self.cmd_SerialDisconn,
+            bytes.fromhex("000C"): self.cmd_OTAStart,
+            bytes.fromhex("000E"): self.cmd_OTAHead,
+            bytes.fromhex("000F"): self.cmd_OTATail,
+            bytes.fromhex("0011"): self.cmd_OTAExit,
+            bytes.fromhex("0012"): self.cmd_OTAState,
+            bytes.fromhex("8001"): self.cmd_DpUpdata,
+        }
 
         print("创建 DeviceStateChkThread线程")
 
@@ -143,34 +207,39 @@ class DeviceStateChkThread(QThread):
         # 发送串口写信号
         self.DS_uartWrite_sinOut.emit(dataTmp)
 
-    def dealDpData(self, data, datalen):
+    def dealDpData(self, data, dataLen) -> bool:
         """
         处理数据
         """
-        if datalen == 0 or datalen != len(data[4:]):
+        if dataLen == 0:
             log.logger.debug('dp数据长度异常')
             return False
 
-        dataDp = data[0]
+        dpid = data[0]
         dataType = data[1]
+
         if dataType > 0x05:
             log.logger.debug('dp数据类型异常')
             return False
+
         dataValue = data[4:]
 
-        self.dPRevSignal.emit(DataPointRev(dataDp, dataType, dataValue))
+        DpRev = DataPointRev(dpid, dataType, dataValue)
+        log.logger.debug("Rev Dp Data: %s" % data.hex())
+        self.DS_dPRevSignal_sinOut.emit(DpRev)
         return True
 
     # 按照帧结构解析处理一条完整的帧数据
     def uartParse(self, data):
-
         IndexCnt = 0
         # 判断输入data是否有效
         if not data:
             return None
         # 打印即将处理的数据
-        print("userTest.uartParse", data, len(data))
-        # log.logger.debug("userTest.uartParse", str(data), len(data))
+        print("check uart", data, len(data))
+        #log.logger.debug("userTest.uartParse", str(data), len(data))
+        # 打印更新后的缓存区数据
+        print("userTest.processReadBuffer", "readBuf", self.readBuf)
 
         # 判断起始标志
         headIdx = data.find(bytes.fromhex("66AA"))
@@ -179,12 +248,12 @@ class DeviceStateChkThread(QThread):
         # print("userTest.uartParse", "headidx", headidx)
         # 如果没有找到起始标志，返回等待数据完整
         if headIdx < 0:
-            # print("userTest.uartParse", "parse no head error")
-            log.logger.debug("userTest.uartParse parse no head error")
-            return True, ''
+            log.logger.debug("check uart parse no head error")
+            return False, b''
+
         # 当索引值大于等于总体数据长度，需要再等多一些字节数据
         if len(data) <= headIdx:
-            log.logger.debug("userTest.uartParse parse wait cnt bytes")
+            log.logger.debug("check uart parse wait cnt bytes")
             return False, data
 
         # 读取sn号
@@ -192,65 +261,51 @@ class DeviceStateChkThread(QThread):
                      data[headIdx + IndexCnt + 2] * pow(2, 8) + data[headIdx + IndexCnt + 3]
 
         IndexCnt += Frame.ACK_SN
+        # 获取2字节功能码
+        cmd = data[headIdx + IndexCnt:headIdx + IndexCnt + Frame.CMD]
+        IndexCnt += Frame.CMD
         # 可能存在断包情况，获取不到cnt信息
         try:
             # 获取数据长度
             dataCnt = data[headIdx + IndexCnt] * 256 + data[headIdx + IndexCnt + 1]
-            # print("userTest.uartParse", "cnt", cnt)
+            print("check uart", "cnt", dataCnt)
         except:
-            log.logger.debug("userTest.uartParse no cnt info")
-            return False, data
+            log.logger.debug("check uart no cnt info")
+            return False, b''
 
         # 等待数据帧完整
         if len(data) < headIdx + dataCnt + Frame.LEN_EXPDATA:
-            log.logger.debug("userTest.uartParse parse wait complete")
-            return False, data
+            log.logger.debug(
+                "check uart parse wait complete %d" % (headIdx + dataCnt + Frame.LEN_EXPDATA - len(data)))
+            return True, b''
 
         # 校验数据
-        dataCheckSum = data[headIdx + dataCnt + IndexCnt]
+        dataCheckSum = data[headIdx + dataCnt + Frame.DATA_START]
         checkTmp = BaseUtils.uchar_byte_checksum(data[headIdx:headIdx + dataCnt + Frame.DATA_START])
         # 如果校验失败
         if dataCheckSum != checkTmp:
-            # print("userTest.uartParse", "parse checksum error", dataCheckSum, checkTmp)
-            log.logger.debug("userTest.uartParse data checksum fail!")
-            return False, data[headIdx + dataCnt + Frame.DATA_START:]
+            log.logger.debug("check uart data checksum fail!")
+            return False, data[headIdx + dataCnt + Frame.LEN_EXPDATA:]
 
         # 校验成功，执行命令代码
-        log.logger.debug("userTest.uartParse data checksum success!")
-
-        # 获取2字节功能码
-        cmd = data[headIdx + IndexCnt:headIdx + IndexCnt + Frame.CMD]
-
-        # 创建测试协议cmd字典
-        self.cmdProcessor = {
-            bytes.fromhex("0000"): self.cmd_shakeHand,
-            bytes.fromhex("0001"): self.cmd_heartJump,
-            bytes.fromhex("0002"): self.cmd_dataPointSend,
-            bytes.fromhex("0003"): self.cmd_chkDataPoint,
-            bytes.fromhex("0004"): self.cmd_DevConn,
-            bytes.fromhex("0005"): self.cmd_SerialDisconn,
-            bytes.fromhex("000C"): self.cmd_OTAStart,
-            bytes.fromhex("000E"): self.cmd_OTAHead,
-            bytes.fromhex("000F"): self.cmd_OTATail,
-            bytes.fromhex("0011"): self.cmd_OTAExit,
-            bytes.fromhex("0012"): self.cmd_OTAState,
-            bytes.fromhex("8001"): self.cmd_DpUpdata,
-        }
+        log.logger.debug("check uart data checksum success!")
 
         # 可能存在没有相应指令函数，则报错退出
         try:
             # 执行相应指令
             if dataCnt:
                 self.cmdProcessor[cmd](data[headIdx + Frame.DATA_START:headIdx + Frame.DATA_START + dataCnt])
+
             else:
                 self.cmdProcessor[cmd]()
-        except:
+
+        except KeyError:
             # print("userTest.uartParse", "parse cmd error", cmd)
-            log.logger.error("userTest.uartParse parse cmd error!")
+            log.logger.error("check uart parse cmd error!")
             return False, data[headIdx + Frame.DATA_START + dataCnt:]
 
         # 正确处理完一条信息，正常返回
-        return True, data[headIdx + dataCnt + Frame.DATA_START:]
+        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA:]
 
     def uartProc(self, data):
         """
@@ -263,16 +318,23 @@ class DeviceStateChkThread(QThread):
         self.readBuf = self.readBuf + data
 
         # print("userTest.uartProc", "rdbuf", self.rdbuf)
+
+    def processReadBuffer(self):
+        """
+        处理读缓冲区中的数据
+        """
+        if not self.readBuf or len(self.readBuf) == 0:
+            return None
+
         # 将处理的的数据转换成bytes字节串
-        unproc = self.util.HexStringToByte(self.readBuf)
+        unproc = BaseUtils.HexStringToByte(self.readBuf)
         # 根据帧结构循环解析未处理过的数据
         while True:
             res, unproc = self.uartParse(unproc)
             if not unproc or unproc == '' or not res:
                 break
         # 已处理完的数据从缓存区去除
-        self.readBuf = self.util.asciiB2HexString(unproc) or ''
-        # print("userTest.uartProc", "rdbuf", self.rdbuf)
+        self.readBuf = BaseUtils.asciiB2HexString(unproc) or ''
 
     def cmd_shakeHand(self):
         """
@@ -329,30 +391,6 @@ class DeviceStateChkThread(QThread):
                 else:
                     log.logger.debug("未知错误")
 
-            else:
-                # 数据下发失败
-                log.logger.error("数据长度异常")
-
-        else:
-            log.logger.debug('错误应答，未在对应状态！')
-
-    def cmd_DevConn(self, hexx):
-        """
-        设备连接状态
-        """
-        if self.stateMachine == MachineState.DpDisplay:
-
-            if len(hexx) == 2:
-                if hexx[0] == 0:
-                    self.online.IotOnline = hexx[1]
-                elif hexx[0] == 1:
-                    self.online.bashBoardOnline = hexx[1]
-                elif hexx[0] == 2:
-                    self.online.controllerOnline = hexx[1]
-                elif hexx[0] == 3:
-                    self.online.BMSOnline = hexx[1]
-                else:
-                    log.logger.error('非法的设备类型！')
             else:
                 # 数据下发失败
                 log.logger.error("数据长度异常")
@@ -494,8 +532,10 @@ class DeviceStateChkThread(QThread):
         if self.stateMachine == MachineState.DpDisplay:
             while offset < len(hexx):
                 dpLen = hexx[offset + 2] * 0x100 + hexx[offset + 3]
-                if self.dealDpData(hexx[offset:offset + len], dpLen):
-                    offset = offset + len
+                state = self.dealDpData(hexx[offset:offset + 4 + dpLen], dpLen)
+
+                if state:
+                    offset = offset + dpLen + 4
                 else:
                     break
 
@@ -619,4 +659,4 @@ class DeviceStateChkThread(QThread):
                 if self.PCB.otaPercentCal() == 100 or self.PCB.successful == OTAState.Success:
                     self.onStopOTA()
 
-            time.sleep(0.1)
+            self.processReadBuffer()

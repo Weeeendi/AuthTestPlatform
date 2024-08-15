@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>919</width>
+    <width>938</width>
     <height>701</height>
    </rect>
   </property>
@@ -153,7 +153,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <property name="elideMode">
         <enum>Qt::ElideLeft</enum>
@@ -745,7 +745,7 @@
                      </size>
                     </property>
                     <property name="text">
-                     <string>Waiting for device connect......</string>
+                     <string/>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1351,7 +1351,7 @@
                      </size>
                     </property>
                     <property name="text">
-                     <string>Waiting for device connect......</string>
+                     <string/>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1950,7 +1950,7 @@
                      </size>
                     </property>
                     <property name="text">
-                     <string>Waiting for device connect......</string>
+                     <string/>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -2559,7 +2559,7 @@
                      </size>
                     </property>
                     <property name="text">
-                     <string>Waiting for device connect......</string>
+                     <string/>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
