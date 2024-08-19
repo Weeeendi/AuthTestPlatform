@@ -150,6 +150,7 @@ class DeviceStateChkThread(QThread):
     def __init__(self):
         super(DeviceStateChkThread, self).__init__()
         # 创建串口读到的数据缓冲区
+        self.exiting = False
         self.PCB = None
         self.cycleCnt = 0
         self.checkAllDp = 0
@@ -305,7 +306,7 @@ class DeviceStateChkThread(QThread):
             return False, data[headIdx + Frame.DATA_START + dataCnt:]
 
         # 正确处理完一条信息，正常返回
-        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA:]
+        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA+1:]
 
     def uartProc(self, data):
         """
@@ -583,7 +584,7 @@ class DeviceStateChkThread(QThread):
         # 初始状态
         self.stateMachine = self.stateList[self.listIndex]
 
-        while True:
+        while not self.exiting:
             if self.stateMachine == MachineState.Waiting:
                 # 握手模式
                 self.DS_Send(self.sn, 0, "0000", '0000')
@@ -660,3 +661,8 @@ class DeviceStateChkThread(QThread):
                     self.onStopOTA()
 
             self.processReadBuffer()
+
+    def stop(self):
+        self.exiting = True
+        self.quit()
+        self.wait()

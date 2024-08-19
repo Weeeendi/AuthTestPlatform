@@ -1,13 +1,18 @@
+import codecs
 import time
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
+
 import baseUtils
-import codecs
 
 
 class BaseUartThread(QThread):
     # 自定义信号，用来发送接收到的数据
     revData_sinOut = pyqtSignal(str)
+
+    # 自定义信号，用来发送错误数据
+    error_sinOut = pyqtSignal()
 
     def __init__(self, Ser):
         super(BaseUartThread, self).__init__()
@@ -46,9 +51,12 @@ class BaseUartThread(QThread):
                 # 获得接受到的字符
                 count = self.Ser.inWaiting()
             except Exception as e:
+
+                self.error_sinOut.emit()
                 print(e)
                 print("uart ser err!")
                 count = 0
+
             if count != 0:
                 # 读串口数据
                 recv = self.Ser.read(count)
@@ -65,4 +73,5 @@ class BaseUartThread(QThread):
             if not self.Ser.isOpen():
                 print("关闭BaseUartThread线程")
                 self.quit()
+                self.wait()
                 return

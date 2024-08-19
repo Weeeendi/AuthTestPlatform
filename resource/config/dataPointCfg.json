@@ -41,5 +41,15 @@
       "code":"IoT_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
       "property":{"maxlen":4,"type":"bitmap"}
     }
+  ],
+    "SubBMS_Dp_Data": [
+    {
+      "code":"base_verInfo","id":80,"msg":"ver","defaultValue":"","desc":"","name":"iot基础信息",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"SubBMS_fault","id":81,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "property":{"maxlen":4,"type":"bitmap"}
+    }
   ]
 }

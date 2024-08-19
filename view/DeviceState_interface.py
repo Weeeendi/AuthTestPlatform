@@ -237,7 +237,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.DpDict = None
         self.task = None
         self.page = 0
-        self.tabPages = 4
+        self.tabPages = 5
         self.setupUi(self)
         self.serialOnline = 0
 
@@ -308,6 +308,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                     groupStr = "BMS_Dp_Data"
                 if tab == 3:
                     groupStr = "IoT_Dp_Data"
+                if tab == 4:
+                    groupStr = "SubBMS_Dp_Data"
 
                 setattr(self, f"dpTableView_{tab}", myTableModel(self.DpDict[groupStr]))
                 getattr(self, f"DeviceStateLayout_{tab + 1}").addWidget(getattr(self, f"dpTableView_{tab}"))
@@ -336,12 +338,17 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"FirmwareVersion").setText(param.get('soft_ver', ''))
                 getattr(self, f"SN").setText(param.get('sn', ''))
             else:
+                if DpParam.page == 2:
+                    param = param['batt_1']
                 getattr(self, f"HWVersion_{DpParam.page + 1}").setText(param.get('hard_ver', ''))
                 getattr(self, f"FirmwareVersion_{DpParam.page + 1}").setText(param.get('soft_ver', ''))
                 getattr(self, f"SN_{DpParam.page + 1}").setText(param.get('sn', ''))
 
-        if DpParam.msg == 'data':
+        elif DpParam.msg == 'data':
             getattr(self, f"dpTableView_{DpParam.page}").updateData(DpParam.id, DpParam.type, DpParam.value)
+
+        else:
+            log.logger.debug("未知消息")
 
     def create_callback(self, widget):
         def callback():
@@ -390,10 +397,26 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             log.logger.error(e)
             pass
 
+    def serialDisconnect(self):
+        try:
+            self.ser.close()
+        except SerialException:
+            log.logger.warning("串口已经被关闭")
+        self.ButtonConnectSerial.setText("Connect")
+        self.serialOnline = 0
+        self.testSetStateChange(False)
+
+        if hasattr(self, 'serialThread') and self.serialThread.isRunning():
+            self.serialThread.quit()  # 假设quit方法可以停止线程
+            self.serialThread.wait()  # 等待线程真正退出
+        if hasattr(self, 'uartThread') and self.uartThread.isRunning():
+            self.uartThread.stop()
+
     def serialConnectChange(self):
         # 开始/停止按钮-状态切换
         if not self.serialOnline:
             self.initialSerial()
+
 
             try:
                 self.ser.open()  # 打开串口有可能失败，做try-except异常处理
@@ -409,6 +432,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.uartThread = DeviceStateChkThread()
 
             self.serialThread.revData_sinOut.connect(self.uartThread.uartProc)
+            self.serialThread.error_sinOut.connect(self.serialDisconnect)
             self.uartThread.DS_uartWrite_sinOut.connect(self.serialThread.uartWrite)
             self.uartThread.DS_dPRevSignal_sinOut.connect(self.task.DpProcess)
 
@@ -418,12 +442,24 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.testSetStateChange(True)
 
         else:
-            self.ser.close()
+            try:
+                self.ser.close()
+            except SerialException:
+                log.logger.warning("串口已经被关闭")
             self.ButtonConnectSerial.setText("Connect")
             self.serialOnline = 0
             self.testSetStateChange(False)
 
+            if hasattr(self, 'serialThread') and self.serialThread.isRunning():
+                self.serialThread.quit()  # 假设quit方法可以停止线程
+                self.serialThread.wait()  # 等待线程真正退出
+            if hasattr(self, 'uartThread') and self.uartThread.isRunning():
+                self.uartThread.stop()
+
         try:
+            # 确保之前的线程已经停止
+
+
             if self.task.running:
                 self.task.startCheckConnect()
                 return
