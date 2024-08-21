@@ -103,7 +103,7 @@
       }
     }
   ],
-  "IoT_fault": [
+  "iot_fault": [
     {
       "bit0": {
         "fault": "smart_gsensor_fault",
@@ -123,7 +123,7 @@
       }
     }
   ],
-  "BMS_fault": [
+  "bms_fault": [
     {
       "bit0": {
         "fault": "charge_over_vol_fault",
@@ -214,5 +214,97 @@
         "description": "mcu芯片错误"
       }
     }
-  ]
+  ],
+  "sub_bms_fault": [
+    {
+      "bit0": {
+        "fault": "charge_over_vol_fault",
+        "description": "充电过压"
+      },
+      "bit1": {
+        "fault": "charge_over_cur_fault",
+        "description": "充电过流"
+      },
+      "bit2": {
+        "fault": "charge_over_tmp_fault",
+        "description": "充电过温"
+      },
+      "bit3": {
+        "fault": "charge_low_tmp_fault",
+        "description": "充电低温"
+      },
+      "bit4": {
+        "fault": "disc_under_cur_fault",
+        "description": "放电欠压"
+      },
+      "bit5": {
+        "fault": "disc_over_cur_fault",
+        "description": "放电过流"
+      },
+      "bit6": {
+        "fault": "disc_over_tmp_fault",
+        "description": "放电过温"
+      },
+      "bit7": {
+        "fault": "disc_low_tmp_fault",
+        "description": "放电低温"
+      },
+      "bit8": {
+        "fault": "battery_tmp_diff_fault",
+        "description": "温差过大"
+      },
+      "bit9": {
+        "fault": "battery_vol_diff_fault",
+        "description": "压差过大"
+      },
+      "bit10": {
+        "fault": "battery_total_vol_fault",
+        "description": "总压过大"
+      },
+      "bit11": {
+        "fault": "afe_chip_err",
+        "description": "afe芯片错误"
+      },
+      "bit12": {
+        "fault": "estimate_chip_err",
+        "description": "估计芯片错误"
+      },
+      "bit13": {
+        "fault": "storage_chip_err",
+        "description": "存储芯片错误"
+      },
+      "bit14": {
+        "fault": "rtc_chip_err",
+        "description": "rtc芯片错误"
+      },
+      "bit15": {
+        "fault": "discharge_mosfet_err",
+        "description": "放电mosfet错误"
+      },
+      "bit16": {
+        "fault": "charge_mosfet_err",
+        "description": "充电mosfet错误"
+      },
+      "bit17": {
+        "fault": "celltemp_sensor_err",
+        "description": "celltemp传感器错误"
+      },
+      "bit18": {
+        "fault": "mostemp_sensor_err",
+        "description": "mostemp传感器错误"
+      },
+      "bit19": {
+        "fault": "discharge_fuse_err",
+        "description": "放电保险丝错误"
+      },
+      "bit20": {
+        "fault": "charge_fuse_err",
+        "description": "充电保险丝错误"
+      },
+      "bit21": {
+        "fault": "mcu_chip_err",
+        "description": "mcu芯片错误"
+      }
+    }
+    ]
 }

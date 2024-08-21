@@ -2,9 +2,10 @@ import json
 import sys
 
 import pandas as pd
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex
-from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QStyleOptionViewItem
+from PyQt5.QtCore import Qt, QAbstractTableModel, QSize
+from PyQt5.QtGui import QFontMetrics, QColor
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QStyleOptionViewItem, \
+    QStyle
 
 from baseLogger import log
 from qfluentwidgets import TableView, TableItemDelegate, isDarkTheme
@@ -13,17 +14,31 @@ from qfluentwidgets import TableView, TableItemDelegate, isDarkTheme
 class CustomTableItemDelegate(TableItemDelegate):
     """ Custom table item delegate """
 
-    def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex):
-        super().initStyleOption(option, index)
-        if index.column() != 1:
-            return
+    # def paint(self, painter, option, index):
+    #     text = index.model().data(index, Qt.DisplayRole)
+    #     painter.save()
+    #     painter.setFont(option.font)
+    #
+    #     # 使用QStyle来绘制背景和边框
+    #     style = option.widget.style()
+    #     options = QStyleOptionViewItem(option)
+    #     options.rect.setWidth(option.rect.width())
+    #     options.rect.setHeight(option.rect.height())
+    #     style.drawPrimitive(QStyle.PE_PanelItemViewItem, options, painter, option.widget)
+    #
+    #     # 绘制文本
+    #     textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options, option.widget)
+    #     painter.drawText(textRect, Qt.AlignCenter, text)
+    #     painter.restore()
+        # super().paint()
 
-        if isDarkTheme():
-            option.palette.setColor(QPalette.Text, Qt.white)
-            option.palette.setColor(QPalette.HighlightedText, Qt.white)
-        else:
-            option.palette.setColor(QPalette.Text, Qt.blue)
-            option.palette.setColor(QPalette.HighlightedText, Qt.blue)
+    def sizeHint(self, option, index):
+        # super().sizeHint(option,index)
+        text = index.model().data(index, Qt.DisplayRole)
+        fontMetrics = QFontMetrics(option.font)
+        lines = text.split('\n')
+        height = fontMetrics.height() * (len(lines) if lines else 1)
+        return option.decorationSize + QSize(0, height)
 
 
 class myTableModel(TableView):
@@ -38,17 +53,6 @@ class myTableModel(TableView):
         self.setModel(self.TableModel)
         self.setItemDelegate(CustomTableItemDelegate(self))
         self.verticalHeader().hide()
-
-    # def paintEvent(self, event):
-    #     painter = QPainter(self)
-    #     painter.setRenderHint(QPainter.Antialiasing)
-    #     rect = self.rect()
-    #     painter.save()
-    #     painter.setBrush(QBrush(QColor(255, 255, 255)))
-    #     painter.setPen(Qt.NoPen)
-    #     painter.drawRoundedRect(rect, self.corner_radius, self.corner_radius)
-    #     painter.restore()
-    #     super().paintEvent(event)
 
     def __fillTableByJson(self):
         # 存储所有去重后的name
@@ -82,7 +86,17 @@ class myTableModel(TableView):
                 return
 
             self.TableModel.update_data(row, 3, value)
+
+            header = self.horizontalHeader()
+            # 设置倒数第二列既适应内容又拉伸
+            column_count = self.model().columnCount()
+            # 设置倒数第二列既适应内容又拉伸
+            header.setSectionResizeMode(column_count - 1, QHeaderView.ResizeToContents)
+            # 将倒数第二列的调整模式设置为 Stretch
+            header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
             # self.resizeColumnsToContents()
+            self.resizeRowsToContents()
+
         else:
             log.logger.error("数据非法,不在列表中的数据")
             log.logger.error(id)
@@ -93,15 +107,20 @@ class myTableModel(TableView):
         super().resizeEvent(event)  # 调用父类的resizeEvent方法以确保窗口大小的自适应
 
         header = self.horizontalHeader()
-
+        # 假设模型中有一些数据，因此有列
+        column_count = self.model().columnCount()
+        # 设置倒数第二列既适应内容又拉伸
+        header.setSectionResizeMode(column_count - 1, QHeaderView.ResizeToContents)
+        # 将倒数第二列的调整模式设置为 Stretch
+        header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
         # 设置列宽模式为Interactive，允许用户手动调整列宽
-        header.setSectionResizeMode(QHeaderView.Interactive)
+        # header.setSectionResizeMode(QHeaderView.Interactive)
 
         # 首次调整列宽以适应内容
         self.resizeColumnsToContents()
 
         # 确保列宽至少是min_section_size
-        min_section_size = 80  # 设置最小列宽
+        min_section_size = 100  # 设置最小列宽
         for section in range(header.count()):
             header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 

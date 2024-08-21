@@ -11,35 +11,8 @@ class MachineState(Enum):
     Waiting = 1
     DpDisplay = 2
     OTAStart = 3
-    OTABlockHead = 4
-    OTABlockData = 5
-    OTABlockTail = 6
-    OTAExit = 7
-
-
-class deviceOnline:
-    # 构造函数
-    def __init__(self, DashBoard: int, Controller: int, BMS: int, IoT: int):
-        self.dashBoardOnline = DashBoard
-        self.controllerOnline = Controller
-        self.BMSOnline = BMS
-        self.IotOnline = IoT
-
-    def clearAll(self):
-        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
-        for attr in attrs:
-            if hasattr(self, attr):  # 确保对象有这个属性
-                setattr(self, attr, 0)
-
-    def decrementAll(self):
-        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
-        for attr in attrs:
-            if hasattr(self, attr):  # 确保对象有这个属性
-                current_value = getattr(self, attr)
-                if isinstance(current_value, int) and current_value > 0:  # 确保值是整数
-                    setattr(self, attr, current_value - 1)
-                # else:
-                #     print(f"Cannot decrement {attr}: not an integer")
+    OTABlockSend = 4
+    OTAExit = 5
 
 
 class Frame:
@@ -97,25 +70,22 @@ def calc_crc16(data: bytes, poly: int = 0x1021) -> int:
 
 
 class OTA_PCB:
-    def __init__(self, devType, FileSize, FileCrc32, BlockCnt, PkgCnt):
-        self.OTAState = 0
+    def __init__(self, devType, FileSize, FileCrc32, BlockCnt):
         self.devType = devType
         self.FileSize = FileSize
-        self.BlockSize = 5120
+        self.BlockSize = 4096
         self.BlockCnt = BlockCnt
+        self.PkgCnt = 0
         self.CurrentPackageSize = 0
-        self.PkgCnt = PkgCnt
-        self.crc32Block = 0
         self.crc32File = FileCrc32
-        self.successful = OTAState.GoOn
+        self.OTAState = OTAState.GoOn
 
     def onOVER(self):
-        self.OTAState = 0
+        self.OTAState = OTAState.GoOn
         self.BlockCnt = 0
         self.CurrentPackageSize = 0
         self.PkgCnt = 0
         self.FileSize = 0
-        self.crc32Block = 0
         self.crc32File = 0
 
     def otaPercentCal(self):
@@ -151,13 +121,9 @@ class DeviceStateChkThread(QThread):
         super(DeviceStateChkThread, self).__init__()
         # 创建串口读到的数据缓冲区
         self.exiting = False
-        self.PCB = None
         self.cycleCnt = 0
         self.checkAllDp = 0
         self.readBuf = ''
-
-        self.online = deviceOnline(0, 0, 0, 0)
-
         # 创建小型状态机，主状态
         self.stateMachine = 'state_dpDisplay'
 
@@ -306,7 +272,7 @@ class DeviceStateChkThread(QThread):
             return False, data[headIdx + Frame.DATA_START + dataCnt:]
 
         # 正确处理完一条信息，正常返回
-        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA+1:]
+        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA + 1:]
 
     def uartProc(self, data):
         """
@@ -549,9 +515,8 @@ class DeviceStateChkThread(QThread):
             return
         else:
             # OTA 控制块
-            filesize, crc32 = BaseUtils.calculate_file_info(path)
-            currentPkgSize = max(filesize, 4096)
-            self.PCB = OTA_PCB(devType, filesize, crc32, 0, currentPkgSize)
+            fileSize, crc32 = BaseUtils.calculate_file_info(path)
+            self.PCB = OTA_PCB(devType, fileSize, crc32, 0)
             # 进入 OTA 状态
             self.listIndex = self.listIndex + 1
             self.stateMachine = self.stateList[self.listIndex]
@@ -570,6 +535,33 @@ class DeviceStateChkThread(QThread):
         self.cycleCnt = 0
         log.logger.info('OTA设备通信超时！！！')
 
+    def UpdataProcessState(self, str, state):
+        percent = self.PCB.CalPkgPercent()
+        self.DS_progressBar_sinOut.emit(percent, state, str)
+
+    def sendBlockHead(self, blockSize, blockCnt):
+        """
+        发送块头
+        """
+        blockCntBytes = blockCnt.to_bytes(2, byteorder='big', signed=False)
+        blockCntStr = f"{int.from_bytes(blockCntBytes, byteorder='big', signed=False):08}"
+        blockSizeBytes = blockSize.to_bytes(4, byteorder='big', signed=False)
+        blockSizeStr = f"{int.from_bytes(blockSizeBytes, byteorder='big', signed=False):08}"
+
+        self.DS_Send(self.sn, 0, "000D", '0006', blockCntStr + blockSizeStr)
+
+    def sendBlockTail(self, blockCnt, crc16):
+        """
+        发送块尾
+        """
+        crc16Bytes = crc16.to_bytes(2, byteorder='big', signed=False)
+        crc16Str = f"{int.from_bytes(crc16Bytes, byteorder='big', signed=False):08}"
+
+        blockCntBytes = blockCnt.to_bytes(4, byteorder='big', signed=False)
+        blockCntStr = f"{int.from_bytes(blockCntBytes, byteorder='big', signed=False):08}"
+
+        self.DS_Send(self.sn, 0, "000F", '0006', blockCntStr + crc16Str)
+
     def run(self):
 
         self.retry = 0
@@ -577,9 +569,8 @@ class DeviceStateChkThread(QThread):
         self.stateList.append(MachineState.Waiting)
         self.stateList.append(MachineState.DpDisplay)
         self.stateList.append(MachineState.OTAStart)
-        self.stateList.append(MachineState.OTABlockHead)
-        self.stateList.append(MachineState.OTABlockData)
-        self.stateList.append(MachineState.OTABlockTail)
+        self.stateList.append(MachineState.OTABlockSend)
+        self.stateList.append(MachineState.OTAExit)
 
         # 初始状态
         self.stateMachine = self.stateList[self.listIndex]
@@ -617,9 +608,42 @@ class DeviceStateChkThread(QThread):
                 # 等待200ms
                 time.sleep(0.2)
 
-            elif self.stateMachine == MachineState.OTABlockHead:
+            elif self.stateMachine == MachineState.OTABlockSend:
                 # OTA 块头
-                self.DS_Send(self.sn, 0, "000D", '0000', self.PCB.currentPkgSize)
+                """切分bin文件并通过串口发送"""
+                file = open(self.path, 'rb')
+                offset = 0
+                while chunk := file.read(self.PCB.BlockSize):
+                    # 发送数据块头
+                    BlockLen = len(chunk)
+                    crc16Cal = calc_crc16(chunk)
+                    self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
+
+                    # 等待200ms
+                    time.sleep(0.01)  # 根据实际情况调整
+                    lenBlock = len(chunk)
+                    pkgCnt = int(lenBlock / 512)
+                    pkg_last = lenBlock % 512
+
+                    # 发送数据块
+                    while offset < len(chunk):
+                        if pkgCnt > 0:
+                            self.DS_Send(self.sn, 0, "000E", '0000', chunk[offset:offset + 512])
+                            offset = offset + 512
+                            pkgCnt = pkgCnt - 1
+                        else:
+                            self.DS_Send(self.sn, 0, "000E", '0000', chunk[offset:offset + pkg_last])
+                            offset = offset + pkg_last
+                            pkgCnt = 0
+                        time.sleep(0.05)  # 根据实际情况调整
+                    # 发送块尾
+                    self.sendBlockTail(self.PCB.BlockCnt, crc16Cal)
+
+                    # 等待200ms
+                    time.sleep(0.5)
+                    # 判断是否完成
+                    if self.PCB.otaPercentCal() == 100 or self.PCB.successful == OTAState.Success:
+                        self.onStopOTA()
 
                 # 等待200ms
                 time.sleep(0.5)
@@ -628,39 +652,13 @@ class DeviceStateChkThread(QThread):
                 if self.cycleCnt == 2:
                     self.onOtaOverTime()
 
-            elif self.stateMachine == MachineState.OTABlockData:
+            elif self.stateMachine == MachineState.OTAExit:
+                self.onStopOTA()
+                break
 
-                # OTA 块数据
-                # def split_bin_file_send(serial_port, file_path, chunk_size):
-                #     """切分bin文件并通过串口发送"""
-
-                #         while chunk := file.read(chunk_size):
-                #             # 发送数据块
-                #             serial_port.write(chunk)
-                #             # 简单版：可以在每个块后加一点延迟，确保接收端能够处理
-                #             time.sleep(0.01)  # 根据实际情况调整
-
-                self.DS_Send(self.sn, 0, "000E", '0000', self.PCB.currentPkgSize)
-
-                # 等待200ms
-                time.sleep(0.1)
-
-            elif self.stateMachine == MachineState.OTABlockTail:
-                # OTA 块尾
-                self.DS_Send(self.sn, 0, "000F", '0000', self.PCB.currentPkgSize)
-
-                # 等待500ms
-                time.sleep(0.5)
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 2:
-                    self.onOtaOverTime()
-
-                # 判断是否完成
-                if self.PCB.otaPercentCal() == 100 or self.PCB.successful == OTAState.Success:
-                    self.onStopOTA()
-
+            # 处理串口数据
             self.processReadBuffer()
+
 
     def stop(self):
         self.exiting = True

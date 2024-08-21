@@ -25,7 +25,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"BMS_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
+      "code":"bms_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
       "property":{"maxlen":2,"type":"bitmap"}
     },
     {
@@ -38,7 +38,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"IoT_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "code":"iot_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
       "property":{"maxlen":4,"type":"bitmap"}
     }
   ],
@@ -48,7 +48,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"SubBMS_fault","id":81,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "code":"sub_bms_fault","id":81,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
       "property":{"maxlen":4,"type":"bitmap"}
     }
   ]
