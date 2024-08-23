@@ -3,12 +3,11 @@ import sys
 
 import pandas as pd
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSize
-from PyQt5.QtGui import QFontMetrics, QColor
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QStyleOptionViewItem, \
-    QStyle
+from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView
 
 from baseLogger import log
-from qfluentwidgets import TableView, TableItemDelegate, isDarkTheme
+from qfluentwidgets import TableView, TableItemDelegate
 
 
 class CustomTableItemDelegate(TableItemDelegate):
@@ -38,6 +37,7 @@ class CustomTableItemDelegate(TableItemDelegate):
         fontMetrics = QFontMetrics(option.font)
         lines = text.split('\n')
         height = fontMetrics.height() * (len(lines) if lines else 1)
+        height = height + 10
         return option.decorationSize + QSize(0, height)
 
 
@@ -94,7 +94,6 @@ class myTableModel(TableView):
             header.setSectionResizeMode(column_count - 1, QHeaderView.ResizeToContents)
             # 将倒数第二列的调整模式设置为 Stretch
             header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
-            # self.resizeColumnsToContents()
             self.resizeRowsToContents()
 
         else:
