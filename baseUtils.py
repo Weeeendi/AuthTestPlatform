@@ -70,8 +70,6 @@ class BaseUtils:
         return total_size, crc & 0xFFFFFFFF  # CRC32返回一个有符号整数，可能需要转换
 
 
-
-
     # 累加无符号字节串，返回低8位累加和，bytes类型
     @staticmethod
     def uchar_byte_checksum(data):

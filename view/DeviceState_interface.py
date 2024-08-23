@@ -359,12 +359,15 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"ParamFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget2))
                 if tab == 1:
                     groupStr = "Controller_Dp_Data"
-                if tab == 2:
+                elif tab == 2:
                     groupStr = "BMS_Dp_Data"
-                if tab == 3:
+                elif tab == 3:
                     groupStr = "IoT_Dp_Data"
-                if tab == 4:
+                elif tab == 4:
                     groupStr = "SubBMS_Dp_Data"
+                else:
+                    log.logger.debug('未知错误')
+                    return
 
                 setattr(self, f"dpTableView_{tab}", myTableModel(self.DpDict[groupStr]))
                 getattr(self, f"DeviceStateLayout_{tab + 1}").addWidget(getattr(self, f"dpTableView_{tab}"))
@@ -386,6 +389,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.task.LightTrigger.connect(self.light_callback)
         self.task.dataPointSignal.connect(self.updateDpValueCallback)
         self.task.start()
+
 
     def updateDpValueCallback(self, DpParam):
 
@@ -586,21 +590,18 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.ser.port = port.device
                 break
 
-        self.ser.baudrate = 115200
+        self.ser.baudrate = 921600
         self.ser.bytesize = 8
         self.ser.stopbits = 1
         self.ser.parity = 'N'
 
     # 重写关闭窗口事件
     def closeEvent(self, event):
-        try:
-            self.task.quit()
-            if self.ser.isOpen():
-                self.ser.close()
-                self.serialThread.quit()
-                self.uartThread.stop()
-        except Exception as e:
-            log.logger.warning("error: " + str(e))
+        if self.task.running:
+            self.task.stop()
+        if self.ser.isOpen():
+            self.ser.close()
+            self.uartThread.stop()
 
     def refresh(self):
         # 查询可用的串口

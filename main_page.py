@@ -278,6 +278,13 @@ if __name__ == '__main__':
     LoginWin.login_succeed_signal.connect(MainWin.show_win_slot)
     MainWin.login_goback_signal.connect(LoginWin.show_win_slot)
 
+
+    # def cleanup():
+    #     LoginWin.login_succeed_signal.disconnect()
+    #     MainWin.login_goback_signal.disconnect()
+    #     print("Cleaning up before quit")
+
+    # app.aboutToQuit.connect(cleanup)
     LoginWin.show()
 
     # setTheme(Theme.DARK)
