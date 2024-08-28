@@ -1,3 +1,4 @@
+import json
 import time
 from enum import Enum
 
@@ -12,7 +13,6 @@ class MachineState(Enum):
     DpDisplay = 2
     OTAStart = 3
     OTABlockSend = 4
-    OTAExit = 5
 
 
 class Frame:
@@ -79,25 +79,24 @@ class OTA_PCB:
         self.FileSize = FileSize
         self.BlockSize = 4096
         self.BlockCnt = BlockCnt
-        self.PkgCnt = 0
         self.CurrentPackageSize = 0
         self.crc32File = FileCrc32
         self.OTAState = OTAState.GoOn
         self.blockLock = False
+        self.otaStop = False
 
     def onOVER(self):
         self.FilePath = ''
         self.OTAState = OTAState.GoOn
         self.BlockCnt = 0
         self.CurrentPackageSize = 0
-        self.PkgCnt = 0
         self.FileSize = 0
         self.crc32File = 0
         self.blockLock = False
 
     def otaPercentCal(self):
         try:
-            otaPercent = float(self.BlockCnt * self.BlockSize + self.PkgCnt * 512 + self.CurrentPackageSize) * 100 / float(
+            otaPercent = float(self.BlockCnt * self.BlockSize + self.CurrentPackageSize) * 100 / float(
                 self.FileSize)
         except ZeroDivisionError:
             otaPercent = 1
@@ -125,6 +124,12 @@ class DeviceStateChkThread(QThread):
     # 自定义信号，用来发送后端提醒
     DS_NotionSignal_sinOut = pyqtSignal(bool, str)
 
+    # 自定义信号，用来发送dongle版本号
+    DS_dongleVersionSignal_sinOut = pyqtSignal(str,str,str,str)
+
+    # 自定义信号，用来发送握手成功
+    DS_shakeHandSignal_sinOut = pyqtSignal()
+
     def __init__(self):
         super(DeviceStateChkThread, self).__init__()
         # 创建串口读到的数据缓冲区
@@ -151,7 +156,7 @@ class DeviceStateChkThread(QThread):
         # 创建测试协议cmd字典
         self.cmdProcessor = {
             bytes.fromhex("0000"): self.cmd_shakeHand,
-            # bytes.fromhex("0001"): self.cmd_heartJump,
+            bytes.fromhex("0001"): self.cmd_DongleInfo,
             bytes.fromhex("0002"): self.cmd_dataPointSend,
             bytes.fromhex("0003"): self.cmd_chkDataPoint,
             bytes.fromhex("0005"): self.cmd_SerialDisconn,
@@ -322,6 +327,8 @@ class DeviceStateChkThread(QThread):
             self.listIndex = self.listIndex + 1
             self.stateMachine = self.stateList[self.listIndex]
             log.logger.debug("握手成功")
+
+            # 初始化DP检查标志
             self.checkAllDp = True
             # 初始化发送互斥标志
             self.sendMutexFlag = True
@@ -329,9 +336,24 @@ class DeviceStateChkThread(QThread):
         else:
             log.logger.debug('握手命令错误应答，未在对应状态！')
 
-    # def cmd_heartJump(self):
-    #     if self.stateMachine == MachineState.DpDisplay:
-    #         log.logger.debug("接收到设备端心跳")
+    def cmd_DongleInfo(self,hexx):
+        if self.stateMachine == MachineState.DpDisplay:
+            log.logger.debug("接收到Dongle设备信息")
+            try:
+                jsonData = json.loads(hexx)
+                SoftVer = jsonData['SoftwareVersion']
+                HardVer = jsonData['HardwareVersion']
+                BootloaderVersion = jsonData['HardwareVersion']
+                Sn = jsonData['SN']
+                self.DS_dongleVersionSignal_sinOut.emit(SoftVer,HardVer,BootloaderVersion,Sn)
+
+            except Exception as e:
+                log.logger.debug("json 解析错误 %s" %e)
+                return
+
+
+        else:
+            log.logger.debug('错误应答，未在对应状态！')
 
     def cmd_dataPointSend(self, hexx):
         """
@@ -339,10 +361,14 @@ class DeviceStateChkThread(QThread):
         """
         if self.stateMachine == MachineState.DpDisplay:
             if len(hexx) == 1:
-                if hexx[0] == 0:
+                if hexx[0] == 0x00:
                     log.logger.debug("数据下发成功")
-                elif hexx[0] == 1:
+                elif hexx[0] == 0x01:
                     log.logger.debug("dp 点不在设备支持的列表中")
+                elif hexx[0] == 0x02:
+                    log.logger.debug("dp 类型不符合定义")
+                elif hexx[0] == 0x03:
+                    log.logger.debug("dp 长度超出限制范围")
                 else:
                     log.logger.debug("未知错误")
 
@@ -461,7 +487,7 @@ class DeviceStateChkThread(QThread):
         """
         退出 OTA
         """
-        if self.stateMachine == MachineState.OTAStart:
+        if self.stateMachine == MachineState.OTABlockSend:
             if len(hexx) == 2:
                 if int(hexx[0]) != self.PCB.devType:
                     log.logger.debug("返回设备类型不符")
@@ -526,6 +552,7 @@ class DeviceStateChkThread(QThread):
     def onStartOTA(self, path, devType):
         if self.stateMachine != MachineState.DpDisplay:
             log.logger.debug('已有其他设备正在OTA，请等待其他设备OTA结束后 再尝试')
+            self.UpdateProcessState('设备未连接', OTAState.GoOn)
             return
         else:
             # OTA 控制块
@@ -539,12 +566,15 @@ class DeviceStateChkThread(QThread):
                 protocolDeviceType = 0
             elif devType == 4:
                 protocolDeviceType = 5
+            elif devType == 5:
+                protocolDeviceType = 6
+
             else:
                 log.logger.debug('设备类型错误')
                 return
             fileSize, crc32 = BaseUtils.calculate_file_info(path)
 
-            self.PCB = OTA_PCB(path,protocolDeviceType, fileSize, crc32, 0)
+            self.PCB = OTA_PCB(path, protocolDeviceType, fileSize, crc32, 0)
 
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
@@ -554,13 +584,27 @@ class DeviceStateChkThread(QThread):
             self.stateMachine = self.stateList[self.listIndex]
 
     def onStopOTA(self):
+        try:
+            self.PCB.otaStop = True
+            self.doStopOTA()
+        except Exception as e:
+            log.logger.error(e)
+
+    def doStopOTA(self):
         self.PCB.onOVER()
         self.stateMachine = MachineState.DpDisplay
         self.sendMutexFlag = True
+        self.cycleCnt = 0
 
         for i in range(len(self.stateList)):
             if self.stateList[i] == self.stateMachine:
                 self.listIndex = i
+                break
+
+    def onSharkOverTime(self):
+        self.cycleCnt = 0
+        self.DS_shakeHandSignal_sinOut.emit()
+        log.logger.info('握手超时！')
 
     def onOtaOverTime(self):
         self.cycleCnt = 0
@@ -570,8 +614,8 @@ class DeviceStateChkThread(QThread):
     def UpdateProcessState(self, str, state: OTAState):
         percent = self.PCB.otaPercentCal()
         self.DS_progressBar_sinOut.emit(percent, state, str)
-        if state == OTAState.Fail:
-            self.onStopOTA()
+        if state == OTAState.Fail or state == OTAState.Success:
+            self.doStopOTA()
 
     def sendBlockHead(self, blockSize, blockCnt):
         """
@@ -593,14 +637,10 @@ class DeviceStateChkThread(QThread):
 
     def run(self):
 
-        self.retry = 0
-
         self.stateList.append(MachineState.Waiting)
         self.stateList.append(MachineState.DpDisplay)
         self.stateList.append(MachineState.OTAStart)
         self.stateList.append(MachineState.OTABlockSend)
-        self.stateList.append(MachineState.OTAExit)
-
         # 初始状态
         self.stateMachine = self.stateList[self.listIndex]
 
@@ -609,18 +649,21 @@ class DeviceStateChkThread(QThread):
                 # 握手模式
                 self.DS_Send(self.sn, 0, "0000", '0000')
 
-                # 等待200ms
+                # 超时
+                self.cycleCnt = self.cycleCnt + 1
+                if self.cycleCnt == 30:
+                    self.onSharkOverTime()
+                # 等待100ms
                 time.sleep(0.1)
 
             elif self.stateMachine == MachineState.DpDisplay:
                 # DP 模式
-
                 if self.checkAllDp and self.sendMutexFlag:
                     self.checkAllDp = False
                     self.sendMutexFlag = False
                     self.DS_Send(self.sn, 0, "0003", '0000')
 
-                # 等待200ms
+                # 等待100ms
                 time.sleep(0.1)
 
             elif self.stateMachine == MachineState.OTAStart:
@@ -629,7 +672,7 @@ class DeviceStateChkThread(QThread):
                     self.sendMutexFlag = False
                     devTypeBytes = self.PCB.devType.to_bytes(1, byteorder='big', signed=False)
                     devTypeStr = f"{int.from_bytes(devTypeBytes, byteorder='big', signed=False):08}"
-                    self.DS_Send(self.sn, 0, "000C", '0001',devTypeStr)
+                    self.DS_Send(self.sn, 0, "000C", '0001', devTypeStr)
 
                 # 超时
                 self.cycleCnt = self.cycleCnt + 1
@@ -649,57 +692,66 @@ class DeviceStateChkThread(QThread):
                 #     return
 
                 offset = 0
-                with open(self.PCB.FilePath, 'rb') as file:
-                    while chunk := file.read(self.PCB.BlockSize):
-                        # 发送数据块头
-                        BlockLen = len(chunk)
-                        crc16Cal = calc_crc16(chunk)
-                        self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
+                try:
+                    with open(self.PCB.FilePath, 'rb') as file:
+                        while chunk := file.read(self.PCB.BlockSize):
 
-                        # 等待200ms
-                        time.sleep(0.01)  # 根据实际情况调整
-                        lenBlock = len(chunk)
-                        pkgCnt = int(lenBlock / 512)
-                        pkg_last = lenBlock % 512
+                            # 发送数据块头
+                            BlockLen = len(chunk)
 
-                        # 发送数据块
-                        while offset < len(chunk):
-                            if pkgCnt > 0:
-                                self.DS_Send(self.sn, 0, "000E", '0400', chunk[offset:offset + 512])
-                                offset = offset + 512
-                                pkgCnt = pkgCnt - 1
-                            else:
-                                pkgCntBytes = pkg_last.to_bytes(2, byteorder='big', signed=False).hex()
-                                self.DS_Send(self.sn, 0, "000E", pkgCntBytes, chunk[offset:offset + pkg_last])
-                                offset = offset + pkg_last
-                                pkgCnt = 0
-                            time.sleep(0.02)  # 根据实际情况调整
-                            self.PCB.CurrentPackageSize = offset
-                            self.UpdateProcessState('升级中',OTAState.GoOn)
-                        # 发送块尾
-                        self.sendBlockTail(self.PCB.BlockCnt, crc16Cal)
-                        self.PCB.BlockCnt = self.PCB.BlockCnt + 1
+                            crc16Cal = calc_crc16(chunk)
+                            self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
 
-                        # 等待200ms
-                        time.sleep(0.5)
-                        # 判断是否完成
-                        if self.PCB.otaPercentCal() == 100 or self.PCB.OTAState == OTAState.Success:
-                            self.UpdateProcessState('设备升级完成', OTAState.Success)
+                            # 等待200ms
+                            time.sleep(0.01)  # 根据实际情况调整
+                            BlockLen = len(chunk)
+                            pkgCnt = int(BlockLen / 512)
+                            pkg_last = BlockLen % 512
+                            pkgCurrCnt = 0
 
-                # 等待200ms
-                time.sleep(0.5)
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 2:
-                    self.onOtaOverTime()
+                            # 发送数据块
+                            while offset < BlockLen:
+                                if pkgCnt > pkgCurrCnt:
+                                    self.DS_Send(self.sn, 0, "000E", '0400', chunk[offset:offset + 512])
+                                    offset = offset + 512
+                                    pkgCurrCnt += 1
+                                else:
+                                    pkgCntBytes = pkg_last.to_bytes(2, byteorder='big', signed=False).hex()
+                                    self.DS_Send(self.sn, 0, "000E", pkgCntBytes, chunk[offset:offset + pkg_last])
+                                    offset = offset + pkg_last
+                                    self.PCB.PkgCnt = 0
+                                time.sleep(0.02)  # 根据实际情况调整
+                                self.PCB.CurrentPackageSize = offset
+                                if self.exiting or self.PCB.otaStop:
+                                    break
+                                self.UpdateProcessState('升级中', OTAState.GoOn)
+                            # 任务退出导致中断
+                            if self.exiting:
+                                self.UpdateProcessState('设备断开', OTAState.Fail)
+                                break
+                            # 用户操作退出升级
+                            if self.PCB.otaStop:
+                                self.UpdateProcessState('用户取消升级', OTAState.GoOn)
+                                break
 
-            elif self.stateMachine == MachineState.OTAExit:
-                self.onStopOTA()
-                break
+                            # 发送块尾
+                            self.sendBlockTail(self.PCB.BlockCnt, crc16Cal)
+                            if self.PCB.CurrentPackageSize == self.PCB.BlockSize:
+                                self.PCB.BlockCnt = self.PCB.BlockCnt + 1
+                            offset = 0
+                            # 等待200ms
+                            time.sleep(0.1)
+                            # if BlockLen < 4096:
+                            #     log.logger.debug("升级完成")
+                            # 判断是否完成
+                            if self.PCB.otaPercentCal() == 100 or self.PCB.OTAState == OTAState.Success:
+                                self.UpdateProcessState('设备升级完成', OTAState.Success)
+
+                except Exception as e:
+                    self.UpdateProcessState(f'升级失败: {str(e)}', OTAState.Fail)
 
             # 处理串口数据
             self.processReadBuffer()
-
 
     def stop(self):
         self.exiting = True

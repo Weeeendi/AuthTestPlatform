@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSize
 from PyQt5.QtGui import QFontMetrics
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QSizePolicy
 
 from baseLogger import log
 from qfluentwidgets import TableView, TableItemDelegate
@@ -53,6 +53,9 @@ class myTableModel(TableView):
         self.setModel(self.TableModel)
         self.setItemDelegate(CustomTableItemDelegate(self))
         self.verticalHeader().hide()
+        self.setBorderVisible(True)
+        self.setBorderRadius(8)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def __fillTableByJson(self):
         # 存储所有去重后的name

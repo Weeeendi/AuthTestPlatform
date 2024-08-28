@@ -5,16 +5,18 @@ import time
 
 import serial
 import serial.tools.list_ports
-from PyQt5.QtCore import QFileInfo, QSize, QThread, pyqtSignal
+from PyQt5.QtCore import QFileInfo, QSize, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget, QVBoxLayout, QHeaderView, \
+    QSizePolicy
 from serial.serialutil import SerialException
 
 from DeviceStateChk import DeviceStateChkThread, OTAState
 from baseLogger import log
 from baseUart import BaseUartThread
 from myTableWidget import myTableModel
-from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
+from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor, CheckBox, LineEdit, \
+    ToolButton, TableWidget
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
 CONN_OVERTIME = 5 * 10
@@ -123,6 +125,7 @@ class DeviceStateTask(QThread):
     def __init__(self, parent=None, DpDict=None):
         super(DeviceStateTask, self).__init__(parent=parent)
 
+        self.overtimeCnt = 0
         self.color = "#e6e6e6"
         self.text = "Serial is not Connection"
         self.ChkConnFlag = True
@@ -155,7 +158,6 @@ class DeviceStateTask(QThread):
 
     def onPageChange(self, page):
         self.page = page
-        self.ChkConnFlag = True
         self.startCheckConnect()
 
     def onSerialOnline(self, online):
@@ -280,11 +282,198 @@ class DeviceStateTask(QThread):
         self.overtimeCnt = 0
 
 
-class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
-    updateSignal_Out = pyqtSignal(str, int)
+class Dp_Row:
+    def __init__(self, select, des, hexx):
+        self.select = select
+        self.des = des
+        self.hexx = hexx
+
+    def to_dict(self):
+        return {
+            "select": self.select,
+            "des": self.des,
+            "hexx": self.hexx,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d.get("select"), d.get("des"), d.get("hexx"))
+
+
+class DP_ListTable(QWidget):
+    dataPointSignal = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.DpList = []
+        self.filename = "resources/user/send_dp_list.json"
+        self.totalItems = 0
+        self.isProcessingDelete = False
+        self.initUI()
+
+    def initUI(self):
+        self.LayOut = QVBoxLayout(self)
+
+        # 创建表格
+        self.table = TableWidget()
+
+        self.table.setRowCount(2)  # 设置行数
+        self.table.setColumnCount(4)  # 设置列数
+        # 设置表格头
+        self.table.setWordWrap(False)
+        self.table.setHorizontalHeaderLabels(['select', 'describe', 'dp date', 'del'])
+
+        checkBox = CheckBox()
+        self.table.setCellWidget(self.totalItems, 0, checkBox)
+
+        deslineEdit = LineEdit()
+        deslineEdit.setPlaceholderText("描述")
+        self.table.setCellWidget(self.totalItems, 1, deslineEdit)
+
+        lineEdit = LineEdit()
+        lineEdit.setPlaceholderText("命令内容")
+        self.table.setCellWidget(self.totalItems, 2, lineEdit)
+
+        deleteButton = ToolButton(FluentIcon.DELETE)
+
+        deleteButton.setMaximumSize(30, 30)
+        self.table.setCellWidget(self.totalItems, 3, deleteButton)
+        deleteButton.clicked.connect(self.deleteCommand)
+
+        self.totalItems += 1
+
+        self.addButton = ToolButton(FluentIcon.ADD)
+        self.addButton.clicked.connect(self.addCommand)
+        self.addButton.setMaximumHeight(30)
+        self.table.setSpan(1, 0, 1, 4)
+        self.table.setCellWidget(self.totalItems, 0, self.addButton)
+
+        # 让第二列扩展以填充可用空间
+        self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        # 隐藏第一列 (索引为0)
+        self.table.setBorderVisible(True)
+        self.table.setBorderRadius(8)
+
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.LayOut.addWidget(self.table)
+
+
+    def addCommand(self, select=False, des='', hexx=''):
+
+        self.table.insertRow(self.totalItems)  # 插入一行
+        self.table.setRowCount(self.totalItems + 2)  # 设置列数
+
+        checkBox = CheckBox()
+        checkBox.setChecked(select)
+        self.table.setCellWidget(self.totalItems, 0, checkBox)
+
+        deslineEdit = LineEdit()
+        deslineEdit.setText(des)
+
+        self.table.setCellWidget(self.totalItems, 1, deslineEdit)
+
+        lineEdit = LineEdit()
+        lineEdit.setText(hexx)
+        self.table.setCellWidget(self.totalItems, 2, lineEdit)
+
+        deleteButton = ToolButton(FluentIcon.DELETE)
+        deleteButton.setMaximumSize(30, 30)
+        deleteButton.clicked.connect(self.deleteCommand)
+        self.table.setCellWidget(self.totalItems, 3, deleteButton)
+
+        self.totalItems += 1
+
+    def saveTheDpList(self):
+        dict_list = []
+
+        for row in range(self.totalItems - 1):
+            try:
+                hexx = self.item(row, 2).text()
+                if hexx == "":
+                    continue
+                select = self.item(row, 0).isChecked()
+                des = self.item(row, 1).text()
+
+            except AttributeError:
+                log.logger.error("error:dp list not attribute")
+
+            dp_item = Dp_Row(select, des, hexx)
+            self.DpList.append(dp_item)
+
+        # 将对象列表转换为字典列表
+        for obj in self.DpList:
+            if obj.hexx != '':
+                dict_list.append(obj.to_dict())
+        try:
+            # 将字典列表写入JSON文件
+            with open(self.filename, "w") as file:
+                json.dump(dict_list, file, indent=4)
+        except IOError as e:
+            print(f"An error occurred while writing to file: {e.strerror}")
+
+    def loadTheDpList(self):
+
+        cls = Dp_Row
+        # 读取命令列表
+        if os.path.exists(self.filename):
+            # 从JSON文件中读取数据
+            with open(self.filename, "r") as file:
+                dict_list = json.load(file)
+
+            # 将字典列表转换为对象列表
+            self.DpList.append(cls.from_dict(d) for d in dict_list)
+        else:
+            self.DpList = []
+
+    def deleteCommand(self):
+
+        if self.isProcessingDelete:
+            return  # 忽略重复的删除请求
+        self.isProcessingDelete = True
+
+        try:
+            # 删除指定的命令布局
+            btn = self.sender()
+
+            btn.disconnect()
+
+            # 获取按钮所在的行
+            row = self.table.indexAt(btn.pos()).row()
+
+            log.logger.debug("delete row %d" % row)
+
+            # 遍历该行的每一列，并删除单元格的设置
+            for col in range(self.table.columnCount()):
+                self.table.setCellWidget(row, col, None)  # 移除单元格的小部件
+                # 删除特定行
+            if row != -1:  # 确保获取的行号有效
+                self.table.removeRow(row)
+
+            # 更新 totalItems 计数以反映当前的行数
+            if self.totalItems > 0:
+                self.totalItems -= 1
+
+            # 调整行数以删除包含按钮的那一行
+            self.table.setRowCount(self.totalItems + 1)
+        finally:
+            self.isProcessingDelete = False
+
+        self.table.viewport().update()
+
+
+class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
+    # 开始OTA信号
+    updateSignal_Out = pyqtSignal(str, int)
+    # 结束OTA信号
+    StopUpdateSignal = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.revSharkHand = False
         self.OTAstate = OTAState.GoOn
         self.page = 0
         self.tabPages = 5
@@ -380,6 +569,14 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         self.page = 0
 
+        # 单独初始化 Dongle 页
+        self.FirmFileToolButton_Dongle.setIcon(FluentIcon.FOLDER)
+        self.FirmFileToolButton_Dongle.clicked.connect(lambda: self.obtainPath(self.FirmFileName_Dongle))
+        self.ButtonStartOTA_Dongle.clicked.connect(self.onUpdateDongle)
+
+        self.DpPCB = DP_ListTable()
+        self.DpListLayout.addWidget(self.DpPCB)
+
         self.tabWidget.setCurrentIndex(self.page)
         # 串口刷新设置
         self.refresh()
@@ -390,6 +587,31 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.task.dataPointSignal.connect(self.updateDpValueCallback)
         self.task.start()
 
+    def onUpdateDongle(self):
+        page = self.tabWidget.currentIndex()
+
+        if self.ButtonStartOTA_Dongle.text() == "Stop":
+            self.ButtonStartOTA_Dongle.setText("Software Update")
+            self.FirmFileName_Dongle.setDisabled(False)
+            self.FirmFileToolButton_Dongle.setDisabled(False)
+            self.tabWidget.tabBar().setDisabled(False)
+            self.StopUpdateSignal.emit()
+        else:
+            path = self.FirmFileName_Dongle.text()
+            # 判断文件名称是否为空
+            if path == "":
+                self.showFlyout("提醒", "请先选择升级文件", self.FirmFileName)
+                return
+            # 判断文件是否存在
+            if not os.path.isfile(path):
+                self.showFlyout("提醒", "文件不存在,请确认后再次尝试", self.FirmFileName)
+                return
+
+            self.updateSignal_Out.emit(path, page)
+            self.ButtonStartOTA_Dongle.setText("Stop")
+            self.FirmFileName_Dongle.setDisabled(True)
+            self.FirmFileToolButton_Dongle.setDisabled(True)
+            self.tabWidget.tabBar().setDisabled(True)
 
     def updateDpValueCallback(self, DpParam):
 
@@ -454,14 +676,18 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             except AttributeError:
                 pass
 
-            getattr(self, f"connStateIcon_{self.page + 1}").setCustomBackgroundColor(QColor(color),
-                                                                                     QColor(color))
+            getattr(self, f"connStateIcon_{self.page + 1}").setCustomBackgroundColor(QColor(color), QColor(color))
             getattr(self, f"connStateIcon_{self.page + 1}").setFixedSize(16, 16)
             getattr(self, f"connStateIcon_{self.page + 1}").setIconSize(QSize(16, 16))
             getattr(self, f"connStateLabel_{self.page + 1}").setText(text)
 
     def onPageChange(self):
-        self.page = self.tabWidget.currentIndex()
+        page = self.tabWidget.currentIndex()
+        if page < self.tabPages:
+            self.page = page
+        else:
+            return
+
         print("current page is " + str(self.page))
         if self.serialOnline == 1:
             self.light_callback("#e6e6e6", "Serial is not Connection")
@@ -482,6 +708,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.ButtonConnectSerial.setText("Connect")
         self.serialOnline = 0
         self.testSetStateChange(False)
+        self.ButtonStartOTA_Dongle.setDisabled(True)
 
         if hasattr(self, 'serialThread') and self.serialThread.isRunning():
             self.serialThread.quit()  # 假设quit方法可以停止线程
@@ -490,6 +717,24 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.uartThread.stop()
 
         self.light_callback("#e6e6e6", "Serial is not Connection")
+
+    def sharkHandFailed(self):
+        # 接收到握手失败
+        self.showFlyout("提示", "dongle建立连接失败", self.ButtonConnectSerial)
+        self.serialDisconnect()
+
+    def revDongleInfo(self, swVer, hdVer, bootVer, sn):
+        """
+        接收dongle版本号信息
+        """
+
+        try:
+            self.HWVersion_Dongle.setText(hdVer)
+            self.FirmwareVersion_Dongle.setText(swVer)
+            self.BootVersion_Dongle.setText(bootVer)
+            self.SN_Dongle.setText(sn)
+        except Exception as e:
+            log.logger.error("版本号接收出错 %s" % e)
 
     def serialConnectChange(self):
         # 开始/停止按钮-状态切换
@@ -502,9 +747,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 showMessage("提示", "当前无串口或者串口被占用", self)
                 return None
 
-            self.serialOnline = 1
-            self.ButtonConnectSerial.setText("Disconnect")
-
             # 创建BaseUartThread线程实例,
             self.serialThread = BaseUartThread(self.ser)
             self.uartThread = DeviceStateChkThread()
@@ -513,10 +755,15 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             try:
                 self.serialThread.revData_sinOut.disconnect()
                 self.serialThread.error_sinOut.disconnect()
+
                 self.uartThread.DS_uartWrite_sinOut.disconnect()
                 self.uartThread.DS_dPRevSignal_sinOut.disconnect()
                 self.uartThread.DS_progressBar_sinOut.disconnect()
+                self.uartThread.DS_shakeHandSignal_sinOut.disconnect()
+                self.uartThread.DS_dongleVersionSignal_sinOut.disconnect()
+
                 self.updateSignal_Out.disconnect()
+                self.StopUpdateSignal.disconnect()
             except Exception:
                 pass
 
@@ -526,12 +773,21 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.uartThread.DS_uartWrite_sinOut.connect(self.serialThread.uartWrite)
             self.uartThread.DS_dPRevSignal_sinOut.connect(self.task.DpProcess)
             self.uartThread.DS_progressBar_sinOut.connect(self.onChangeOTAState)
+            self.uartThread.DS_shakeHandSignal_sinOut.connect(self.sharkHandFailed)
+            self.uartThread.DS_dongleVersionSignal_sinOut.connect(self.revDongleInfo)
 
             self.updateSignal_Out.connect(self.uartThread.onStartOTA)
+            self.StopUpdateSignal.connect(self.uartThread.onStopOTA)
+
+            self.ButtonStartOTA_Dongle.setDisabled(False)
 
             # 启动BaseUartThread线程实例
             self.serialThread.start()
             self.uartThread.start()
+
+            self.serialOnline = 1
+            self.ButtonConnectSerial.setText("Disconnect")
+
             self.testSetStateChange(True)
 
         else:
@@ -542,6 +798,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.ButtonConnectSerial.setText("Connect")
             self.serialOnline = 0
             self.testSetStateChange(False)
+
+            self.ButtonStartOTA_Dongle.setDisabled(True)
 
             if hasattr(self, 'serialThread') and self.serialThread.isRunning():
                 self.serialThread.quit()  # 假设quit方法可以停止线程
@@ -601,6 +859,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.task.stop()
         if self.ser.isOpen():
             self.ser.close()
+            self.serialThread.quit()
+            self.serialThread.wait()
             self.uartThread.stop()
 
     def refresh(self):
@@ -641,31 +901,43 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         elif state == OTAState.Success:
             color = "green"
             self.OTAstate = OTAState.Success
-            self.onUpdateButton()
+            # self.onUpdateButton()
         else:
             color = "red"
             self.OTAstate = OTAState.Fail
-            self.onUpdateButton()
+            # self.onUpdateButton()
 
-        if self.page == 0:
-            self.OTAStateLabel.setText(OTADescription)
-            self.OTAStateLabel.setTextColor(QColor(color),QColor(color))
-            self.UpdateProgressBar.setValue(percent)
-            # self.UpdateProgressBar.setCustomBackgroundColor(QColor(color), QColor(color))
+        page = self.tabWidget.currentIndex()
 
+        if page == self.tabPages:
+            self.OTAStateLabel_Dongle.setText(OTADescription)
+            self.OTAStateLabel_Dongle.setTextColor(QColor(color), QColor(color))
+            self.UpdateProgressBar_Dongle.setValue(percent)
+            if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
+                self.onUpdateDongle()
         else:
-            try:
-                getattr(self, f"OTAStateLabel_{self.page + 1}").setText(OTADescription)
-                getattr(self, f"OTAStateLabel_{self.page + 1}").setTextColor(QColor(color),QColor(color))
-                getattr(self, f"UpdateProgressBar_{self.page + 1}").setValue(percent)
-                # getattr(self, f"UpdateProgressBar_{self.page + 1}").setCustomBackgroundColor(QColor(color),QColor(color))
+            if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
+                self.onUpdateButton()
 
-            except AttributeError:
-                pass
+            if self.page == 0:
+                self.OTAStateLabel.setText(OTADescription)
+                self.OTAStateLabel.setTextColor(QColor(color), QColor(color))
+                self.UpdateProgressBar.setValue(percent)
+                # self.UpdateProgressBar.setCustomBackgroundColor(QColor(color), QColor(color))
+
+            else:
+                try:
+                    getattr(self, f"OTAStateLabel_{self.page + 1}").setText(OTADescription)
+                    getattr(self, f"OTAStateLabel_{self.page + 1}").setTextColor(QColor(color), QColor(color))
+                    getattr(self, f"UpdateProgressBar_{self.page + 1}").setValue(percent)
+                    # getattr(self, f"UpdateProgressBar_{self.page + 1}").setCustomBackgroundColor(QColor(color),QColor(color))
+
+                except AttributeError:
+                    pass
 
     def onUpdateFileCheckBox(self):
         """文件选择 Checkbox是否可用"""
-        
+
         if self.page == 0:
             try:
                 for index in range(self.ParamFileLayOut.count()):
@@ -720,7 +992,10 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             if self.ButtonStartOTA.text() == "Stop":
                 self.ButtonStartOTA.setText("Software Update")
                 self.tabWidget.tabBar().setDisabled(False)
+                self.FirmFileName.setDisabled(False)
                 self.FirmFileToolButton.setDisabled(False)
+                self.StopUpdateSignal.emit()
+
             else:
 
                 path = self.FirmFileName.text()
@@ -739,6 +1014,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             if getattr(self, f"ButtonStartOTA_{self.page + 1}").text() == "Stop":
                 getattr(self, f"ButtonStartOTA_{self.page + 1}").setText("Software Update")
                 self.tabWidget.tabBar().setDisabled(False)
+                self.StopUpdateSignal.emit()
             else:
                 path = getattr(self, f"FirmFileName_{self.page + 1}").text()
                 # 判断文件名称是否为空
