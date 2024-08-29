@@ -5,18 +5,17 @@ import time
 
 import serial
 import serial.tools.list_ports
-from PyQt5.QtCore import QFileInfo, QSize, QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QFileInfo, QSize, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget, QVBoxLayout, QHeaderView, \
-    QSizePolicy
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
 from serial.serialutil import SerialException
 
+from CmdSendInterface import DP_ListTable
 from DeviceStateChk import DeviceStateChkThread, OTAState
 from baseLogger import log
 from baseUart import BaseUartThread
 from myTableWidget import myTableModel
-from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor, CheckBox, LineEdit, \
-    ToolButton, TableWidget
+from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
 CONN_OVERTIME = 5 * 10
@@ -122,14 +121,17 @@ class DeviceStateTask(QThread):
     DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
     ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]
 
-    def __init__(self, parent=None, DpDict=None):
-        super(DeviceStateTask, self).__init__(parent=parent)
+    def __init__(self,DpDict=None):
+        super(DeviceStateTask,self).__init__()
 
         self.overtimeCnt = 0
         self.color = "#e6e6e6"
         self.text = "Serial is not Connection"
         self.ChkConnFlag = True
-        self.FilterDict = DpDict
+        if DpDict is None:
+            self.FilterDict = {}
+        else:
+            self.FilterDict = DpDict
 
         self.pageChangeSignal.connect(self.onPageChange)
         self.serialOnlineSignal.connect(self.onSerialOnline)
@@ -141,7 +143,7 @@ class DeviceStateTask(QThread):
         self.errCodeDict = {}
         self.initErrDict()
 
-        self.running = 1
+        self.running = True
 
     def initErrDict(self):
         for Dev in self.DevList:
@@ -273,196 +275,13 @@ class DeviceStateTask(QThread):
             time.sleep(0.01)
 
     def stop(self):
-        self.running = 0
+        self.running = False
 
     def startCheckConnect(self):
         self.ChkConnFlag = True
         self.text = "Waiting for device connection......"
         self.color = "#f4ea2a"
         self.overtimeCnt = 0
-
-
-class Dp_Row:
-    def __init__(self, select, des, hexx):
-        self.select = select
-        self.des = des
-        self.hexx = hexx
-
-    def to_dict(self):
-        return {
-            "select": self.select,
-            "des": self.des,
-            "hexx": self.hexx,
-        }
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(d.get("select"), d.get("des"), d.get("hexx"))
-
-
-class DP_ListTable(QWidget):
-    dataPointSignal = pyqtSignal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.DpList = []
-        self.filename = "resources/user/send_dp_list.json"
-        self.totalItems = 0
-        self.isProcessingDelete = False
-        self.initUI()
-
-    def initUI(self):
-        self.LayOut = QVBoxLayout(self)
-
-        # 创建表格
-        self.table = TableWidget()
-
-        self.table.setRowCount(2)  # 设置行数
-        self.table.setColumnCount(4)  # 设置列数
-        # 设置表格头
-        self.table.setWordWrap(False)
-        self.table.setHorizontalHeaderLabels(['select', 'describe', 'dp date', 'del'])
-
-        checkBox = CheckBox()
-        self.table.setCellWidget(self.totalItems, 0, checkBox)
-
-        deslineEdit = LineEdit()
-        deslineEdit.setPlaceholderText("描述")
-        self.table.setCellWidget(self.totalItems, 1, deslineEdit)
-
-        lineEdit = LineEdit()
-        lineEdit.setPlaceholderText("命令内容")
-        self.table.setCellWidget(self.totalItems, 2, lineEdit)
-
-        deleteButton = ToolButton(FluentIcon.DELETE)
-
-        deleteButton.setMaximumSize(30, 30)
-        self.table.setCellWidget(self.totalItems, 3, deleteButton)
-        deleteButton.clicked.connect(self.deleteCommand)
-
-        self.totalItems += 1
-
-        self.addButton = ToolButton(FluentIcon.ADD)
-        self.addButton.clicked.connect(self.addCommand)
-        self.addButton.setMaximumHeight(30)
-        self.table.setSpan(1, 0, 1, 4)
-        self.table.setCellWidget(self.totalItems, 0, self.addButton)
-
-        # 让第二列扩展以填充可用空间
-        self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        # 隐藏第一列 (索引为0)
-        self.table.setBorderVisible(True)
-        self.table.setBorderRadius(8)
-
-        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.LayOut.addWidget(self.table)
-
-
-    def addCommand(self, select=False, des='', hexx=''):
-
-        self.table.insertRow(self.totalItems)  # 插入一行
-        self.table.setRowCount(self.totalItems + 2)  # 设置列数
-
-        checkBox = CheckBox()
-        checkBox.setChecked(select)
-        self.table.setCellWidget(self.totalItems, 0, checkBox)
-
-        deslineEdit = LineEdit()
-        deslineEdit.setText(des)
-
-        self.table.setCellWidget(self.totalItems, 1, deslineEdit)
-
-        lineEdit = LineEdit()
-        lineEdit.setText(hexx)
-        self.table.setCellWidget(self.totalItems, 2, lineEdit)
-
-        deleteButton = ToolButton(FluentIcon.DELETE)
-        deleteButton.setMaximumSize(30, 30)
-        deleteButton.clicked.connect(self.deleteCommand)
-        self.table.setCellWidget(self.totalItems, 3, deleteButton)
-
-        self.totalItems += 1
-
-    def saveTheDpList(self):
-        dict_list = []
-
-        for row in range(self.totalItems - 1):
-            try:
-                hexx = self.item(row, 2).text()
-                if hexx == "":
-                    continue
-                select = self.item(row, 0).isChecked()
-                des = self.item(row, 1).text()
-
-            except AttributeError:
-                log.logger.error("error:dp list not attribute")
-
-            dp_item = Dp_Row(select, des, hexx)
-            self.DpList.append(dp_item)
-
-        # 将对象列表转换为字典列表
-        for obj in self.DpList:
-            if obj.hexx != '':
-                dict_list.append(obj.to_dict())
-        try:
-            # 将字典列表写入JSON文件
-            with open(self.filename, "w") as file:
-                json.dump(dict_list, file, indent=4)
-        except IOError as e:
-            print(f"An error occurred while writing to file: {e.strerror}")
-
-    def loadTheDpList(self):
-
-        cls = Dp_Row
-        # 读取命令列表
-        if os.path.exists(self.filename):
-            # 从JSON文件中读取数据
-            with open(self.filename, "r") as file:
-                dict_list = json.load(file)
-
-            # 将字典列表转换为对象列表
-            self.DpList.append(cls.from_dict(d) for d in dict_list)
-        else:
-            self.DpList = []
-
-    def deleteCommand(self):
-
-        if self.isProcessingDelete:
-            return  # 忽略重复的删除请求
-        self.isProcessingDelete = True
-
-        try:
-            # 删除指定的命令布局
-            btn = self.sender()
-
-            btn.disconnect()
-
-            # 获取按钮所在的行
-            row = self.table.indexAt(btn.pos()).row()
-
-            log.logger.debug("delete row %d" % row)
-
-            # 遍历该行的每一列，并删除单元格的设置
-            for col in range(self.table.columnCount()):
-                self.table.setCellWidget(row, col, None)  # 移除单元格的小部件
-                # 删除特定行
-            if row != -1:  # 确保获取的行号有效
-                self.table.removeRow(row)
-
-            # 更新 totalItems 计数以反映当前的行数
-            if self.totalItems > 0:
-                self.totalItems -= 1
-
-            # 调整行数以删除包含按钮的那一行
-            self.table.setRowCount(self.totalItems + 1)
-        finally:
-            self.isProcessingDelete = False
-
-        self.table.viewport().update()
 
 
 class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
@@ -582,7 +401,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.refresh()
 
         # 启动设备状态检测任务
-        self.task = DeviceStateTask(self, self.DpDict)
+        self.task = DeviceStateTask(self.DpDict)
         self.task.LightTrigger.connect(self.light_callback)
         self.task.dataPointSignal.connect(self.updateDpValueCallback)
         self.task.start()
@@ -727,7 +546,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         """
         接收dongle版本号信息
         """
-
         try:
             self.HWVersion_Dongle.setText(hdVer)
             self.FirmwareVersion_Dongle.setText(swVer)
@@ -747,7 +565,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 showMessage("提示", "当前无串口或者串口被占用", self)
                 return None
 
-            # 创建BaseUartThread线程实例,
+            # 创建BaseUartThread线程实例
             self.serialThread = BaseUartThread(self.ser)
             self.uartThread = DeviceStateChkThread()
 
@@ -761,6 +579,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.uartThread.DS_progressBar_sinOut.disconnect()
                 self.uartThread.DS_shakeHandSignal_sinOut.disconnect()
                 self.uartThread.DS_dongleVersionSignal_sinOut.disconnect()
+                self.DpPCB.dataPointSignal.disconnect()
 
                 self.updateSignal_Out.disconnect()
                 self.StopUpdateSignal.disconnect()
@@ -778,6 +597,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
             self.updateSignal_Out.connect(self.uartThread.onStartOTA)
             self.StopUpdateSignal.connect(self.uartThread.onStopOTA)
+
+            self.DpPCB.dataPointSignal.connect(self.uartThread.DpListSend)
 
             self.ButtonStartOTA_Dongle.setDisabled(False)
 
@@ -818,11 +639,21 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     # 测试项设置状态变更
     def testSetStateChange(self, bool_value):
         # 串口号选择-禁止/使能
+        page = self.tabWidget.currentIndex()
+
         self.ComboBox_Serial.setDisabled(bool_value)
         # 串口刷新按钮
         self.Button_UpdateSerial.setDisabled(bool_value)
 
-        self.UpdateProgressBar.setVal(0)
+        if page == 0:
+            self.UpdateProgressBar.setVal(0)
+            self.OTAStateLabel.setText("")
+        elif page < self.tabPages:
+            getattr(self, f"UpdateProgressBar_{page + 1}").setVal(0)
+            getattr(self, f"OTAStateLabel_{page + 1}").setText("")
+        else:
+            self.UpdateProgressBar_Dongle.setVal(0)
+            self.OTAStateLabel_Dongle.setText("")
 
     def showFlyout(self, title, content, Widget_object):
         Flyout.create(
@@ -857,11 +688,17 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     def closeEvent(self, event):
         if self.task.running:
             self.task.stop()
+            self.task.quit()
+            self.task.wait()
+
         if self.ser.isOpen():
             self.ser.close()
             self.serialThread.quit()
             self.serialThread.wait()
             self.uartThread.stop()
+            self.uartThread.quit()
+            self.uartThread.wait()
+            print("关闭串口")
 
     def refresh(self):
         # 查询可用的串口

@@ -213,7 +213,22 @@ class Window(FluentWindow):
         # self.albumInterface = Widget('Album Interface', self)
         # self.albumInterface1 = Widget('Album Interface 1', self)
 
+        # create splash screen
+        self.splashScreen = SplashScreen(self.windowIcon(), self)
+        self.splashScreen.setTitleBar(CostumerTitleBar(self))
+        self.splashScreen.setIconSize(QSize(106, 106))
+        self.splashScreen.raise_()
+        QApplication.processEvents()
+
         self.initNavigation()
+
+        self.timer = QTimer(self)
+        self.timer.start(1500)
+        self.timer.timeout.connect(self.stop_waiting)
+
+    def stop_waiting(self):
+        self.splashScreen.finish()
+        self.timer.stop()
 
     def show_win_slot(self):
         self.show()
@@ -272,11 +287,11 @@ if __name__ == '__main__':
     translate = FluentTranslator()
     app.installTranslator(translate)
     MainWin = Window()
-    LoginWin = LoginWindow()
+    # LoginWin = LoginWindow()
 
     # signal slot
-    LoginWin.login_succeed_signal.connect(MainWin.show_win_slot)
-    MainWin.login_goback_signal.connect(LoginWin.show_win_slot)
+    # LoginWin.login_succeed_signal.connect(MainWin.show_win_slot)
+    # MainWin.login_goback_signal.connect(LoginWin.show_win_slot)
 
 
     # def cleanup():
@@ -285,7 +300,8 @@ if __name__ == '__main__':
     #     print("Cleaning up before quit")
 
     # app.aboutToQuit.connect(cleanup)
-    LoginWin.show()
+    # LoginWin.show()
+    MainWin.show()
 
     # setTheme(Theme.DARK)
     sys.exit(app.exec())
