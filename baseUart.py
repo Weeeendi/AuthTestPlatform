@@ -1,6 +1,7 @@
 import codecs
 import time
 
+import serial
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -59,7 +60,11 @@ class BaseUartThread(QThread):
 
             if count != 0:
                 # 读串口数据
-                recv = self.Ser.read(count)
+                try:
+                    recv = self.Ser.read(count)
+                except serial.SerialException:
+                    self.error_sinOut.emit()
+
 
                 dealStr = self.util.asciiB2HexString(recv)
 

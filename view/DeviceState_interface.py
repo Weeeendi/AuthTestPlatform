@@ -10,10 +10,10 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFileDialog, QTabWidget
 from serial.serialutil import SerialException
 
-from CmdSendInterface import DP_ListTable
-from DeviceStateChk import DeviceStateChkThread, OTAState
 from baseLogger import log
 from baseUart import BaseUartThread
+from cmdSendInterface import DP_ListTable
+from deviceStateChk import DeviceStateChkThread, OTAState
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
@@ -121,8 +121,8 @@ class DeviceStateTask(QThread):
     DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
     ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]
 
-    def __init__(self,DpDict=None):
-        super(DeviceStateTask,self).__init__()
+    def __init__(self, DpDict=None):
+        super(DeviceStateTask, self).__init__()
 
         self.overtimeCnt = 0
         self.color = "#e6e6e6"
@@ -287,8 +287,9 @@ class DeviceStateTask(QThread):
 class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
     # 开始OTA信号
     updateSignal_Out = pyqtSignal(str, int)
+
     # 结束OTA信号
-    StopUpdateSignal = pyqtSignal()
+    stopSignal_Out = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -347,8 +348,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.ParamFileToolButton.clicked.connect(lambda: self.obtainPath(self.ParamFileName))
                 self.FirmFileToolButton.clicked.connect(lambda: self.obtainPath(self.FirmFileName))
                 self.ButtonStartOTA.clicked.connect(self.onUpdateButton)
-                self.CheckBox_Param.stateChanged.connect(self.onUpdateFileCheckBox)
-                self.CheckBox_Firmware.stateChanged.connect(self.onUpdateFileCheckBox)
+                self.CheckBox_Param.clicked.connect(self.onUpdateFileCheckBox)
+                self.CheckBox_Firmware.clicked.connect(self.onUpdateFileCheckBox)
                 setattr(self, f"dpTableView", myTableModel(self.DpDict['Dashboard_Dp_Data']))
                 getattr(self, f"DeviceStateLayout").addWidget(getattr(self, f"dpTableView"))
 
@@ -356,8 +357,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.setShadowEffect(getattr(self, f"DeviceCard_{tab + 1}"))
                 self.setShadowEffect(getattr(self, f"SettingCard_{tab + 1}"))
 
-                getattr(self, f"CheckBox_Param_{tab + 1}").stateChanged.connect(self.onUpdateFileCheckBox)
-                getattr(self, f"CheckBox_Firmware_{tab + 1}").stateChanged.connect(self.onUpdateFileCheckBox)
+                getattr(self, f"CheckBox_Param_{tab + 1}").clicked.connect(self.onUpdateFileCheckBox)
+                getattr(self, f"CheckBox_Firmware_{tab + 1}").clicked.connect(self.onUpdateFileCheckBox)
 
                 getattr(self, f"ParamFileToolButton_{tab + 1}").setIcon(FluentIcon.FOLDER)
                 getattr(self, f"FirmFileToolButton_{tab + 1}").setIcon(FluentIcon.FOLDER)
@@ -414,7 +415,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.FirmFileName_Dongle.setDisabled(False)
             self.FirmFileToolButton_Dongle.setDisabled(False)
             self.tabWidget.tabBar().setDisabled(False)
-            self.StopUpdateSignal.emit()
+
         else:
             path = self.FirmFileName_Dongle.text()
             # 判断文件名称是否为空
@@ -527,7 +528,9 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.ButtonConnectSerial.setText("Connect")
         self.serialOnline = 0
         self.testSetStateChange(False)
+        self.UpdateStop()
         self.ButtonStartOTA_Dongle.setDisabled(True)
+        # self.showFlyout("提示","串口已断开",self)
 
         if hasattr(self, 'serialThread') and self.serialThread.isRunning():
             self.serialThread.quit()  # 假设quit方法可以停止线程
@@ -537,12 +540,20 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         self.light_callback("#e6e6e6", "Serial is not Connection")
 
+        try:
+            if self.task.running:
+                self.task.serialOnlineSignal.emit(self.serialOnline)
+                return
+        except Exception as e:
+            log.logger.error(e)
+            pass
+
     def sharkHandFailed(self):
         # 接收到握手失败
-        self.showFlyout("提示", "dongle建立连接失败", self.ButtonConnectSerial)
+        self.showFlyout("提示", "与dongle建立连接失败", self.ButtonConnectSerial)
         self.serialDisconnect()
 
-    def revDongleInfo(self, swVer, hdVer, bootVer, sn):
+    def revDongleInfo(self, swVer, hdVer, bootVer):
         """
         接收dongle版本号信息
         """
@@ -550,7 +561,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.HWVersion_Dongle.setText(hdVer)
             self.FirmwareVersion_Dongle.setText(swVer)
             self.BootVersion_Dongle.setText(bootVer)
-            self.SN_Dongle.setText(sn)
         except Exception as e:
             log.logger.error("版本号接收出错 %s" % e)
 
@@ -582,7 +592,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.DpPCB.dataPointSignal.disconnect()
 
                 self.updateSignal_Out.disconnect()
-                self.StopUpdateSignal.disconnect()
+                self.stopSignal_Out.disconnect()
             except Exception:
                 pass
 
@@ -596,7 +606,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.uartThread.DS_dongleVersionSignal_sinOut.connect(self.revDongleInfo)
 
             self.updateSignal_Out.connect(self.uartThread.onStartOTA)
-            self.StopUpdateSignal.connect(self.uartThread.onStopOTA)
+            self.stopSignal_Out.connect(self.uartThread.otaStop)
 
             self.DpPCB.dataPointSignal.connect(self.uartThread.DpListSend)
 
@@ -732,17 +742,19 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.DpDict = json.loads(file.read())
 
     def onChangeOTAState(self, percent: int, state: OTAState, OTADescription: str):
+
+        log.logger.debug("当前状态：%d %s", state, OTADescription)
+
         if state == OTAState.GoOn:
             color = themeColor()
             self.OTAstate = OTAState.GoOn
         elif state == OTAState.Success:
-            color = "green"
+            # color = "green"
+            color = themeColor()
             self.OTAstate = OTAState.Success
-            # self.onUpdateButton()
         else:
             color = "red"
             self.OTAstate = OTAState.Fail
-            # self.onUpdateButton()
 
         page = self.tabWidget.currentIndex()
 
@@ -754,7 +766,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.onUpdateDongle()
         else:
             if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
-                self.onUpdateButton()
+                self.UpdateStop()
 
             if self.page == 0:
                 self.OTAStateLabel.setText(OTADescription)
@@ -774,52 +786,54 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
     def onUpdateFileCheckBox(self):
         """文件选择 Checkbox是否可用"""
+        currentPage = self.page
+        # 处理参数文件和固件文件相关的checkbox和layout
+        paramCheckboxName = f"CheckBox_Param_{currentPage + 1}" if currentPage else "CheckBox_Param"
+        firmCheckboxName = f"CheckBox_Firmware_{currentPage + 1}" if currentPage else "CheckBox_Firmware"
 
+        ParamFileLayOutName = f"ParamFileLayOut_{currentPage + 1}" if currentPage else "ParamFileLayOut"
+        FirmFileLayOutName = f"FirmFileLayOut_{currentPage + 1}" if currentPage else "FirmFileLayOut"
+
+        paramCheckbox = getattr(self, paramCheckboxName)
+        firmCheckbox = getattr(self, firmCheckboxName)
+
+        paramLayOut = getattr(self, ParamFileLayOutName)
+        firmLayOut = getattr(self, FirmFileLayOutName)
+        def handle_widget(LayOut, Checkbox):
+            try:
+                for index in range(LayOut.count()):
+                    item = LayOut.itemAt(index)
+                    if item.widget() is not None:
+                        if Checkbox.isChecked():
+                            item.widget().setDisabled(False)
+                        else:
+                            item.widget().setDisabled(True)
+            except AttributeError:
+                log.logger.debug("error: not attribute")
+
+        # 新增逻辑: 点击checkbox时判断另一个checkbox的状态
+        # 如果被点击的checkbox被选中，且另一个也是选中状态
+        if paramCheckbox.isChecked() and firmCheckbox.isChecked():
+            # 弹出提示，并取消checkbox的选择状态
+            sender = self.sender()
+            self.showFlyout("提示", "不能同时升级参数文件和固件文件，请逐次进行升级！", sender)
+            sender.setChecked(False)
+            return
+
+        handle_widget(paramLayOut, paramCheckbox)
+        handle_widget(firmLayOut, firmCheckbox)
+
+
+
+    def UpdateStop(self):
         if self.page == 0:
-            try:
-                for index in range(self.ParamFileLayOut.count()):
-                    item = self.ParamFileLayOut.itemAt(index)
-                    if item.widget() is not None:
-                        if self.CheckBox_Param.isChecked():
-                            item.widget().setDisabled(False)
-                        else:
-                            item.widget().setDisabled(True)
-            except AttributeError:
-                log.logger.debug("error: not attribute")
-
-            try:
-
-                for index in range(self.FirmFileLayOut.count()):
-                    item = self.FirmFileLayOut.itemAt(index)
-                    if item.widget() is not None:
-                        if self.CheckBox_Firmware.isChecked():
-                            item.widget().setDisabled(False)
-                        else:
-                            item.widget().setDisabled(True)
-            except AttributeError:
-                log.logger.debug("error: not attribute")
-
+            self.ButtonStartOTA.setText("Software Update")
+            self.tabWidget.tabBar().setDisabled(False)
+            self.FirmFileName.setDisabled(False)
+            self.FirmFileToolButton.setDisabled(False)
         else:
-            try:
-
-                for index in range(getattr(self, f"ParamFileLayOut_{self.page + 1}").count()):
-                    item = getattr(self, f"ParamFileLayOut_{self.page + 1}").itemAt(index)
-                    if item.widget() is not None:
-                        if getattr(self, f"CheckBox_Param_{self.page + 1}").isChecked():
-                            item.widget().setDisabled(False)
-                        else:
-                            item.widget().setDisabled(True)
-
-                for index in range(getattr(self, f"FirmFileLayOut_{self.page + 1}").count()):
-                    item = getattr(self, f"FirmFileLayOut_{self.page + 1}").itemAt(index)
-                    if item.widget() is not None:
-                        if getattr(self, f"CheckBox_Firmware_{self.page + 1}").isChecked():
-                            item.widget().setDisabled(False)
-                        else:
-                            item.widget().setDisabled(True)
-
-            except AttributeError:
-                pass
+            getattr(self, f"ButtonStartOTA_{self.page + 1}").setText("Software Update")
+            self.tabWidget.tabBar().setDisabled(False)
 
     def onUpdateButton(self):
         """
@@ -831,11 +845,18 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.tabWidget.tabBar().setDisabled(False)
                 self.FirmFileName.setDisabled(False)
                 self.FirmFileToolButton.setDisabled(False)
-                self.StopUpdateSignal.emit()
+                self.stopSignal_Out.emit()
 
             else:
 
-                path = self.FirmFileName.text()
+                if self.CheckBox_Param.isChecked():
+                    path = self.ParamFileName.text()
+                elif self.CheckBox_Firmware.isChecked():
+                    path = self.FirmFileName.text()
+                else:
+                    self.showFlyout("提醒", "至少选择一项进行升级", self.ButtonStartOTA)
+                    return
+
                 # 判断文件名称是否为空
                 if path == "":
                     self.showFlyout("提醒", "请填入文件名称", self.FirmFileName)
@@ -844,6 +865,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 if not os.path.isfile(path):
                     self.showFlyout("提醒", "文件不存在,请确认后再次尝试", self.FirmFileName)
                     return
+
                 self.updateSignal_Out.emit(path, self.page)
                 self.ButtonStartOTA.setText("Stop")
                 self.tabWidget.tabBar().setDisabled(True)
@@ -851,9 +873,16 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             if getattr(self, f"ButtonStartOTA_{self.page + 1}").text() == "Stop":
                 getattr(self, f"ButtonStartOTA_{self.page + 1}").setText("Software Update")
                 self.tabWidget.tabBar().setDisabled(False)
-                self.StopUpdateSignal.emit()
+                self.stopSignal_Out.emit()
+
             else:
-                path = getattr(self, f"FirmFileName_{self.page + 1}").text()
+                if getattr(self, f"CheckBox_Param_{self.page + 1}").isChecked():
+                    path = getattr(self, f"ParamFileName_{self.page + 1}").text()
+                elif getattr(self, f"CheckBox_Firmware_{self.page + 1}").isChecked():
+                    path = getattr(self, f"FirmFileName_{self.page + 1}").text()
+                else:
+                    self.showFlyout("提醒", "至少选择一项进行升级", getattr(self, f"ButtonStartOTA_{self.page + 1}"))
+                    return
                 # 判断文件名称是否为空
                 if path == "":
                     self.showFlyout("提醒", "请先选择文件", getattr(self, f"FirmFileName_{self.page + 1}"))

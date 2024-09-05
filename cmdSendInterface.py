@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QHe
 
 from baseLogger import log
 from qfluentwidgets import ToolButton, FluentIcon, LineEdit, CheckBox, TableWidget, PushButton, BodyLabel, Flyout, \
-    InfoBarIcon, SpinBox
+    InfoBarIcon, SpinBox, TransparentToolButton
 
 MAX_CONSTANT = float('inf')
 
@@ -79,11 +79,25 @@ class DP_ListTable(QWidget):
     def initUI(self):
         self.LayOut = QVBoxLayout(self)
 
+        # 创建发送布局
+        self.SendLayout = QHBoxLayout()
+        self.saveButton = ToolButton(FluentIcon.SAVE)
+
+        self.saveButton.clicked.connect(self.saveTheDpList)
+        self.delButton = ToolButton(FluentIcon.DELETE)
+        if os.path.exists(self.filename):
+            self.delButton.setDisabled(False)
+        else:
+            self.delButton.setDisabled(True)
+
+        self.delButton.clicked.connect(self.deleteAllDpList)
+
         # 创建表格
         self.table = TableWidget()
 
         self.table.setRowCount(2)  # 设置行数
         self.table.setColumnCount(4)  # 设置列数
+
         # 设置表格头
         self.table.setWordWrap(False)
         self.table.setHorizontalHeaderLabels(['select', 'describe', 'dp date', 'del'])
@@ -93,19 +107,22 @@ class DP_ListTable(QWidget):
 
             checkBox = CheckBox()
             self.table.setCellWidget(self.totalItems, 0, checkBox)
+            checkBox.stateChanged.connect(lambda :self.saveButton.setDisabled(False))
 
             deslineEdit = LineEdit()
             deslineEdit.setMaximumHeight(30)
             deslineEdit.setPlaceholderText("描述")
+            deslineEdit.textChanged.connect(lambda :self.saveButton.setDisabled(False))
             self.table.setCellWidget(self.totalItems, 1, deslineEdit)
 
             lineEdit = LineEdit()
             lineEdit.editingFinished.connect(self.onHexEditChanged)
+            lineEdit.textChanged.connect(lambda :self.saveButton.setDisabled(False))
             lineEdit.setMaximumHeight(30)
             lineEdit.setPlaceholderText("命令内容")
             self.table.setCellWidget(self.totalItems, 2, lineEdit)
 
-            deleteButton = ToolButton(FluentIcon.DELETE)
+            deleteButton = TransparentToolButton(FluentIcon.DELETE)
 
             deleteButton.setMaximumSize(30, 30)
             self.table.setCellWidget(self.totalItems, 3, deleteButton)
@@ -132,6 +149,7 @@ class DP_ListTable(QWidget):
         self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.LayOut.addWidget(self.table)
 
+        # 创建参数布局
         self.ParamsLayout = QHBoxLayout()
         self.IntervalName = BodyLabel("Interval")
         self.IntervalName.setMaximumWidth(50)
@@ -146,10 +164,8 @@ class DP_ListTable(QWidget):
 
         self.LayOut.addLayout(self.ParamsLayout)
 
-        self.SendLayout = QHBoxLayout()
-        self.saveButton = ToolButton(FluentIcon.SAVE)
-        self.saveButton.clicked.connect(self.saveTheDpList)
         self.SendLayout.addWidget(self.saveButton)
+        self.SendLayout.addWidget(self.delButton)
         self.SendLayout.addStretch()
 
         self.cancelButton = ToolButton(FluentIcon.CANCEL)
@@ -163,6 +179,8 @@ class DP_ListTable(QWidget):
         self.sendButton.clicked.connect(self.sendDpCommand)
         self.SendLayout.addWidget(self.sendButton)
 
+        self.saveButton.setDisabled(True)
+
         self.LayOut.addLayout(self.SendLayout)
 
     def showFlyout(self, icon: InfoBarIcon, title, content, Widget_object):
@@ -175,11 +193,21 @@ class DP_ListTable(QWidget):
             isClosable=False
         )
 
+    def deleteAllDpList(self):
+        if os.path.exists(self.filename):
+            os.remove(self.filename)
+            self.showFlyout(InfoBarIcon.SUCCESS, "提示", "删除数据成功", self)
+        else:
+            self.showFlyout(InfoBarIcon.ERROR, "提示", "删除数据失败,文件不存在", self.delButton)
+
+        self.delButton.setDisabled(True)
+
     def onHexEditChanged(self):
         # 获取发送信号的 QLineEdit
         edit = self.sender()
         text = edit.text()
 
+        # 检查数据是否符合十六进制格式
         if not check_data("HEX", text):
             self.showFlyout(InfoBarIcon.ERROR, "提示", "请输入正确的十六进制数据", edit)
             edit.setText("")
@@ -191,9 +219,11 @@ class DP_ListTable(QWidget):
 
         checkBox = CheckBox()
         checkBox.setChecked(select)
+        checkBox.stateChanged.connect(lambda :self.saveButton.setDisabled(False))
         self.table.setCellWidget(self.totalItems, 0, checkBox)
 
         deslineEdit = LineEdit()
+        deslineEdit.textChanged.connect(lambda :self.saveButton.setDisabled(False))
         deslineEdit.setText(des)
 
         self.table.setCellWidget(self.totalItems, 1, deslineEdit)
@@ -201,9 +231,10 @@ class DP_ListTable(QWidget):
         lineEdit = LineEdit()
         lineEdit.setText(hexx)
         lineEdit.editingFinished.connect(self.onHexEditChanged)
+        lineEdit.textChanged.connect(lambda :self.saveButton.setDisabled(False))
         self.table.setCellWidget(self.totalItems, 2, lineEdit)
 
-        deleteButton = ToolButton(FluentIcon.DELETE)
+        deleteButton = TransparentToolButton(FluentIcon.DELETE)
         deleteButton.setMaximumSize(30, 30)
         deleteButton.clicked.connect(self.deleteCommand)
         self.table.setCellWidget(self.totalItems, 3, deleteButton)
@@ -242,6 +273,8 @@ class DP_ListTable(QWidget):
                 json.dump(dict_list, file, indent=4)
 
             self.showFlyout(InfoBarIcon.SUCCESS, "提示", "保存成功", self.table)
+            self.delButton.setDisabled(False)
+            self.saveButton.setDisabled(True)
         except IOError as e:
             log.logger.error(f"An error occurred while writing to file: {e.strerror}")
 
@@ -257,12 +290,16 @@ class DP_ListTable(QWidget):
             # 将字典列表转换为对象列表
             DpList = [cls.from_dict(d) for d in dict_list]  # 使用列表推导式，并将结果直接赋值给 self.DpList
 
-        if len(DpList) > 0:
-            for i in range(len(DpList)):
-                # 遍历该行的每一列，并删除单元格的设置
-                self.addCommand(select=DpList[i].select, des=DpList[i].des,
-                                hexx=DpList[i].hexx)  # 添加dp列表数据到table
-            return True
+            if len(DpList) > 0:
+                for i in range(len(DpList)):
+                    # 遍历该行的每一列，并删除单元格的设置
+                    self.addCommand(select=DpList[i].select, des=DpList[i].des,
+                                    hexx=DpList[i].hexx)  # 添加dp列表数据到table
+                return True
+            else:
+                log.logger.error("数据转换失败")
+                return False
+
         else:
             log.logger.error("无dp存储数据")
             return False
