@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 from PyQt5.QtChart import (QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis, QPieSeries)
 from PyQt5.QtCore import Qt, QMargins
-from PyQt5.QtGui import QColor, QPainter, QPen, QFont
-from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFrame
+from PyQt5.QtGui import QColor, QPainter, QFont
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFrame, QVBoxLayout
 
-from qfluentwidgets import MessageBox, themeColor
+from qfluentwidgets import MessageBox, themeColor, BodyLabel
 from resource.ui.ChartInterface_UI import Ui_ChartInterface_UI
 
 
@@ -14,12 +14,14 @@ def showMessage(title, content, parent=None):
 
 
 class ChartRecordInterface(Ui_ChartInterface_UI, QWidget):
+    errorList = ['开始授权', '获取MAC', '请求接口', '读取授权', 'GSensor', 'Lte', 'BLE-Rssi', 'Flash',
+                 '主电池电压', '副电池电压', 'GPS']
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setupUi(self)
         self.loadRecord()
-        self.showChart()
+        self.showChart(1000, 50)
 
         # add shadow effect to card
         self.setShadowEffect(self.SearchCard)
@@ -27,10 +29,11 @@ class ChartRecordInterface(Ui_ChartInterface_UI, QWidget):
         self.setShadowEffect(self.FailReasonCard)
 
     def drawChart(self):
-        df = pd.DataFrame(np.random.randint(20, high=100, size=(10, 1)), columns=list('a'), index=list('123456789a'))
-        daysOfWeek = ['开始授权', '获取MAC', '请求接口', '读取授权', 'GSensor', 'Lte', 'BLE-Rssi', 'Flash',
-                      '主电池电压', '副电池电压']
-        df['故障'] = daysOfWeek
+        indexList = list(range(1, len(self.errorList) + 1))
+        df = pd.DataFrame(np.random.randint(20, high=100, size=(len(self.errorList), 1)), columns=list('a'),
+                          index=indexList)
+
+        df['故障'] = self.errorList
         # 对图表排序后进行显示
         df = df.sort_values(by=df.columns[0], ascending=False)
 
@@ -49,6 +52,7 @@ class ChartRecordInterface(Ui_ChartInterface_UI, QWidget):
 
         axisY = QValueAxis()
         axisY.applyNiceNumbers()
+        axisY.setLabelFormat("%d")
         chart.addAxis(axisY, Qt.AlignLeft)
         series.attachAxis(axisY)
 
@@ -75,9 +79,10 @@ class ChartRecordInterface(Ui_ChartInterface_UI, QWidget):
         self.pieSeries = QPieSeries()
 
         total = success + fail
-        self.pieSeries.append('fail ' + str('%.2f' % float(fail / total)), fail)
-        self.pieSeries.append('success ' + str('%.2f' % float(success / total)), success)
-
+        failPercent = int(fail * 1000 / total)
+        self.pieSeries.append('fail ' + str('%d‰' % failPercent), fail)
+        self.pieSeries.append("", success)
+        # 'success ' + str('%d‰' % (1000-failPercent)
         success_color = themeColor()  # Green
         failure_color = "#F56C6C"  # Red
         # 处理索引号为1的片
@@ -92,26 +97,35 @@ class ChartRecordInterface(Ui_ChartInterface_UI, QWidget):
         pieSlice2.setExploded()
         pieSlice2.setLabelFont(QFont('Microsoft YaHei', pointSize=10))
         pieSlice2.setLabelVisible(False)  # 设置标签可见,缺省不可见
+        # pieSlice2.setBorderWidth(0)
         pieSlice2.setBrush(QColor(success_color))
 
         # 创建图表
         self.PieChart = QChart()
-        self.PieChart.legend().setAlignment(Qt.AlignBottom)  # 调整图例位置
+        self.PieChart.legend().setAlignment(Qt.AlignVCenter)  # 调整图例位置
         self.PieChart.addSeries(self.pieSeries)
         # self.PieChart.setTitle('通过比例')
-        # self.PieChart.legend().hide()
+        self.PieChart.legend().hide()
         self.PieChart.setBackgroundVisible(0)
-        # Create a Pyecharts Pie chart
-        # Create a central widget and layout
 
-    def showChart(self):
-        self.drawPieChart(1000, 50)
+        self.PieLabel = BodyLabel()
+        self.PieLabel.setText('Fail:' + str('%d‰' % failPercent))
+        self.PieLabel.setTextColor(QColor(failure_color))
+        self.PieLabel.setFont(QFont('Microsoft YaHei', pointSize=16))
+        self.PieLabel.setAlignment(Qt.AlignCenter)
+
+    def showChart(self, success, fail):
+        self.PieLayOut = QVBoxLayout()
+        self.drawPieChart(success, fail)
         self.drawChart()
         # 创建图表视图
         self.PieChartView = QChartView(self.PieChart)
         self.PieChartView.setRenderHint(QPainter.Antialiasing)  # 可选的，用于抗锯齿
         self.PieChartView.setFrameShape(QFrame.NoFrame)  # 将框架形状设置为无框
-        self.ProdTestDataLayout.addWidget(self.PieChartView)
+        self.PieLayOut.addWidget(self.PieChartView)
+        self.PieLayOut.addWidget(self.PieLabel)
+
+        self.ProdTestDataLayout.addLayout(self.PieLayOut)
         self.PieChartView.setStyleSheet('QWidget {background:transparent}')
         self.chartView.setStyleSheet('QWidget {background:transparent}')
 

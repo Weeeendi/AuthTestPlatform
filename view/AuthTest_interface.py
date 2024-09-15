@@ -81,7 +81,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             self.regUrl = 'http://iot.stage.vehiclink.com'
 
         # 绑定信号槽函数
-        self.parent().settingInterface.BasicSetCard.reg_url_sinOut.connect(self.get_reg_url_slot)
+        # self.parent().settingInterface.BasicSetCard.reg_url_sinOut.connect(self.get_reg_url_slot)
 
         # 默认使能配网参数授权
         self.CheckBox_AuthTest.setChecked(True)

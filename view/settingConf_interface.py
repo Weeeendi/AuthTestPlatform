@@ -6,7 +6,6 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
 
 import data_manage
-# from resource.ui.SettingInterface_ui import Ui_SettingInterface
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, DoubleSpinBox, SpinBox, PillToolButton,

@@ -14,7 +14,6 @@ from view.AuthTest_interface import AuthTestInterface
 from view.ChartRecord_interface import ChartRecordInterface
 from view.DeviceState_interface import DeviceStateInterface
 from view.Login_page import Ui_Form
-from view.settingConf_interface import SettingInterface
 
 
 # from baseLogger import log
@@ -129,18 +128,19 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def login_process(self):
         print('login pressed')
-        # userName = self.lineEdit_UserName.text()
-        # passWord = self.LineEdit_Password.text()
-        # if userName == 'Auther' and passWord == '123456':
-
-        self.login_succeed_signal.emit()
-        if self.checkBox_RememberPS.isChecked():
-            save_credentials(self.lineEdit_UserName.text(), self.LineEdit_Password.text(), True)
+        userName = self.lineEdit_UserName.text()
+        passWord = self.LineEdit_Password.text()
+        if userName == 'Auther' and passWord == '123456':
+            self.login_succeed_signal.emit()
+            if self.checkBox_RememberPS.isChecked():
+                save_credentials(self.lineEdit_UserName.text(), self.LineEdit_Password.text(), True)
+            else:
+                save_credentials("", "", False)
+            # 隐藏登录页
+            self.close()
         else:
-            save_credentials("", "", False)
+            MessageBox("提示","用户名或密码错误，请重试",self).show()
 
-        # 隐藏登录页
-        self.close()
 
     def show_win_slot(self):
         self.raise_()
@@ -206,7 +206,7 @@ class Window(FluentWindow):
 
         setThemeColor("#28afe9")
         # 创建子界面
-        self.settingInterface = SettingInterface(self)
+        # self.settingInterface = SettingInterface(self)
         self.homeInterface = AuthTestInterface(self)
         self.recordInterface = ChartRecordInterface(self)
         self.deviceInterface = DeviceStateInterface(self)
@@ -231,6 +231,7 @@ class Window(FluentWindow):
         self.timer.stop()
 
     def show_win_slot(self):
+        self.raise_()
         self.show()
         # self.initNavigation()
 
@@ -252,7 +253,7 @@ class Window(FluentWindow):
 
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
 
-        self.addSubInterface(self.settingInterface, FIF.SETTING, 'Operations Notice', NavigationItemPosition.BOTTOM)
+        # self.addSubInterface(self.settingInterface, FIF.SETTING, 'Operations Notice', NavigationItemPosition.BOTTOM)
 
     def account_set(self):
         msgbox = MessageBox('提醒', "是否要退出当前账号？", self)
@@ -260,8 +261,8 @@ class Window(FluentWindow):
         msgbox.cancelButton.setText("取消")
 
         if msgbox.exec():
-            self.login_goback_signal.emit()
             self.close()
+            self.login_goback_signal.emit()
 
     def initWindow(self):
         self.resize(980, 900)
@@ -287,21 +288,21 @@ if __name__ == '__main__':
     translate = FluentTranslator()
     app.installTranslator(translate)
     MainWin = Window()
-    # LoginWin = LoginWindow()
+    LoginWin = LoginWindow()
 
     # signal slot
-    # LoginWin.login_succeed_signal.connect(MainWin.show_win_slot)
-    # MainWin.login_goback_signal.connect(LoginWin.show_win_slot)
+    LoginWin.login_succeed_signal.connect(MainWin.show_win_slot)
+    MainWin.login_goback_signal.connect(LoginWin.show_win_slot)
 
 
-    # def cleanup():
-    #     LoginWin.login_succeed_signal.disconnect()
-    #     MainWin.login_goback_signal.disconnect()
-    #     print("Cleaning up before quit")
+    def cleanup():
+        LoginWin.login_succeed_signal.disconnect()
+        MainWin.login_goback_signal.disconnect()
+        print("Cleaning up before quit")
 
-    # app.aboutToQuit.connect(cleanup)
-    # LoginWin.show()
-    MainWin.show()
+    app.aboutToQuit.connect(cleanup)
+    LoginWin.show()
+    # MainWin.show()
 
     # setTheme(Theme.DARK)
     sys.exit(app.exec())
