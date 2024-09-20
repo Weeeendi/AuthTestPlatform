@@ -43,39 +43,32 @@ class OTAState:
     OverTime = 5
 
 
-def calc_crc16(data: bytes, poly: int = 0x1021) -> int:
-    """
-    Calculate the CRC16-modbus checksum value.
 
-    This function calculates the CRC16-modbus checksum value for the given data.
+
+def calc_crc16_modbus(data: bytes, poly: int = 0x8005) -> int:
+    """
+    Calculate the CRC16-Modbus checksum value.
+
+    This function calculates the CRC16-Modbus checksum value for the given data.
 
     Args:
         data (bytes): The data to calculate the checksum for.
-        poly (int, optional): The polynomial to use. Defaults to 0x1021.
+        poly (int, optional): The polynomial to use. Defaults to 0x8005 (0x1021 can also be used).
 
     Returns:
         int: The calculated checksum value.
     """
-    crc = 0x0000
-    # Iterate over each byte in the data
-    for b in data:
-        # XOR the current byte with the current CRC value
-        crc ^= (b << 8)
-        # Iterate 8 times to process each bit in the current byte
-        for _ in range(8):
-            # If the current bit is 1, XOR the CRC value with the polynomial
-            if crc & 0x8000:
-                crc = (crc << 1) ^ poly
-            # If the current bit is 0, just shift the CRC value
+    crc = 0xFFFF
+    for pos in data:
+        crc ^= pos
+        for i in range(8):
+            if (crc & 1) != 0:
+                crc >>= 1
+                crc ^= 0xA001
             else:
-                crc = crc << 1
-            # Ensure crc remains in 16-bit
-            crc &= 0xFFFF
+                crc >>= 1
 
-    # Perform two more iterations to finalize the CRC value
-    crc = (crc << 1) ^ poly
-    crc = (crc << 1) & 0xFFFF  # Ensure crc remains in 16-bit
-    return crc
+    return ((crc & 0xff) << 8) + (crc >> 8)
 
 
 class OTA_PCB:
@@ -642,13 +635,13 @@ class DeviceStateChkThread(QThread):
                 self.listIndex = i
                 break
 
-    def doStopOTA(self):
+    def doStopOTA(self,goBackState):
         devTypeStr = self.PCB.devType.to_bytes(1, byteorder='big', signed=False).hex()
         # 发送退出OTA命令
         self.DS_Send(self.sn, 0, "0011", '0001', devTypeStr)
 
         self.PCB.onOVER()
-        self.stateMachine = MachineState.DpDisplay
+        self.stateMachine = goBackState
         self.sendMutexFlag = True
         self.cycleCnt = 0
 
@@ -664,10 +657,14 @@ class DeviceStateChkThread(QThread):
 
     def UpdateProcessState(self, str, state: OTAState, percent=0):
 
-        if state != OTAState.GoOn:
-            self.doStopOTA()
+        if state == OTAState.Fail or state == OTAState.UserExit:
+            self.doStopOTA(MachineState.DpDisplay)
             percent = 0
-            state = OTAState.Fail
+
+        if state == OTAState.Success:
+            self.doStopOTA(MachineState.Waiting)
+            percent = 100
+
         self.DS_progressBar_sinOut.emit(percent, state, str)
 
     def sendBlockHead(self, blockSize, blockCnt):
@@ -724,9 +721,9 @@ class DeviceStateChkThread(QThread):
 
                 # 超时
                 self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 30:
+                if self.cycleCnt == 300:
                     self.onSharkOverTime()
-                # 等待200ms
+                # 等待100ms
                 time.sleep(0.2)
 
             elif self.stateMachine == MachineState.CheckVer:
@@ -790,14 +787,19 @@ class DeviceStateChkThread(QThread):
         if self.PCB.OTAState == OTAState.Fail:
             self.UpdateProcessState("升级失败", OTAState.Fail)
             return False
+        elif self.PCB.OTAState == OTAState.UserExit:
+            self.UpdateProcessState("用户取消升级", OTAState.UserExit)
+            return False
+
         elif self.PCB.OTAState == OTAState.Success:
             self.UpdateProcessState("升级成功", OTAState.Success)
             return False
+
         elif self.PCB.OTAState == OTAState.OverTime:
             self.UpdateProcessState("设备超时回复", OTAState.OverTime)
             return False
         elif self.exiting:
-            self.UpdateProcessState('设备断开', OTAState.Fail)
+            self.UpdateProcessState('连接断开', OTAState.Fail)
             return False
 
         return True
@@ -805,14 +807,14 @@ class DeviceStateChkThread(QThread):
     def otaSendDataTask(self):
         # 发送数据块头
         offset = 0
+        PkgIdx = 1  # 包计数，取值范围1~255 循环计数
         try:
             with open(self.PCB.FilePath, 'rb') as file:
                 while chunk := file.read(self.PCB.BlockSize):
 
                     # 发送数据块头
                     BlockLen = len(chunk)
-                    PkgIdx = 1  # 包计数，取值范围1~255 循环计数
-                    crc16Cal = calc_crc16(chunk)
+                    crc16Cal = calc_crc16_modbus(chunk)
                     self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
 
                     # 等待1000ms
@@ -824,6 +826,8 @@ class DeviceStateChkThread(QThread):
                         self.cycleCnt += 1
                         if self.exiting:
                             break
+                        if not self.otaStateChk():
+                            break
 
                     if not self.otaStateChk():
                         break
@@ -834,20 +838,22 @@ class DeviceStateChkThread(QThread):
                     pkg_last = BlockLen % 512
                     pkgCurrCnt = 0
 
+                    if BlockLen < 4096:
+                        log.logger.debug("最后一包数据，长度为%d", BlockLen)
+
                     # 发送数据块
                     while offset < BlockLen:
-
                         PkgIdxByte = PkgIdx.to_bytes(1, byteorder='big', signed=False)
                         if pkgCnt > pkgCurrCnt:
                             self.DS_Send(self.sn, 0, "0010", '0201', PkgIdxByte + chunk[offset:offset + 512])
                             offset = offset + 512
                             pkgCurrCnt += 1
                         else:
-                            pkgCntBytes = pkg_last.to_bytes(2, byteorder='big', signed=False).hex() + 1
+                            pkgCntBytes = (pkg_last+1).to_bytes(2, byteorder='big', signed=False).hex()
                             self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
                             offset = offset + pkg_last
                             self.PCB.PkgCnt = 0
-                        time.sleep(0.1)  # 根据实际情况调整
+                        time.sleep(0.02)  # 根据实际情况调整
 
                         if PkgIdx == 255:
                             PkgIdx = 1
@@ -875,6 +881,8 @@ class DeviceStateChkThread(QThread):
                         self.cycleCnt += 1
                         if self.exiting:
                             break
+                        if not self.otaStateChk():
+                            break
 
                     if not self.otaStateChk():
                         break
@@ -885,6 +893,7 @@ class DeviceStateChkThread(QThread):
                     # 判断是否完成
                     if self.PCB.otaPercentCal() == 100 or self.PCB.OTAState == OTAState.Success:
                         self.UpdateProcessState('设备升级完成', OTAState.Success)
+                        time.sleep(6)
 
         except Exception as e:
             self.UpdateProcessState(f'升级失败: {str(e)}', OTAState.Fail)

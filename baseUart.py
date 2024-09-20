@@ -6,6 +6,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 
 import baseUtils
+from baseLogger import log
 
 
 class BaseUartThread(QThread):
@@ -27,17 +28,26 @@ class BaseUartThread(QThread):
 
     #
     def uartWrite(self, data):
+
         # 判断输入data是否有效
-        if not data:
+        if not data or len(data) % 2 != 0:
+            print("Invalid data or data length is not even.")
             return None
+
+        try:
+            # 尝试解码hex数据
+            tmp = codecs.decode(data, "hex_codec")
+        except Exception as e:
+            print(f"Failed to decode data: {e}")
+            return None
+
         # 加写串口数据互斥锁，锁
         self.uartTx_mutex.lock()
-        # print("baseUart", "uartWrite", data, type(data))
-
-        tmp = codecs.decode(data, "hex_codec")
 
         if self.Ser.isOpen():
             try:
+                # 向串口写数据，打印日志以便调试
+                log.logger.info(f"Writing data size: {len(tmp)}")
                 # 向串口写数据
                 self.Ser.write(tmp)
             except:

@@ -415,16 +415,17 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.FirmFileName_Dongle.setDisabled(False)
             self.FirmFileToolButton_Dongle.setDisabled(False)
             self.tabWidget.tabBar().setDisabled(False)
+            self.stopSignal_Out.emit()
 
         else:
             path = self.FirmFileName_Dongle.text()
             # 判断文件名称是否为空
             if path == "":
-                self.showFlyout("提醒", "请先选择升级文件", self.FirmFileName)
+                self.showFlyout("提醒", "请先选择升级文件", self.FirmFileName_Dongle)
                 return
             # 判断文件是否存在
             if not os.path.isfile(path):
-                self.showFlyout("提醒", "文件不存在,请确认后再次尝试", self.FirmFileName)
+                self.showFlyout("提醒", "文件不存在,请确认后再次尝试", self.FirmFileName_Dongle)
                 return
 
             self.updateSignal_Out.emit(path, page)
@@ -432,6 +433,13 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.FirmFileName_Dongle.setDisabled(True)
             self.FirmFileToolButton_Dongle.setDisabled(True)
             self.tabWidget.tabBar().setDisabled(True)
+
+    def onUpdateDongleStop(self):
+
+        self.ButtonStartOTA_Dongle.setText("Software Update")
+        self.FirmFileName_Dongle.setDisabled(False)
+        self.FirmFileToolButton_Dongle.setDisabled(False)
+        self.tabWidget.tabBar().setDisabled(False)
 
     def updateDpValueCallback(self, DpParam):
 
@@ -745,11 +753,10 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         log.logger.debug("当前状态：%d %s", state, OTADescription)
 
-        if state == OTAState.GoOn:
+        if state == OTAState.GoOn or state == OTAState.UserExit:
             color = themeColor()
             self.OTAstate = OTAState.GoOn
         elif state == OTAState.Success:
-            # color = "green"
             color = themeColor()
             self.OTAstate = OTAState.Success
         else:
@@ -763,7 +770,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.OTAStateLabel_Dongle.setTextColor(QColor(color), QColor(color))
             self.UpdateProgressBar_Dongle.setValue(percent)
             if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
-                self.onUpdateDongle()
+                self.onUpdateDongleStop()
         else:
             if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
                 self.UpdateStop()
