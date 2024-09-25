@@ -231,83 +231,100 @@ class DeviceStateChkThread(QThread):
         self.DS_dPRevSignal_sinOut.emit(DpRev)
         return True
 
+    @staticmethod
+    def findHead(bytesList: bytes, headfirst, headsecond):
+
+        if len(bytesList) < 2:
+            return -1
+
+        for i in range(len(bytesList)-1):
+            if bytesList[i] == headfirst and bytesList[i+1] == headsecond:
+                return i
+        return -1
+
     # 按照帧结构解析处理一条完整的帧数据
     def uartParse(self, data):
-        IndexCnt = 0
-        # 判断输入data是否有效
         if not data:
             return None
-        # 打印即将处理的数据
-        print("check uart", data, len(data))
-        #log.logger.debug("userTest.uartParse", str(data), len(data))
-        # 打印更新后的缓存区数据
-        print("userTest.processReadBuffer", "readBuf", self.readBuf)
 
-        # 判断起始标志
-        headIdx = data.find(bytes.fromhex("66AA"))
+        # print("check uart", data, len(data))
+        # log.logger.debug("userTest.processReadBuffer %s ",% self.readBuf.hex())
+        log.logger.debug("Rev Dp Data: %s" % data.hex())
+        # print("userTest.processReadBuffer", "readBuf", self.readBuf)
 
-        IndexCnt += (Frame.HEAD + Frame.SN)
-        # print("userTest.uartParse", "headidx", headidx)
-        # 如果没有找到起始标志，返回等待数据完整
-        if headIdx < 0:
-            log.logger.debug("check uart parse no head error")
-            return False, b''
+        result = True
+        remaining_data = data  # 剩余待处理的数据
 
-        # 当索引值大于等于总体数据长度，需要再等多一些字节数据
-        if len(data) < 15:
-            log.logger.debug("check uart parse wait cnt bytes")
-            return False, b''
+        while True:
+            headIdx = self.findHead(remaining_data, 0x66, 0xAA)  #
+            offset = headIdx
 
-        # 读取sn号
+            if headIdx < 0:
+                # 没有找到更多的起始标志，退出循环
+                log.logger.debug("check uart parse not find head")
+                break
 
-        self.acksn = data[headIdx + IndexCnt] * pow(2, 16) + data[headIdx + IndexCnt + 1] * pow(2, 12) + \
-                     data[headIdx + IndexCnt + 2] * pow(2, 8) + data[headIdx + IndexCnt + 3]
+            # 当索引值大于等于总体数据长度，需要再等多一些字节数据
+            if len(remaining_data) < headIdx + 15:
+                log.logger.debug("check uart parse wait cnt bytes")
+                return False, b''
 
-        IndexCnt += Frame.ACK_SN
-        # 获取2字节功能码
-        cmd = data[headIdx + IndexCnt:headIdx + IndexCnt + Frame.CMD]
-        IndexCnt += Frame.CMD
-        # 可能存在断包情况，获取不到cnt信息
-        try:
-            # 获取数据长度
-            dataCnt = data[headIdx + IndexCnt] * 256 + data[headIdx + IndexCnt + 1]
-            print("check uart", "cnt", dataCnt)
-        except:
-            log.logger.debug("check uart no cnt info")
-            return False, b''
+            # 读取sn号
+            self.acksn = (remaining_data[headIdx + Frame.HEAD + Frame.SN] << 24) | \
+                    (remaining_data[headIdx + Frame.HEAD + Frame.SN + 1] << 16) | \
+                    (remaining_data[headIdx + Frame.HEAD + Frame.SN + 2] << 8) | \
+                    remaining_data[headIdx + Frame.HEAD + Frame.SN + 3]
 
-        # 等待数据帧完整
-        if len(data) < headIdx + dataCnt + Frame.LEN_EXPDATA:
-            log.logger.debug(
-                "check uart parse wait complete %d" % (headIdx + dataCnt + Frame.LEN_EXPDATA - len(data)))
-            return True, b''
+            offset += (Frame.HEAD+Frame.ACK_SN + Frame.SN)
+            # 获取2字节功能码
+            cmd = remaining_data[offset:offset + Frame.CMD]
 
-        # 校验数据
-        dataCheckSum = data[headIdx + dataCnt + Frame.DATA_START]
-        checkTmp = BaseUtils.uchar_byte_checksum(data[headIdx:headIdx + dataCnt + Frame.DATA_START])
-        # 如果校验失败
-        if dataCheckSum != checkTmp:
-            log.logger.debug("check uart data checksum fail!")
-            return False, data[headIdx + dataCnt + Frame.LEN_EXPDATA:]
+            offset += Frame.CMD
 
-        # 校验成功，执行命令代码
-        log.logger.debug("check uart data checksum success!")
+            try:
+                # 获取数据长度
+                dataCnt = (remaining_data[offset] << 8) | remaining_data[offset + 1]
+            except:
+                log.logger.debug("check uart no cnt info")
+                return False, b''
 
-        # 可能存在没有相应指令函数，则报错退出
-        try:
-            # 执行相应指令
-            if dataCnt:
-                self.cmdProcessor[cmd](data[headIdx + Frame.DATA_START:headIdx + Frame.DATA_START + dataCnt])
+            offset += Frame.DATA_LEN
+
+            # 等待数据帧完整
+            if len(remaining_data) < dataCnt + Frame.LEN_EXPDATA:
+                log.logger.debug(
+                    "check uart parse wait complete %d" % (
+                                dataCnt + Frame.LEN_EXPDATA - len(remaining_data)))
+                return True, b''
+
+            # 校验数据
+            dataCheckSum = remaining_data[offset + dataCnt ]
+            checkTmp = BaseUtils.uchar_byte_checksum(
+                remaining_data[headIdx:offset + dataCnt])
+
+            if dataCheckSum != checkTmp:
+                log.logger.debug("check uart data checksum fail!")
+                result = False
+                break
             else:
-                self.cmdProcessor[cmd]()
+                log.logger.debug("check uart data checksum success!")
 
-        except KeyError:
-            # print("userTest.uartParse", "parse cmd error", cmd)
-            log.logger.error("check uart parse cmd error!")
-            return False, data[headIdx + Frame.DATA_START + dataCnt:]
+                # 执行相应指令
+                if cmd in self.cmdProcessor:
+                    self.cmdProcessor[cmd](
+                            remaining_data[offset:offset + dataCnt])
+                else:
+                    result = False
+                    log.logger.error("check uart parse cmd error!")
+                    break
 
-        # 正确处理完一条信息，正常返回
-        return True, data[headIdx + dataCnt + Frame.LEN_EXPDATA + 1:]
+                offset += dataCnt + 1
+
+            # 更新remaining_data为当前处理位置之后的数据
+            remaining_data = remaining_data[offset:]
+
+        # 返回处理结果和剩余未处理的数据
+        return result,  b''
 
     def uartProc(self, data):
         """
@@ -338,7 +355,7 @@ class DeviceStateChkThread(QThread):
         # 已处理完的数据从缓存区去除
         self.readBuf = BaseUtils.asciiB2HexString(unProc) or ''
 
-    def cmd_shakeHand(self):
+    def cmd_shakeHand(self,hexx):
         """
         解析握手指令
         """
@@ -432,7 +449,7 @@ class DeviceStateChkThread(QThread):
         else:
             log.logger.debug('错误应答，未在对应状态！')
 
-    def cmd_SerialDisconn(self):
+    def cmd_SerialDisconn(self,hexx):
         """
         设备断开回复
         """
@@ -699,7 +716,7 @@ class DeviceStateChkThread(QThread):
     def processData(self):
         while True:
             self.processReadBuffer()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     def run(self):
 
