@@ -103,7 +103,7 @@ class UserTestThread(QThread):
 
         # 通过外部ini文件配置相关测试参数
         try:
-            self.settings = QSettings("resource/config/user_config.ini", QSettings.IniFormat)
+            self.settings = QSettings("resources/config/user_config.ini", QSettings.IniFormat)
             self.lteTestFlag = self.settings.value("TEST/lteTest_flag")
             self.subBattFlag = self.settings.value("TEST/subBattFlag")
 

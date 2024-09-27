@@ -142,7 +142,7 @@ class BaseUtils:
         current_time = datetime.now().date()
         # 格式化日期戳
         datestamp = current_time.strftime("%Y%m%d")
-        RecordFilePath = 'resource/regList_'+datestamp+'.csv'
+        RecordFilePath = 'resources/regList_'+datestamp+'.csv'
 
         try:
             # 尝试读文件

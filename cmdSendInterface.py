@@ -71,7 +71,7 @@ class DP_ListTable(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.filename = "resource/user/send_dp_list.json"
+        self.filename = "resources/user/send_dp_list.json"
         self.totalItems = 0
         self.isProcessingDelete = False
         self.initUI()

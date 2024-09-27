@@ -11,7 +11,7 @@ from baseLogger import log
 from basePrinter import BasePrinterThread
 from baseUart import BaseUartThread
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
-from resource.ui.AuthTestInterface_UI import Ui_AuthTestInterface_UI
+from resources.ui.AuthTestInterface_UI import Ui_AuthTestInterface_UI
 from userTest import UserTestThread
 
 
@@ -70,7 +70,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # 通过外部ini文件配置相关参数
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
         try:
-            self.settings = QSettings("resource/config/sys_config.ini", QSettings.IniFormat)
+            self.settings = QSettings("resources/config/sys_config.ini", QSettings.IniFormat)
             self.printerCnt = int(self.settings.value("BASE_SETTING/tag_print_times"))
             self.regUrl = self.settings.value("BASE_SETTING/reg_url")
             print(self.regUrl)

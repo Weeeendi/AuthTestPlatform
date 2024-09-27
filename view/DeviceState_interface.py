@@ -16,9 +16,21 @@ from cmdSendInterface import DP_ListTable
 from deviceStateChk import DeviceStateChkThread, OTAState
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
-from resource.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
+from resources.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
 CONN_OVERTIME = 5 * 10
+
+DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
+ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]
+
+
+class dev_dp_list:
+    def __init__(self):
+        self.bms_dp_list = []
+        self.iot_dp_list = []
+        self.controller_dp_list = []
+        self.dashboard_dp_list = []
+        self.sub_bms_dp_list = []
 
 
 class deviceOnline:
@@ -118,9 +130,7 @@ class DeviceStateTask(QThread):
     pageChangeSignal = pyqtSignal(int)
     serialOnlineSignal = pyqtSignal(bool)
 
-    DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
-    ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]
-
+    # 过滤掉不需要的数据
     def __init__(self, DpDict=None):
         super(DeviceStateTask, self).__init__()
 
@@ -146,16 +156,16 @@ class DeviceStateTask(QThread):
         self.running = True
 
     def initErrDict(self):
-        for Dev in self.DevList:
+        for Dev in DevList:
             try:
                 group = self.FilterDict[Dev]
                 for key in group:
-                    if key.get("code") in self.ErrCodeList:
+                    if key.get("code") in ErrCodeList:
                         self.errCodeDict[key.get("code")] = key.get("id")
             except Exception as e:
                 log.logger.error(e)
 
-        with open('resource/config/bitmapTranslation.json', 'r', encoding='utf-8', errors='ignore') as file:
+        with open('resources/config/bitmapTranslation.json', 'r', encoding='utf-8', errors='ignore') as file:
             self.errDict = json.loads(file.read())
 
     def onPageChange(self, page):
@@ -167,7 +177,7 @@ class DeviceStateTask(QThread):
 
     def addErrDescription(self, dpid, value) -> str:
         strList = ""
-        for errCode in self.ErrCodeList:
+        for errCode in ErrCodeList:
             if dpid == self.errCodeDict[errCode]:
                 for i in range(len(value)):
                     if value[-(i + 1)] == '1':
@@ -206,10 +216,10 @@ class DeviceStateTask(QThread):
             elif group == "BMS_Dp_Data":
                 page = 2
                 self.overTimeConn.BMSOnline = CONN_OVERTIME
-            elif group == "IOT_Dp_Data":
+            elif group == "IoT_Dp_Data":
                 page = 3
                 self.overTimeConn.IotOnline = CONN_OVERTIME
-            elif group == "Sub_BMS_Dp_Data":
+            elif group == "SubBMS_Dp_Data":
                 page = 4
                 self.overTimeConn.SubBMSOnline = CONN_OVERTIME
 
@@ -465,7 +475,10 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 getattr(self, f"SN_{DpParam.page + 1}").setText(param.get('sn', ''))
 
         elif DpParam.msg == 'data':
-            getattr(self, f"dpTableView_{DpParam.page}").updateData(DpParam.id, DpParam.type, DpParam.value)
+            if DpParam.page == 0:
+                getattr(self, f"dpTableView").updateData(DpParam.id, DpParam.type, DpParam.value)
+            else:
+                getattr(self, f"dpTableView_{DpParam.page}").updateData(DpParam.id, DpParam.type, DpParam.value)
 
         else:
             log.logger.debug("未知消息")
@@ -746,14 +759,14 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         print("刷新串口")
 
     def InitDataPointList(self):
-        with open('resource/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
+        with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
             self.DpDict = json.loads(file.read())
 
     def onChangeOTAState(self, percent: int, state: OTAState, OTADescription: str):
 
         log.logger.debug("当前状态：%d %s", state, OTADescription)
 
-        if state == OTAState.GoOn or state == OTAState.UserExit:
+        if state == OTAState.GoOn or state == OTAState.UserExit or state == OTAState.TransDataComplete:
             color = themeColor()
             self.OTAstate = OTAState.GoOn
         elif state == OTAState.Success:
@@ -806,6 +819,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         paramLayOut = getattr(self, ParamFileLayOutName)
         firmLayOut = getattr(self, FirmFileLayOutName)
+
         def handle_widget(LayOut, Checkbox):
             try:
                 for index in range(LayOut.count()):
@@ -829,8 +843,6 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         handle_widget(paramLayOut, paramCheckbox)
         handle_widget(firmLayOut, firmCheckbox)
-
-
 
     def UpdateStop(self):
         if self.page == 0:

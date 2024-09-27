@@ -1,14 +1,16 @@
 import ctypes  # 通过这个模块来调用C#的dll库
-from PyQt5.QtCore import QThread
 import time
-from baseLogger import log
+
+from PyQt5.QtCore import QThread
+
 import baseUtils
+from baseLogger import log
 
 # 创建BaseUtils实例
 util = baseUtils.BaseUtils()
 
 # 加载dll库
-mydll = ctypes.WinDLL("resource/Seagull.BarTender.Print.dll")
+mydll = ctypes.WinDLL("resources/Seagull.BarTender.Print.dll")
 
 # 可能会出现“Import "Seagull.BarTender.Print" could not be resolved”这个波浪线错误，这里不用管
 
@@ -73,7 +75,7 @@ class BasePrinterThread(QThread):
 
         try:
             # 生成bartender对象
-            self.seagullBartender = BaseBarTender(util.resource_path("resource/yunJi_tag.btw"))
+            self.seagullBartender = BaseBarTender(util.resource_path("resources/yunJi_tag.btw"))
             # 生成目标文件对象
             self.seagullBartender.createTask()
             # 搜寻默认打印机

@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     window = QMainWindow()
-    with open('resource/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
+    with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
         jsondata = json.load(file)
 
     ex = myTableModel(jsondata["BMS_Dp_Data"])

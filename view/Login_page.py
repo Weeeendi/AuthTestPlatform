@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'd:\Python_Study\Github_Repositories\PyQt-Fluent-Widgets\resource\ui\LoginWindow.ui'
+# Form implementation generated from reading ui file 'd:\Python_Study\Github_Repositories\PyQt-Fluent-Widgets\resources\ui\LoginWindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -22,7 +22,7 @@ class Ui_Form(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.label = QtWidgets.QLabel(Form)
         self.label.setText("")
-        self.label.setPixmap(QtGui.QPixmap("../resource/background.jpg"))
+        self.label.setPixmap(QtGui.QPixmap("../resources/background.jpg"))
         self.label.setScaledContents(True)
         self.label.setObjectName("label")
         self.horizontalLayout.addWidget(self.label)
@@ -54,7 +54,7 @@ class Ui_Form(object):
         self.label_2.setMinimumSize(QtCore.QSize(100, 100))
         self.label_2.setMaximumSize(QtCore.QSize(100, 100))
         self.label_2.setText("")
-        self.label_2.setPixmap(QtGui.QPixmap("resource/logo.png"))
+        self.label_2.setPixmap(QtGui.QPixmap("resources/logo.png"))
         self.label_2.setScaledContents(True)
         self.label_2.setObjectName("label_2")
         self.verticalLayout_2.addWidget(self.label_2, 0, QtCore.Qt.AlignHCenter)

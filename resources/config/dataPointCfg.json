@@ -5,7 +5,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"控制器故障",
+      "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"控制器故障信息",
       "property":{"maxlen":20,"type":"bitmap"}
     }
   ],
@@ -15,7 +15,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"dashboard_fault","id":42,"msg":"data","defaultValue":"","desc":"","name":"仪表故障",
+      "code":"dashboard_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"仪表故障信息",
       "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
     }
   ],
@@ -25,7 +25,7 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"bms_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障",
+      "code":"bms_fault","id":32,"msg":"data","defaultValue":"","desc":"","name":"电池故障信息",
       "property":{"maxlen":2,"type":"bitmap"}
     },
     {
@@ -34,21 +34,17 @@
   ],
   "IoT_Dp_Data": [
     {
-      "code":"base_verInfo","id":30,"msg":"ver","defaultValue":"","desc":"","name":"iot基础信息",
+      "code":"base_verInfo","id":43,"msg":"ver","defaultValue":"","desc":"","name":"iot基础信息",
       "property":{"maxlen":255,"type":"string"}
     },
     {
-      "code":"iot_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "code":"iot_fault","id":30,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
       "property":{"maxlen":4,"type":"bitmap"}
     }
   ],
     "SubBMS_Dp_Data": [
     {
-      "code":"base_verInfo","id":80,"msg":"ver","defaultValue":"","desc":"","name":"iot基础信息",
-      "property":{"maxlen":255,"type":"string"}
-    },
-    {
-      "code":"sub_bms_fault","id":81,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
+      "code":"sub_bms_fault","id":77,"msg":"data","defaultValue":"","desc":"","name":"副电池故障信息",
       "property":{"maxlen":4,"type":"bitmap"}
     }
   ]

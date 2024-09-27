@@ -38,9 +38,10 @@ class Frame:
 class OTAState:
     GoOn = 1
     Fail = 2
-    Success = 3
-    UserExit = 4
-    OverTime = 5
+    TransDataComplete = 3
+    Success = 4
+    UserExit = 5
+    OverTime = 6
 
 
 
@@ -82,6 +83,7 @@ class OTA_PCB:
         self.crc32File = FileCrc32
         self.OTAState = OTAState.GoOn
         self.blockLock = True
+        self.otaExit = False
 
     def onOVER(self):
         self.FilePath = ''
@@ -237,8 +239,8 @@ class DeviceStateChkThread(QThread):
         if len(bytesList) < 2:
             return -1
 
-        for i in range(len(bytesList)-1):
-            if bytesList[i] == headfirst and bytesList[i+1] == headsecond:
+        for i in range(len(bytesList) - 1):
+            if bytesList[i] == headfirst and bytesList[i + 1] == headsecond:
                 return i
         return -1
 
@@ -271,11 +273,11 @@ class DeviceStateChkThread(QThread):
 
             # 读取sn号
             self.acksn = (remaining_data[headIdx + Frame.HEAD + Frame.SN] << 24) | \
-                    (remaining_data[headIdx + Frame.HEAD + Frame.SN + 1] << 16) | \
-                    (remaining_data[headIdx + Frame.HEAD + Frame.SN + 2] << 8) | \
-                    remaining_data[headIdx + Frame.HEAD + Frame.SN + 3]
+                         (remaining_data[headIdx + Frame.HEAD + Frame.SN + 1] << 16) | \
+                         (remaining_data[headIdx + Frame.HEAD + Frame.SN + 2] << 8) | \
+                         remaining_data[headIdx + Frame.HEAD + Frame.SN + 3]
 
-            offset += (Frame.HEAD+Frame.ACK_SN + Frame.SN)
+            offset += (Frame.HEAD + Frame.ACK_SN + Frame.SN)
             # 获取2字节功能码
             cmd = remaining_data[offset:offset + Frame.CMD]
 
@@ -294,11 +296,11 @@ class DeviceStateChkThread(QThread):
             if len(remaining_data) < dataCnt + Frame.LEN_EXPDATA:
                 log.logger.debug(
                     "check uart parse wait complete %d" % (
-                                dataCnt + Frame.LEN_EXPDATA - len(remaining_data)))
+                            dataCnt + Frame.LEN_EXPDATA - len(remaining_data)))
                 return True, b''
 
             # 校验数据
-            dataCheckSum = remaining_data[offset + dataCnt ]
+            dataCheckSum = remaining_data[offset + dataCnt]
             checkTmp = BaseUtils.uchar_byte_checksum(
                 remaining_data[headIdx:offset + dataCnt])
 
@@ -312,7 +314,7 @@ class DeviceStateChkThread(QThread):
                 # 执行相应指令
                 if cmd in self.cmdProcessor:
                     self.cmdProcessor[cmd](
-                            remaining_data[offset:offset + dataCnt])
+                        remaining_data[offset:offset + dataCnt])
                 else:
                     result = False
                     log.logger.error("check uart parse cmd error!")
@@ -324,7 +326,7 @@ class DeviceStateChkThread(QThread):
             remaining_data = remaining_data[offset:]
 
         # 返回处理结果和剩余未处理的数据
-        return result,  b''
+        return result, b''
 
     def uartProc(self, data):
         """
@@ -355,7 +357,7 @@ class DeviceStateChkThread(QThread):
         # 已处理完的数据从缓存区去除
         self.readBuf = BaseUtils.asciiB2HexString(unProc) or ''
 
-    def cmd_shakeHand(self,hexx):
+    def cmd_shakeHand(self, hexx):
         """
         解析握手指令
         """
@@ -449,7 +451,7 @@ class DeviceStateChkThread(QThread):
         else:
             log.logger.debug('错误应答，未在对应状态！')
 
-    def cmd_SerialDisconn(self,hexx):
+    def cmd_SerialDisconn(self, hexx):
         """
         设备断开回复
         """
@@ -552,6 +554,8 @@ class DeviceStateChkThread(QThread):
 
                 if hexx[1] == 0x00:
                     log.logger.debug("OTA 退出成功")
+                    self.PCB.otaExit = True
+
                 elif hexx[1] == 0x01:
                     log.logger.debug("数据总长度错误")
                     self.UpdateProcessState('数据总长度错误', OTAState.Fail)
@@ -652,7 +656,7 @@ class DeviceStateChkThread(QThread):
                 self.listIndex = i
                 break
 
-    def doStopOTA(self,goBackState):
+    def doStopOTA(self, goBackState):
         devTypeStr = self.PCB.devType.to_bytes(1, byteorder='big', signed=False).hex()
         # 发送退出OTA命令
         self.DS_Send(self.sn, 0, "0011", '0001', devTypeStr)
@@ -677,6 +681,12 @@ class DeviceStateChkThread(QThread):
         if state == OTAState.Fail or state == OTAState.UserExit:
             self.doStopOTA(MachineState.DpDisplay)
             percent = 0
+
+        if state == OTAState.TransDataComplete:
+            # 发送退出OTA命令
+            devTypeStr = self.PCB.devType.to_bytes(1, byteorder='big', signed=False).hex()
+            self.DS_Send(self.sn, 0, "0011", '0001', devTypeStr)
+            percent = 99
 
         if state == OTAState.Success:
             self.doStopOTA(MachineState.Waiting)
@@ -717,6 +727,16 @@ class DeviceStateChkThread(QThread):
         while True:
             self.processReadBuffer()
             time.sleep(0.01)
+
+    def send_query_dp(self, dpList=[]):
+        if len(dpList) == 0:
+            self.DS_Send(self.sn, 0, "0003", '0000')
+        else:
+            dpListLen = len(dpList).to_bytes(2, byteorder='big', signed=False).hex()
+            dpListBytes = ''
+            for i in range(len(dpList)):
+                dpListBytes += dpList[i].to_bytes(1, byteorder='big', signed=False).hex()
+            self.DS_Send(self.sn, 0, "0003", dpListLen, dpListBytes)
 
     def run(self):
 
@@ -759,7 +779,7 @@ class DeviceStateChkThread(QThread):
                 if self.checkAllDp and self.sendMutexFlag:
                     self.checkAllDp = False
                     self.sendMutexFlag = False
-                    self.DS_Send(self.sn, 0, "0003", '0000')
+                    self.send_query_dp()
 
                 # 等待100ms
                 time.sleep(0.1)
@@ -809,7 +829,7 @@ class DeviceStateChkThread(QThread):
             return False
 
         elif self.PCB.OTAState == OTAState.Success:
-            self.UpdateProcessState("升级成功", OTAState.Success)
+            self.UpdateProcessState("设备升级成功", OTAState.Success)
             return False
 
         elif self.PCB.OTAState == OTAState.OverTime:
@@ -866,7 +886,7 @@ class DeviceStateChkThread(QThread):
                             offset = offset + 512
                             pkgCurrCnt += 1
                         else:
-                            pkgCntBytes = (pkg_last+1).to_bytes(2, byteorder='big', signed=False).hex()
+                            pkgCntBytes = (pkg_last + 1).to_bytes(2, byteorder='big', signed=False).hex()
                             self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
                             offset = offset + pkg_last
                             self.PCB.PkgCnt = 0
@@ -908,9 +928,28 @@ class DeviceStateChkThread(QThread):
                     # if BlockLen < 4096:
                     #     log.logger.debug("升级完成")
                     # 判断是否完成
-                    if self.PCB.otaPercentCal() == 100 or self.PCB.OTAState == OTAState.Success:
-                        self.UpdateProcessState('设备升级完成', OTAState.Success)
-                        time.sleep(6)
+                    if self.PCB.otaPercentCal() == 100:
+
+                        self.UpdateProcessState('文件传输完成，等待校验', OTAState.TransDataComplete)
+
+                        while not self.PCB.otaExit:
+                            time.sleep(0.2)  # 根据实际情况调整
+                            if self.cycleCnt >= 100:
+                                self.PCB.OTAState = OTAState.OverTime
+                                break
+                            self.cycleCnt += 1
+                            if self.exiting:
+                                break
+                            if not self.otaStateChk():
+                                break
+
+                        if self.cycleCnt < 100:
+                            self.UpdateProcessState('设备升级完成', OTAState.Success)
+                            time.sleep(6)
+                        else:
+                            self.UpdateProcessState('设备回复超时', OTAState.OverTime)
+
+                    self.cycleCnt = 0
 
         except Exception as e:
             self.UpdateProcessState(f'升级失败: {str(e)}', OTAState.Fail)

@@ -31,10 +31,10 @@ def save_credentials(username, password, enable_remember):
 
     # 将数据写入文件（或者数据库中）
     try:
-        with open('resource/user/credentials.json', 'w') as file:
+        with open('resources/user/credentials.json', 'w') as file:
             json.dump(credentials, file)
     except FileNotFoundError:
-        with open('resource/user/credentials.json', 'x') as file:
+        with open('resources/user/credentials.json', 'x') as file:
             json.dump(credentials, file)
 
 
@@ -55,7 +55,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
         self.label.setScaledContents(False)
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
-        # self.setWindowIcon(QIcon("resource/logo.png"))
+        # self.setWindowIcon(QIcon("resources/logo.png"))
         self.resize(1000, 650)
 
         self.windowEffect.setMicaEffect(self.winId(), isDarkMode=False)
@@ -92,7 +92,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     def read_credentials(self):
 
         try:
-            with open('resource/user/credentials.json', 'r') as file:
+            with open('resources/user/credentials.json', 'r') as file:
                 stored_credentials = json.load(file)
         except FileNotFoundError:
             print("没有存储的用户信息")
@@ -110,7 +110,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def check_credentials(self, username, password):
         # 读取存储的数据
-        with open('resource/user/credentials.json', 'r') as file:
+        with open('resources/user/credentials.json', 'r') as file:
             stored_credentials = json.load(file)
 
         # 获取存储的用户名和密码
@@ -148,13 +148,13 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        pixmap = QPixmap("resource/background.jpg").scaled(
+        pixmap = QPixmap("resources/background.jpg").scaled(
             self.label.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self.label.setPixmap(pixmap)
 
     def initWindow(self):
         self.resize(1000, 650)
-        self.setWindowIcon(QIcon("resource/logo.png"))
+        self.setWindowIcon(QIcon("resources/logo.png"))
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
         # 隐藏窗口标题栏
@@ -196,7 +196,7 @@ class Window(FluentWindow):
         self.close_cnt = 1;
         # self.initWindow()
         self.resize(1000, 700)
-        self.setWindowIcon(QIcon("resource/logo.png"))
+        self.setWindowIcon(QIcon("resources/logo.png"))
         self.version = "v23111.0.0"
         self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
 
@@ -246,7 +246,7 @@ class Window(FluentWindow):
 
         self.navigationInterface.addWidget(
             routeKey='avatar',
-            widget=NavigationAvatarWidget('Account', QPixmap('resource/logo.png'), self),
+            widget=NavigationAvatarWidget('Account', QPixmap('resources/logo.png'), self),
             onClick=self.account_set,
             position=NavigationItemPosition.BOTTOM
         )
@@ -266,7 +266,7 @@ class Window(FluentWindow):
 
     def initWindow(self):
         self.resize(980, 900)
-        self.setWindowIcon(QIcon("resource/logo.png"))
+        self.setWindowIcon(QIcon("resources/logo.png"))
         self.version = "v23111.0.0"
         self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
         # self.setFont(QFont('Microsoft YaHei', pointSize=16))

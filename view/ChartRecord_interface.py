@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QPainter, QFont
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QFrame, QVBoxLayout
 
 from qfluentwidgets import MessageBox, themeColor, BodyLabel
-from resource.ui.ChartInterface_UI import Ui_ChartInterface_UI
+from resources.ui.ChartInterface_UI import Ui_ChartInterface_UI
 
 
 def showMessage(title, content, parent=None):

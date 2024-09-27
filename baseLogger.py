@@ -1,9 +1,11 @@
-import time
-import os
 import logging
+import os
+import time
 from logging import handlers
+
 from PyQt5.QtCore import *
 from PyQt5.QtCore import pyqtSignal
+
 import baseUtils
 
 formater = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
@@ -56,7 +58,7 @@ class Logger(object):
         # 通过外部ini文件配置相关参数
         # 获取log level
         try:
-            self.settings = QSettings("resource/config/sys_config.ini", QSettings.IniFormat)
+            self.settings = QSettings("resources/config/sys_config.ini", QSettings.IniFormat)
             self.loggerLevel = self.settings.value("BASE_SETTING/logger_level")
             level = self.loggerLevel
         except:
