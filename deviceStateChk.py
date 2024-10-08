@@ -686,7 +686,7 @@ class DeviceStateChkThread(QThread):
             # 发送退出OTA命令
             devTypeStr = self.PCB.devType.to_bytes(1, byteorder='big', signed=False).hex()
             self.DS_Send(self.sn, 0, "0011", '0001', devTypeStr)
-            percent = 99
+            percent = 100
 
         if state == OTAState.Success:
             self.doStopOTA(MachineState.Waiting)
@@ -857,7 +857,7 @@ class DeviceStateChkThread(QThread):
                     # 等待1000ms
                     while self.PCB.blockLock:
                         time.sleep(0.01)  # 根据实际情况调整
-                        if self.cycleCnt >= 100:
+                        if self.cycleCnt >= 300:
                             self.PCB.OTAState = OTAState.OverTime
                             break
                         self.cycleCnt += 1
@@ -912,7 +912,7 @@ class DeviceStateChkThread(QThread):
                     # 等待1000ms
                     while self.PCB.blockLock:
                         time.sleep(0.01)  # 根据实际情况调整
-                        if self.cycleCnt >= 100:
+                        if self.cycleCnt >= 300:
                             self.PCB.OTAState = OTAState.OverTime
                             break
                         self.cycleCnt += 1
@@ -934,7 +934,7 @@ class DeviceStateChkThread(QThread):
 
                         while not self.PCB.otaExit:
                             time.sleep(0.2)  # 根据实际情况调整
-                            if self.cycleCnt >= 100:
+                            if self.cycleCnt >= 300:
                                 self.PCB.OTAState = OTAState.OverTime
                                 break
                             self.cycleCnt += 1
