@@ -73,6 +73,15 @@ class myTableModel(TableView):
             value = item.get("defaultValue") if item.get("defaultValue") is not None else item.get("value", "")
             unit = item.get("property").get("unit") if item.get("property").get("unit") is not None else item.get(
                 "property").get("unit", "")
+
+            if itype == "enum" and value != '':
+                enum_des = item.get("property").get("enum_desc").split(",")
+
+                if int(value) >= len(enum_des):
+                    return None
+
+                value = enum_des[int(value)]
+
             # 如果name还未被处理过，添加到集合和数据列表
             if name and name not in unique_names:
                 unique_names.add(name)
@@ -91,13 +100,21 @@ class myTableModel(TableView):
             self.TableModel.update_data(row, 3, value)
 
             header = self.horizontalHeader()
-            # 设置倒数第二列既适应内容又拉伸
             column_count = self.model().columnCount()
             # 设置倒数第二列既适应内容又拉伸
-            header.setSectionResizeMode(column_count - 1, QHeaderView.ResizeToContents)
-            # 将倒数第二列的调整模式设置为 Stretch
+            # 设置倒数第二列既适应内容又拉伸
+            self.resizeColumnsToContents()
             header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
-            self.resizeRowsToContents()
+            # 将倒数第二列的调整模式设置为 Stretch
+            # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
+
+            # 确保列宽至少是min_section_size
+            min_section_size = 100  # 设置最小列宽
+            for section in range(header.count()):
+                if (section == column_count - 1):
+                    header.resizeSection(section, 100)
+                    continue
+                header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 
         else:
             log.logger.error("数据非法,不在列表中的数据")
@@ -112,9 +129,9 @@ class myTableModel(TableView):
         # 假设模型中有一些数据，因此有列
         column_count = self.model().columnCount()
         # 设置倒数第二列既适应内容又拉伸
-        header.setSectionResizeMode(column_count - 1, QHeaderView.ResizeToContents)
-        # 将倒数第二列的调整模式设置为 Stretch
         header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
+        # 将倒数第二列的调整模式设置为 Stretch
+        # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
         # 设置列宽模式为Interactive，允许用户手动调整列宽
         # header.setSectionResizeMode(QHeaderView.Interactive)
 
@@ -124,7 +141,11 @@ class myTableModel(TableView):
         # 确保列宽至少是min_section_size
         min_section_size = 100  # 设置最小列宽
         for section in range(header.count()):
+            if(section == column_count - 1):
+                header.resizeSection(section, 100)
+                continue
             header.resizeSection(section, max(header.sectionSize(section), min_section_size))
+
 
 
 class PandasModel(QAbstractTableModel):

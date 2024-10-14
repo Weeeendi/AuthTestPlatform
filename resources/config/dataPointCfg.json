@@ -7,6 +7,50 @@
     {
       "code":"controller_fault","id": 29,"msg":"data","defaultValue":"","desc":"","name":"控制器故障信息",
       "property":{"maxlen":20,"type":"bitmap"}
+    },
+    {
+      "code":"pedal_speed","id": 50,"msg":"data","defaultValue":"","desc":"","name":"脚踏转速",
+      "property":{"maxlen":4,"type":"value","unit":"rpm"}
+    },
+    {
+      "code":"speed","id": 16,"msg":"data","defaultValue":"","desc":"","name":"速度",
+      "property":{"maxlen":4,"type":"value","unit":"km/h"}
+    },
+    {
+      "code":"motor_out_power","id": 53,"msg":"data","defaultValue":"","desc":"","name":"电机输出功率",
+      "property":{"maxlen":4,"type":"value","unit":"W"}
+    },
+    {
+      "code":"man_out_power","id": 52,"msg":"data","defaultValue":"","desc":"","name":"人力输出功率",
+      "property":{"maxlen":4,"type":"value","unit":"W"}
+    },
+    {
+      "code":"man_out_averpower","id": 72,"msg":"data","defaultValue":"","desc":"","name":"平均人力输出功率",
+      "property":{"maxlen":4,"type":"value","unit":"W"}
+    },
+    {
+      "code":"motor_out_averpower","id": 73,"msg":"data","defaultValue":"","desc":"","name":"平均电机输出功率",
+      "property":{"maxlen":4,"type":"value","unit":"W"}
+    },
+    {
+      "code":"top_speed","id": 67,"msg":"data","defaultValue":"","desc":"","name":"车辆最高速度",
+      "property":{"maxlen":4,"type":"value","unit":"km/h"}
+    },
+    {
+      "code":"ridetime_once", "id": 17,"msg":"data","defaultValue":"","desc":"","name":"单次骑行时间",
+      "property":{"maxlen":4,"type":"value","unit":"s"}
+    },
+    {
+      "code":"mileage_once", "id": 18,"msg":"data","defaultValue":"","desc":"","name":"单次里程",
+      "property":{"maxlen":4,"type":"value","unit":"km"}
+    },
+    {
+      "code":"mileage_total", "id": 20,"msg":"data","defaultValue":"","desc":"","name":"总里程",
+      "property":{"maxlen":4,"type":"value","unit":"km"}
+    },
+    {
+      "code":"endurance_mileage", "id": 19,"msg":"data","defaultValue":"","desc":"","name":"续航里程",
+      "property":{"maxlen":4,"type":"value","unit":"km"}
     }
   ],
   "Dashboard_Dp_Data": [
@@ -17,6 +61,34 @@
     {
       "code":"dashboard_fault","id":31,"msg":"data","defaultValue":"","desc":"","name":"仪表故障信息",
       "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
+    },
+    {
+      "code":"start","id":1,"msg":"data","defaultValue":"","desc":"","name":"开机状态",
+      "property":{"maxlen":1,"type":"bool"}
+    },
+    {
+      "code":"level","id":4,"msg":"data","defaultValue":"","desc":"","name":"档位",
+      "property":{"maxlen":1,"type":"enum","enum_desc":"off,level1,level2,level3,level4"}
+    },
+    {
+      "code":"level_mode","id":3,"msg":"data","defaultValue":"","desc":"","name":"档位模式",
+      "property":{"maxlen":1,"type":"enum","enum_desc":"eco,normal,sport"}
+    },
+    {
+      "code":"headlight_switch","id":14,"msg":"data","defaultValue":"","desc":"","name":"大灯开关",
+      "property":{"maxlen":1,"type":"bool"}
+    },
+    {
+      "code":"password_sync","id":46,"msg":"data","defaultValue":"","desc":"","name":"密码设置状态",
+      "property":{"maxlen":255,"type":"string"}
+    },
+    {
+      "code":"unit_set","id":11,"msg":"data","defaultValue":"","desc":"","name":"单位设置",
+      "property":{"maxlen":1,"type":"enum","enum_desc":"km, mile"}
+    },
+    {
+      "code":"number_of_gear","id":79,"msg":"data","defaultValue":"","desc":"","name":"档位数量",
+      "property":{"maxlen":4,"type":"value"}
     }
   ],
   "BMS_Dp_Data": [
@@ -30,6 +102,14 @@
     },
     {
       "code":"battery_percentage_1","id":22,"msg":"data","defaultValue":"","desc":"","name":"电池电量","property":{"max":100,"min":0,"scale":0,"step":1,"type":"value","unit":"%"}
+    },
+    {
+      "code":"charge_state","id":75,"msg":"data","defaultValue":"","desc":"","name":"充电状态",
+      "property":{"maxlen":1,"type":"enum","enum_desc":"uncharged,charging,full"}
+    },
+    {
+      "code":"battery_info","id":21,"msg":"data","defaultValue":"","desc":"","name":"电池故障信息",
+      "property":{"maxlen":255,"type":"string"}
     }
   ],
   "IoT_Dp_Data": [
