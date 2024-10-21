@@ -74,14 +74,6 @@ class myTableModel(TableView):
             unit = item.get("property").get("unit") if item.get("property").get("unit") is not None else item.get(
                 "property").get("unit", "")
 
-            if itype == "enum" and value != '':
-                enum_des = item.get("property").get("enum_desc").split(",")
-
-                if int(value) >= len(enum_des):
-                    return None
-
-                value = enum_des[int(value)]
-
             # 如果name还未被处理过，添加到集合和数据列表
             if name and name not in unique_names:
                 unique_names.add(name)
@@ -96,6 +88,22 @@ class myTableModel(TableView):
             if PandasModel.getData(self.TableModel, row, 2) != type:
                 log.logger.error("数据类型不一致")
                 return
+            if type == "enum":
+                for item in self.jsonData:
+                    if int(item.get("id")) == id:
+                        enum_des = item.get("property").get("enum_desc").split(",")
+                        if int(value) >= len(enum_des):
+                            return
+
+                        value = enum_des[int(value)]
+                        break
+
+            if type == "value":
+                for item in self.jsonData:
+                    if int(item.get("id")) == id:
+                        if item.get("property").get("scale", 0) > 0:
+                            value = value / pow(10, item.get("property").get("scale"))
+                        break
 
             self.TableModel.update_data(row, 3, value)
 
@@ -109,11 +117,12 @@ class myTableModel(TableView):
             # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
 
             # 确保列宽至少是min_section_size
-            min_section_size = 100  # 设置最小列宽
+            min_section_size = 80  # 设置最小列宽
             for section in range(header.count()):
-                if (section == column_count - 1):
-                    header.resizeSection(section, 100)
+                if section == 0:
+                    header.resizeSection(section, 150)
                     continue
+
                 header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 
         else:
@@ -139,11 +148,12 @@ class myTableModel(TableView):
         self.resizeColumnsToContents()
 
         # 确保列宽至少是min_section_size
-        min_section_size = 100  # 设置最小列宽
+        min_section_size = 80  # 设置最小列宽
         for section in range(header.count()):
-            if(section == column_count - 1):
-                header.resizeSection(section, 100)
+            if section == 0:
+                header.resizeSection(section, 150)
                 continue
+
             header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 
 
