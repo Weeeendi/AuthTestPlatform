@@ -139,7 +139,7 @@ class TestItemFactory:
 
     def __init__(self):
         self.GridRowCount = 0
-        self.testItemsData = load_json_from_file("resources/config/user_testCfg.json")
+        self.testItemsData = load_json_from_file("resources/config/userConfig.json")
 
         # 确保testItemsData是一个字典
         if isinstance(self.testItemsData, dict):
@@ -192,7 +192,7 @@ class TestItemFactory:
 
 if __name__ == '__main__':
     # 读配置文件
-    testItemsData = load_json_from_file("resources/config/user_testcfg.json")
+    testItemsData = load_json_from_file("resources/config/userConfig.json")
 
     testItemsSize = len(testItemsData.get("TestItems", []))
     # 确保testItemsData是一个字典

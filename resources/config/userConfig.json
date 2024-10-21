@@ -1,0 +1,139 @@
+{
+  "TestItems": [
+    {
+      "funName": "Flash_Test",
+      "dspName": "外部flash存储功能测试",
+      "cmd": "0001",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 3
+    },
+    {
+      "funName": "G-Sensor_Test",
+      "dspName": "三轴G-Sensor测试",
+      "cmd": "0002",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "ACC_Ctrl_Test",
+      "dspName": "ACC控制功能测试",
+      "cmd": "0003",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "ACC_Func_Test",
+      "dspName": "ACC电路功能综合测试",
+      "cmd": "0004",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "CAN_Test",
+      "dspName": "CAN功能测试",
+      "cmd": "0005",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "ADC_Test",
+      "dspName": "ADC功能测试",
+      "cmd": "0006",
+      "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "Fault_Test",
+      "dspName": "故障检测功能测试",
+      "cmd": "0007",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "Fault_Test",
+      "dspName": "蜂鸣器测试",
+      "cmd": "0008",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "Buzzer_Test",
+      "dspName": "蜂鸣器测试",
+      "cmd": "0008",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "Serial_Test",
+      "dspName": "串口测试",
+      "cmd": "0009",
+      "data": "",
+      "enable": true,
+      "interval": 500,
+      "retry": 1
+    },
+    {
+      "funName": "LTE_Signal_Strength",
+      "dspName": "蜂窝信号强度测试",
+      "cmd": "0020",
+      "data": "{\"CSQ\":15}",
+      "enable": true,
+      "interval": 1000,
+      "retry": 60
+    },
+    {
+      "funName": "GPS_Signal_Strength",
+      "dspName": "GPS信号强度测试",
+      "cmd": "0021",
+      "data": "{\"star\":3}",
+      "enable": true,
+      "interval": 1000,
+      "retry": 180
+    },
+    {
+      "funName": "Device_Reset",
+      "dspName": "设备重启测试",
+      "cmd": "0030",
+      "data": "",
+      "enable": true,
+      "interval": 1000,
+      "retry": 180
+    },
+    {
+      "funName": "Device_Volt_Test",
+      "dspName": "读取设备电压",
+      "cmd": "0031",
+      "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"out_5V\":500,\"tolerance\":10 }",
+      "enable": true,
+      "interval": 1000,
+      "retry": 180
+    },
+    {
+      "funName": "Device_Charge_Test",
+      "dspName": "读取设备充电电流",
+      "cmd": "0032",
+      "data": "{\"charge_current\":\"10\",\"tolerance\":10 } ",
+      "enable": true,
+      "interval": 1000,
+      "retry": 180
+    }
+  ]
+}

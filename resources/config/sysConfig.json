@@ -1,0 +1,26 @@
+{
+  "logger_level": "DEBUG",
+  "tag_print_times": 3,
+  "reg_url": [
+    {
+      "Desc": "公版注册地址",
+      "value": "http://web.eu.vehiclink.com"
+    },
+    {
+      "Desc": "测试注册地址",
+      "value": "http://iot-dev.vehiclink.com"
+    },
+    {
+      "Desc":  "欧飞线上注册地址",
+      "value": "https://management.vecocraft.com"
+    },
+    {
+      "Desc": "泛舟线上注册地址",
+      "value": "https://management.deruizebike.de"
+    },
+    {
+      "Desc": "ANANDA线上注册地址",
+      "value": "https://eu.ananda-drive.com"
+    }
+  ]
+}

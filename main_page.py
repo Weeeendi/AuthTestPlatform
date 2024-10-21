@@ -10,9 +10,8 @@ from qframelesswindow import TitleBar, AcrylicWindow
 from qfluentwidgets import FluentIcon as FIF, SplashScreen, NavigationAvatarWidget, SplitTitleBar, MessageBox
 from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeColor, \
     FluentWindow
+from settingConf_interface import SettingInterface
 from view.AuthTest_interface import AuthTestInterface
-from view.ChartRecord_interface import ChartRecordInterface
-from view.DeviceState_interface import DeviceStateInterface
 from view.Login_page import Ui_Form
 
 
@@ -206,10 +205,10 @@ class Window(FluentWindow):
 
         setThemeColor("#28afe9")
         # 创建子界面
-        # self.settingInterface = SettingInterface(self)
+        self.settingInterface = SettingInterface(self)
         self.homeInterface = AuthTestInterface(self)
-        self.recordInterface = ChartRecordInterface(self)
-        self.deviceInterface = DeviceStateInterface(self)
+        # self.recordInterface = ChartRecordInterface(self)
+        # self.deviceInterface = DeviceStateInterface(self)
         # self.albumInterface = Widget('Album Interface', self)
         # self.albumInterface1 = Widget('Album Interface 1', self)
 
@@ -238,8 +237,8 @@ class Window(FluentWindow):
     def initNavigation(self):
         self.addSubInterface(self.homeInterface, FIF.HOME, 'Authorization&Test')
 
-        self.addSubInterface(self.recordInterface, FIF.SEARCH, 'Record')
-        self.addSubInterface(self.deviceInterface, FIF.DEVELOPER_TOOLS, "Device detection")
+        # self.addSubInterface(self.recordInterface, FIF.SEARCH, 'Record')
+        # self.addSubInterface(self.deviceInterface, FIF.DEVELOPER_TOOLS, "Device detection")
         # self.addSubInterface(self.albumInterface, FIF.ALBUM, 'Albums', NavigationItemPosition.SCROLL)
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
         self.navigationInterface.addSeparator()
@@ -253,7 +252,7 @@ class Window(FluentWindow):
 
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
 
-        # self.addSubInterface(self.settingInterface, FIF.SETTING, 'Operations Notice', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingInterface, FIF.SETTING, 'Operations Notice', NavigationItemPosition.BOTTOM)
 
     def account_set(self):
         msgbox = MessageBox('提醒', "是否要退出当前账号？", self)
