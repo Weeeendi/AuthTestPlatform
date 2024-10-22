@@ -1,5 +1,5 @@
 {
-  "logger_level": "DEBUG",
+  "logger_level": "debug",
   "tag_print_times": 3,
   "reg_url": [
     {

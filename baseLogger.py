@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -58,9 +59,8 @@ class Logger(object):
         # 通过外部ini文件配置相关参数
         # 获取log level
         try:
-            self.settings = QSettings("resources/config/sys_config.ini", QSettings.IniFormat)
-            self.loggerLevel = self.settings.value("BASE_SETTING/logger_level")
-            level = self.loggerLevel
+            with open('resources/config/sysConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
+                level = json.loads(file.read()).get("logger_level", "info")
         except:
             level = 'info'
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # log = Logger('all.log', level='debug')
     log.logger.debug('debug')
     log.logger.info('info')
-    log.logger.warning('警告')
-    log.logger.error('报错')
-    log.logger.critical('严重')
+    log.logger.warning('warning')
+    log.logger.error('error')
+    log.logger.critical('critial')
     # Logger('error.log', level='error').logger.error('error')
