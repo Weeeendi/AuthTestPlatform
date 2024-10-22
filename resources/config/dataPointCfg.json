@@ -10,47 +10,47 @@
     },
     {
       "code":"pedal_speed","id": 50,"msg":"data","defaultValue":"","desc":"","name":"脚踏转速",
-      "property":{"maxlen":4,"type":"value","unit":"rpm"}
+      "property":{"maxlen":4,"type":"value","unit":"rpm","scale":0,"step":1}
     },
     {
       "code":"speed","id": 16,"msg":"data","defaultValue":"","desc":"","name":"速度",
-      "property":{"maxlen":4,"type":"value","unit":"km/h"}
+      "property":{"maxlen":4,"type":"value","unit":"km/h","scale":1,"step":1}
     },
     {
       "code":"motor_out_power","id": 53,"msg":"data","defaultValue":"","desc":"","name":"电机输出功率",
-      "property":{"maxlen":4,"type":"value","unit":"W"}
+      "property":{"maxlen":4,"type":"value","unit":"W","scale":1,"step":1}
     },
     {
       "code":"man_out_power","id": 52,"msg":"data","defaultValue":"","desc":"","name":"人力输出功率",
-      "property":{"maxlen":4,"type":"value","unit":"W"}
+      "property":{"maxlen":4,"type":"value","unit":"W","scale":0,"step":1}
     },
     {
       "code":"man_out_averpower","id": 72,"msg":"data","defaultValue":"","desc":"","name":"平均人力输出功率",
-      "property":{"maxlen":4,"type":"value","unit":"W"}
+      "property":{"maxlen":4,"type":"value","unit":"W","scale":0,"step":1}
     },
     {
       "code":"motor_out_averpower","id": 73,"msg":"data","defaultValue":"","desc":"","name":"平均电机输出功率",
-      "property":{"maxlen":4,"type":"value","unit":"W"}
+      "property":{"maxlen":4,"type":"value","unit":"W","scale":1,"step":1}
     },
     {
       "code":"top_speed","id": 67,"msg":"data","defaultValue":"","desc":"","name":"车辆最高速度",
-      "property":{"maxlen":4,"type":"value","unit":"km/h"}
+      "property":{"maxlen":4,"type":"value","unit":"km/h","scale":1,"step":1}
     },
     {
       "code":"ridetime_once", "id": 17,"msg":"data","defaultValue":"","desc":"","name":"单次骑行时间",
-      "property":{"maxlen":4,"type":"value","unit":"s"}
+      "property":{"maxlen":4,"type":"value","unit":"s","scale":0,"step":1}
     },
     {
       "code":"mileage_once", "id": 18,"msg":"data","defaultValue":"","desc":"","name":"单次里程",
-      "property":{"maxlen":4,"type":"value","unit":"km"}
+      "property":{"maxlen":4,"type":"value","unit":"km","scale":1,"step":1}
     },
     {
       "code":"mileage_total", "id": 20,"msg":"data","defaultValue":"","desc":"","name":"总里程",
-      "property":{"maxlen":4,"type":"value","unit":"km"}
+      "property":{"maxlen":4,"type":"value","unit":"km","scale":1,"step":1}
     },
     {
       "code":"endurance_mileage", "id": 19,"msg":"data","defaultValue":"","desc":"","name":"续航里程",
-      "property":{"maxlen":4,"type":"value","unit":"km"}
+      "property":{"maxlen":4,"type":"value","unit":"km","scale":0,"step":1}
     }
   ],
   "Dashboard_Dp_Data": [
@@ -88,7 +88,7 @@
     },
     {
       "code":"number_of_gear","id":79,"msg":"data","defaultValue":"","desc":"","name":"档位数量",
-      "property":{"maxlen":4,"type":"value"}
+      "property":{"maxlen":4,"type":"value","scale":0,"step":1}
     }
   ],
   "BMS_Dp_Data": [
@@ -120,6 +120,14 @@
     {
       "code":"iot_fault","id":30,"msg":"data","defaultValue":"","desc":"","name":"iot故障",
       "property":{"maxlen":4,"type":"bitmap"}
+    },
+    {
+      "code":"gps_signal_strength","id":36,"msg":"data","defaultValue":"","desc":"","name":"GPS信号强度",
+      "property":{"maxlen":4,"type":"value","scale":0,"step":1}
+    },
+    {
+      "code":"single_strength","id":36,"msg":"data","defaultValue":"","desc":"","name":"蜂窝信号强度",
+      "property":{"maxlen":4,"type":"value","scale":0,"step":1}
     }
   ],
     "SubBMS_Dp_Data": [
