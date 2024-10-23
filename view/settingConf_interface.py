@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVB
 import data_manage
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
-                            HyperlinkButton, DoubleSpinBox, SpinBox, PillToolButton,
+                            HyperlinkButton, SpinBox, PillToolButton,
                             CheckBox)
 
 
@@ -265,63 +265,9 @@ class TestSetHeaderCard(HeaderCardWidget):
         self.QGridLayOut.setColumnStretch(0, 1)
         self.QGridLayOut.setColumnStretch(1, 1)
 
-        self.fileData = data_manage.TestItemFactory()
-        for testParam in self.fileData.testItemsData:
-            self.fileData
+        self.fileData = data_manage.TestItemEditFactory()
 
-        self.viewLayout.addLayout(self.QGridLayOut)
-        # self.date = TestOptions()
-        # self._loadSettingData()
-        self._LineEditInit()
 
-    # def _loadSettingData(self):
-    #
-    #
-    # def _saveSettingData(self):
-
-    def _LineEditInit(self):
-        """set lineEdit"""
-        DoubleLine_edits = self.findChildren(DoubleEditBox)
-        IntLine_edits = self.findChildren(IntEditBox)
-        for le in IntLine_edits:
-            le.setDisabled(True)
-        for le in DoubleLine_edits:
-            le.setDisabled(True)
-
-    def setLineEditReadOnly(self, isChecked: bool):
-        # 获取所有的LineEdit控件  
-        DoubleLine_edits = self.findChildren(DoubleEditBox)
-        IntLine_edits = self.findChildren(IntEditBox)
-
-        # 设置所有的LineEdit为只读
-        if isChecked:
-            for le in IntLine_edits:
-                le.setDisabled(False)
-            for le in DoubleLine_edits:
-                le.setDisabled(False)
-
-        else:
-            for le in IntLine_edits:
-                le.setDisabled(True)
-            for le in DoubleLine_edits:
-                le.setDisabled(True)
-
-            createSaveInfoBar(self)
-
-    def LayOurSetting(self):
-        self.rowCount = 0
-        self.ColumnCount = 0
-        CheckBox_edits = self.findChildren(CheckBox)
-        for le in CheckBox_edits:
-            if self.ColumnCount > 0:
-                self.GridLayout.addWidget(le, self.rowCount, self.ColumnCount, Qt.AlignLeft)
-                self.rowCount += 1
-                self.ColumnCount = 0
-                continue
-            self.GridLayout.addWidget(le, self.rowCount, self.ColumnCount, Qt.AlignLeft)
-            self.ColumnCount += 1
-
-        self.viewLayout.addLayout(self.GridLayout)
 
     @staticmethod
     def setValueLayOut(Box, LabelWidget, SpinBoxWidget, indicatorPos=0):
@@ -335,47 +281,6 @@ class TestSetHeaderCard(HeaderCardWidget):
             Box.addWidget(LabelWidget, 3, Qt.AlignRight)  # 添加LabelWidget到布局中，行数为3，并设置右对齐
             Box.setAlignment(Qt.AlignRight)  # 设置布局中的对齐方式为右对齐
 
-
-class IntEditBox(SpinBox):
-    """ Int line edit """
-
-    # valueChanged = pyqtSignal(str)
-
-    def __init__(self, maxVal, parent=None):
-        super().__init__(parent=parent)
-        self.setFixedSize(120, 33)
-        self.setMaximum(maxVal)
-
-
-class DoubleEditBox(DoubleSpinBox):
-    """ Double line edit """
-
-    # valueChanged = pyqtSignal(str)
-
-    def __init__(self, maxVal, step: float, parent=None):
-        super().__init__(parent=parent)
-        self.setFixedSize(120, 33)
-        self.setMaximum(maxVal)
-        self.setSingleStep(0.1)
-        self.step = step
-
-        # super().upButton.clicked.connect(self.stepUp)
-        # super().downButton.clicked.connect(self.stepDown)
-
-    def stepBy(self, step):
-        # 重载 stepBy 方法，允许你自定义每次step的值
-        if step == 1:
-            super().stepBy(int(self.step / 0.1))
-        else:
-            super().stepBy(-int(self.step / 0.1))
-
-    def stepUp(self):
-        # 重载 stepUp 方法，允许你自定义每次step的值
-        super().stepBy(int(self.step / 0.1))
-
-    def stepDown(self):
-        # 重载 stepDown 方法，允许你自定义每次step的值    
-        super().stepBy(-int(self.step / 0.1))
 
 
 class DescriptionCard(HeaderCardWidget):

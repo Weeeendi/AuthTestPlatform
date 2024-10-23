@@ -94,6 +94,11 @@ class Logger(object):
         self.logger.addHandler(sh)
         self.logger.addHandler(th)
 
+    def log_level_set(self,level):
+        if level in self.level_relations.keys():
+            self.logger.setLevel(self.level_relations.get(level))
+        else:
+            self.logger.debug("Input log level illegal")
 
 log = Logger()
 

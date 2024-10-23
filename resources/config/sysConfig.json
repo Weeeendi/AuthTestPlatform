@@ -1,5 +1,8 @@
 {
-  "logger_level": "debug",
+  "logger_level": ["info","debug","warning"],
+  "current_logger_level": "debug",
+  "device_type": ["Only BLE","BLE & Cat1","Only Cat1","GPS"],
+  "current_device_type": "BLE & Cat1",
   "tag_print_times": 3,
   "reg_url": [
     {
@@ -21,6 +24,10 @@
     {
       "Desc": "ANANDA线上注册地址",
       "value": "https://eu.ananda-drive.com"
+    },
+    {
+      "Desc": "斯维驰线上注册地址",
+      "value": "https://acc.sweetrich.net"
     }
   ]
 }
