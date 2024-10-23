@@ -15,29 +15,29 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_3">
    <item>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="1,0,0,0">
+    <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,2" columnstretch="0,0,1,2">
      <property name="sizeConstraint">
       <enum>QLayout::SetDefaultConstraint</enum>
      </property>
      <property name="leftMargin">
-      <number>20</number>
+      <number>0</number>
      </property>
      <property name="topMargin">
-      <number>20</number>
+      <number>0</number>
      </property>
      <property name="rightMargin">
-      <number>20</number>
+      <number>0</number>
      </property>
      <property name="bottomMargin">
-      <number>20</number>
+      <number>0</number>
      </property>
      <property name="spacing">
-      <number>12</number>
+      <number>2</number>
      </property>
      <item row="0" column="2" colspan="2">
       <widget class="CardWidget" name="progressCard">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -514,6 +514,12 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="maximumSize">
+        <size>
+         <width>320</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <layout class="QVBoxLayout" name="verticalLayout_13">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -600,7 +606,7 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>16777215</width>
+         <width>320</width>
          <height>410</height>
         </size>
        </property>
@@ -608,6 +614,9 @@
         <string notr="true"/>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>5</number>
+        </property>
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>

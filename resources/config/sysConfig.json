@@ -1,33 +1,43 @@
 {
-  "logger_level": ["info","debug","warning"],
-  "current_logger_level": "debug",
-  "device_type": ["Only BLE","BLE & Cat1","Only Cat1","GPS"],
-  "current_device_type": "BLE & Cat1",
-  "tag_print_times": 3,
-  "reg_url": [
-    {
-      "Desc": "公版注册地址",
-      "value": "http://web.eu.vehiclink.com"
-    },
-    {
-      "Desc": "测试注册地址",
-      "value": "http://iot-dev.vehiclink.com"
-    },
-    {
-      "Desc":  "欧飞线上注册地址",
-      "value": "https://management.vecocraft.com"
-    },
-    {
-      "Desc": "泛舟线上注册地址",
-      "value": "https://management.deruizebike.de"
-    },
-    {
-      "Desc": "ANANDA线上注册地址",
-      "value": "https://eu.ananda-drive.com"
-    },
-    {
-      "Desc": "斯维驰线上注册地址",
-      "value": "https://acc.sweetrich.net"
-    }
-  ]
+    "logger_level": [
+        "info",
+        "debug",
+        "warning"
+    ],
+    "current_logger_level": "info",
+    "device_type": [
+        "Only BLE",
+        "BLE & Cat1",
+        "Only Cat1",
+        "GPS"
+    ],
+    "current_device_type": "BLE & Cat1",
+    "tag_print_times": 3,
+    "reg_urls": [
+        {
+            "desc": "公版线上",
+            "url": "http://web.eu.vehiclink.com"
+        },
+        {
+            "desc": "测试注册",
+            "url": "http://iot-dev.vehiclink.com"
+        },
+        {
+            "desc": "欧飞线上",
+            "url": "https://management.vecocraft.com"
+        },
+        {
+            "desc": "泛舟线上",
+            "url": "https://management.deruizebike.de"
+        },
+        {
+            "desc": "ANANDA线上",
+            "url": "https://eu.ananda-drive.com"
+        },
+        {
+            "desc": "斯维驰线上",
+            "url": "https://acc.sweetrich.net"
+        }
+    ],
+    "reg_url": "(公版线上)http://web.eu.vehiclink.com"
 }

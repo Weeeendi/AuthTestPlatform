@@ -43,6 +43,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.Button_UpdateSerial.setIcon(FluentIcon.SYNC)
         # self.PrimaryToolButton_playlog.setIcon(FluentIcon.PLAY)
 
+        self.gridLayout.setSpacing(5)
         # add shadow effect to card
         self.setShadowEffect(self.SettingCard)
         self.setShadowEffect(self.progressCard)

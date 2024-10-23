@@ -1,12 +1,12 @@
 # coding:utf-8
-from PyQt5.QtCore import Qt, pyqtSignal, QRectF, pyqtProperty, QPropertyAnimation, QPoint
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QPainterPath, QFont
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtProperty, QPropertyAnimation, QPoint
+from PyQt5.QtGui import QPainter, QColor, QPainterPath, QFont
 from PyQt5.QtWidgets import QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel
 
-from ...common.overload import singledispatchmethod
-from ...common.style_sheet import isDarkTheme, FluentStyleSheet
 from ...common.animation import BackgroundAnimationWidget, DropShadowAnimation
 from ...common.font import setFont
+from ...common.overload import singledispatchmethod
+from ...common.style_sheet import isDarkTheme, FluentStyleSheet
 
 
 class CardWidget(BackgroundAnimationWidget, QFrame):
@@ -220,7 +220,7 @@ class HeaderCardWidget(SimpleCardWidget):
         self.vBoxLayout.addWidget(self.separator)
         self.vBoxLayout.addWidget(self.view)
 
-        self.viewLayout.setContentsMargins(24, 24, 24, 24)
+        self.viewLayout.setContentsMargins(24, 2, 24, 2)
         setFont(self.headerLabel, 15, QFont.DemiBold)
 
         self.view.setObjectName('view')

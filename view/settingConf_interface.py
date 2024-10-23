@@ -1,4 +1,5 @@
 # coding:utf-8
+import json
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, pyqtSignal, Qt
@@ -6,6 +7,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
 
 import data_manage
+import testSetTableWidget
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, SpinBox, PillToolButton,
@@ -23,17 +25,17 @@ class SettingInterface(ScrollArea):
         self.view.setObjectName("scrollAreaWidgetContents")
         self.vBoxLayout = QVBoxLayout(self.view)
 
-        self.BasicSetCard = BaseSettingCard(self)
-        self.SettingSelectCard = SettingSelectCard(self)
-        self.TestSetHeaderCard = TestSetHeaderCard(self)
+        self.BasicSetCard = sysSettingCard(self)
+        self.SettingSelectCard = setSelectCard(self)
+        self.TestSetHeaderCard = setDetailCard(self)
         self.DescriptionCard = DescriptionCard(self)
 
         self.setWidget(self.view)
         self.setWidgetResizable(True)
         self.setObjectName("SettingInterface")
 
-        self.vBoxLayout.setSpacing(10)
-        self.vBoxLayout.setContentsMargins(30, 30, 30, 30)
+        self.vBoxLayout.setSpacing(5)
+
         self.vBoxLayout.addWidget(self.BasicSetCard, 0, Qt.AlignTop)
         self.vBoxLayout.addWidget(self.SettingSelectCard, 0, Qt.AlignTop)
         self.vBoxLayout.addWidget(self.TestSetHeaderCard, 0, Qt.AlignTop)
@@ -94,45 +96,26 @@ def createSaveInfoBar(self):
     )
 
 
-class SettingSelectCard(HeaderCardWidget):
+class setSelectCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ColumnCount = None
-        self.GridLayout = QGridLayout(self)
         self.rowCount = None
         self.setTitle('测试项目选择')
 
         self.expandButton = PillToolButton(FIF.EDIT, self)
         self.expandButton.setFixedSize(32, 32)
         self.expandButton.setIconSize(QSize(12, 12))
-        self.headerLayout.addWidget(self.expandButton, 0, Qt.AlignRight)
+        self.headerLayout.addWidget(self.expandButton, 1, Qt.AlignRight)
 
         self.expandButton.toggled.connect(self._setComponentState)
         # 读配置文件
-        self.fileData = data_manage.TestItemFactory()
-        for item in self.fileData.testItems:
-            self.fileData.create_component_enable(item, self)
-        self.LayOurSetting()
+        self.file = 'resources/config/userConfig.json'
 
-        CheckBox_edits = self.findChildren(CheckBox)
-        for le in CheckBox_edits:
-            le.setDisabled(True)
-        # self._setComponentState(False)
+        self.setSelectWidget = data_manage.TestItemEditFactory(self.file, self)
+        self.viewLayout.addWidget(self.setSelectWidget,0, Qt.AlignLeft)
 
-    def LayOurSetting(self):
-        self.rowCount = 0
-        self.ColumnCount = 0
-        CheckBox_edits = self.findChildren(CheckBox)
-        for le in CheckBox_edits:
-            if self.ColumnCount > 0:
-                self.GridLayout.addWidget(le, self.rowCount, self.ColumnCount, Qt.AlignLeft)
-                self.rowCount += 1
-                self.ColumnCount = 0
-                continue
-            self.GridLayout.addWidget(le, self.rowCount, self.ColumnCount, Qt.AlignLeft)
-            self.ColumnCount += 1
-
-        self.viewLayout.addLayout(self.GridLayout)
+        self._setComponentState(False)
 
     def _setComponentState(self, isChecked: bool):
         """set lineEdit"""
@@ -146,7 +129,7 @@ class SettingSelectCard(HeaderCardWidget):
             createSaveInfoBar(self)
 
 
-class BaseSettingCard(HeaderCardWidget):
+class sysSettingCard(HeaderCardWidget):
     # 自定义信号，用来发送注册地址的值
     reg_url_sinOut = pyqtSignal(str)
 
@@ -157,71 +140,15 @@ class BaseSettingCard(HeaderCardWidget):
         self.expandButton = PillToolButton(FIF.EDIT, self)
         self.expandButton.setFixedSize(32, 32)
         self.expandButton.setIconSize(QSize(12, 12))
-        self.headerLayout.addWidget(self.expandButton, 0, Qt.AlignRight)
+        self.headerLayout.addWidget(self.expandButton, 1, Qt.AlignRight)
 
         self.expandButton.toggled.connect(self.setComponentState)
 
-        self.GridLayout = QGridLayout(self)
-        self.LogLevelLabel = BodyLabel("日志等级", self)
-        self.LogLevelCombo = ComboBox(self)
-        listOps = ["info", "debug", "error"]
-        self.LogLevelCombo.addItems(listOps)
-        self.LogLevelCombo.setMinimumWidth(100)
-        self.GridLayout.addWidget(self.LogLevelLabel, 0, 0, Qt.AlignLeft)
-        self.GridLayout.addWidget(self.LogLevelCombo, 0, 1, Qt.AlignRight)
-        self.GridLayout.setColumnStretch(0, 1)
-        self.GridLayout.setColumnStretch(1, 2)
-
-        self.tagPrintLabel = BodyLabel("标签打印次数", self)
-        self.tagPrintNum = SpinBox(self)
-        self.GridLayout.addWidget(self.tagPrintLabel, 1, 0, Qt.AlignLeft)
-        self.GridLayout.addWidget(self.tagPrintNum, 1, 1, Qt.AlignRight)
-
-        self.TokenTakeAddrLabel = BodyLabel("注册地址选择", self)
-        self.TokenTakeAddrCombo = ComboBox(self)
-        self.TokenTakeAddrCombo.setMinimumWidth(400)
-        self.GridLayout.addWidget(self.TokenTakeAddrLabel, 2, 0, Qt.AlignLeft)
-        self.GridLayout.addWidget(self.TokenTakeAddrCombo, 2, 1, Qt.AlignRight)
-        self.GridLayout.setAlignment(Qt.AlignLeft)
-
-        self.TokenTakeAddrCombo.currentTextChanged.connect(self.handle_combo_text_changed)
-
-        self.viewLayout.addLayout(self.GridLayout)
-        self._componentInit()
+        self.systemSettingWidget = data_manage.SysItemEditFactory()
+        self.viewLayout.addWidget(self.systemSettingWidget, 0, Qt.AlignLeft)
 
         # self.options = TestOptions()
         # self.loading_data()
-
-    def handle_combo_text_changed(self):
-        # Emit your custom signal with the current text
-        text = self.TokenTakeAddrCombo.currentText()
-        self.reg_url_sinOut.emit(text)
-
-    def _componentInit(self):
-
-        """set lineEdit"""
-        ComboBox_edits = self.findChildren(ComboBox)
-        SpinBox_edits = self.findChildren(SpinBox)
-        for le in ComboBox_edits:
-            le.setDisabled(True)
-        for le in SpinBox_edits:
-            le.setDisabled(True)
-
-    def data_saving(self):
-        """保存设置"""
-        self.options.base_set.logger_level.value = self.LogLevelCombo.currentText()
-        self.options.base_set.tag_print_times.value = self.tagPrintNum.value()
-        self.options.base_set.reg_urls[0].value = self.TokenTakeAddrCombo.currentText()
-        self.options.write_basedata()
-
-    def loading_data(self):
-        """上传数据"""
-        self.options.read_basedata()
-        self.LogLevelCombo.setCurrentText(self.options.base_set.logger_level.value)
-        self.tagPrintNum.setValue(int(self.options.base_set.tag_print_times.value))
-        for item in self.options.base_set.reg_urls:
-            if item.value != '' and item.value is not None:
-                self.TokenTakeAddrCombo.addItem(item.value)
 
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
@@ -241,45 +168,22 @@ class BaseSettingCard(HeaderCardWidget):
             for le in SpinBox_edits:
                 le.setDisabled(True)
             # save data
-            self.data_saving()
             createSaveInfoBar(self)
 
 
-class TestSetHeaderCard(HeaderCardWidget):
+class setDetailCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        # 读配置文件
+        self.file = 'resources/config/userConfig.json'
+        with open(self.file, 'r', encoding='utf-8', errors='ignore') as file:
+            self.testItemsData = json.load(file)
 
-        self.BoxNum = 10
-        self.BoxCount = 0
-        self.GridRowCount = 0
+        self.setTitle('测试项目详情')
 
-        self.setTitle('测试项设置')
-        self.expandButton = PillToolButton(FIF.EDIT, self)
-        self.expandButton.setFixedSize(32, 32)
-        self.expandButton.setIconSize(QSize(12, 12))
-        self.headerLayout.addWidget(self.expandButton, 0, Qt.AlignRight)
+        self.detailInfo = testSetTableWidget.myTableModel(self.testItemsData["TestItems"])
+        self.viewLayout.addWidget(self.detailInfo)
 
-        self.expandButton.toggled.connect(self.setLineEditReadOnly)
-
-        self.QGridLayOut = QGridLayout(self)
-        self.QGridLayOut.setColumnStretch(0, 1)
-        self.QGridLayOut.setColumnStretch(1, 1)
-
-        self.fileData = data_manage.TestItemEditFactory()
-
-
-
-    @staticmethod
-    def setValueLayOut(Box, LabelWidget, SpinBoxWidget, indicatorPos=0):
-        # 设置布局
-        if indicatorPos == 0:
-            Box.addWidget(SpinBoxWidget, 4)  # 添加SpinBoxWidget到布局中，行数为4
-            Box.addWidget(LabelWidget, 4)  # 添加LabelWidget到布局中，行数为4
-            Box.setAlignment(Qt.AlignRight)  # 设置布局中的对齐方式为右对齐
-        else:
-            Box.addWidget(SpinBoxWidget, 3, Qt.AlignRight)  # 添加SpinBoxWidget到布局中，行数为3，并设置右对齐
-            Box.addWidget(LabelWidget, 3, Qt.AlignRight)  # 添加LabelWidget到布局中，行数为3，并设置右对齐
-            Box.setAlignment(Qt.AlignRight)  # 设置布局中的对齐方式为右对齐
 
 
 
