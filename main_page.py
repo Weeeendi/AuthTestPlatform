@@ -10,9 +10,9 @@ from qframelesswindow import TitleBar, AcrylicWindow
 from qfluentwidgets import FluentIcon as FIF, SplashScreen, NavigationAvatarWidget, SplitTitleBar, MessageBox
 from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeColor, \
     FluentWindow
-from settingConf_interface import SettingInterface
 from view.AuthTest_interface import AuthTestInterface
 from view.Login_page import Ui_Form
+from view.settingConf_interface import SettingInterface
 
 
 # from baseLogger import log

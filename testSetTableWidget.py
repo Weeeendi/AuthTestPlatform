@@ -3,8 +3,8 @@ import sys
 
 import pandas as pd
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSize, QByteArray, QDataStream, QIODevice, QMimeData, QVariant, \
-    QModelIndex
-from PyQt5.QtGui import QFontMetrics
+    QModelIndex, QPoint, pyqtSignal
+from PyQt5.QtGui import QFontMetrics, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QSizePolicy, \
     QAbstractItemView
 
@@ -14,26 +14,17 @@ from qfluentwidgets import TableView, TableItemDelegate
 class CustomTableItemDelegate(TableItemDelegate):
     """ Custom table item delegate """
 
-    # def paint(self, painter, option, index):
-    #     text = index.model().data(index, Qt.DisplayRole)
-    #     painter.save()
-    #     painter.setFont(option.font)
-    #
-    #     # 使用QStyle来绘制背景和边框
-    #     style = option.widget.style()
-    #     options = QStyleOptionViewItem(option)
-    #     options.rect.setWidth(option.rect.width())
-    #     options.rect.setHeight(option.rect.height())
-    #     style.drawPrimitive(QStyle.PE_PanelItemViewItem, options, painter, option.widget)
-    #
-    #     # 绘制文本
-    #     textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options, option.widget)
-    #     painter.drawText(textRect, Qt.AlignCenter, text)
-    #     painter.restore()
-    # super().paint()
-
     def sizeHint(self, option, index):
-        # super().sizeHint(option,index)
+        """
+        Gets the size hint of item delegate.
+
+        Args:
+            option (QStyleOptionViewItem): The style option of item.
+            index (QModelIndex): The model index of item.
+
+        Returns:
+            QSize: The size hint of item delegate.
+        """
         text = index.model().data(index, Qt.DisplayRole)
         fontMetrics = QFontMetrics(option.font)
         lines = text.split('\n')
@@ -43,8 +34,15 @@ class CustomTableItemDelegate(TableItemDelegate):
 
 
 class myTableModel(TableView):
+    dropRowChangeSin = pyqtSignal(int)
+
     def __init__(self, jsonData=None):
         super().__init__()
+        self.initialRow = -1  # 用于存储拖拽行的初始行数
+        self.dropRow = -1  # 用于存储拖拽行的目标位置
+        self.dropHighlightColor = QColor(Qt.gray)  # 高亮颜色
+        self.initialMousePos = None  # 用于存储初始拖拽时的鼠标位置
+
         # 存储所有去重后的name
         self.unique_names = set()
         self.jsonData = jsonData
@@ -52,13 +50,14 @@ class myTableModel(TableView):
 
         df = self.__fillTableByJson()
         self.TableModel = PandasModel(df)
+        self.dropRowChangeSin.connect(self.TableModel.droprowRev)
 
         self.setDragEnabled(True)  # 允许拖拽
         self.setAcceptDrops(True)  # 允许放置
         self.setDragDropOverwriteMode(False)  # 防止拖拽时覆盖其它数据
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setModel(self.TableModel)
-        # self.setItemDelegate(EditableDelegate(self))
+        self.setItemDelegate(CustomTableItemDelegate(self))
         self.verticalHeader().hide()
         self.setBorderVisible(True)
         self.setBorderRadius(8)
@@ -69,9 +68,7 @@ class myTableModel(TableView):
         data_list = []
 
         for item in self.jsonData:
-            enable = item.get("enable", False)
-            if not enable:
-                continue
+
             headerName = next(iter(item))
             nameValue = item.get(headerName)
             # 如果name还未被处理过，添加到集合和数据列表
@@ -79,12 +76,122 @@ class myTableModel(TableView):
                 self.unique_names.add(nameValue)
                 itemlist = item
                 ret1 = itemlist.pop(headerName, None)
-                ret2 = itemlist.pop("enable", None)
-                if ret1 and ret2:
+                # ret2 = itemlist.pop("enable", None)
+                if ret1:
                     data_list.append(itemlist)
 
         # 将数据列表转换为DataFrame
         return pd.DataFrame(data_list)
+
+    def __saveData2Json(self):
+        """
+            将 QAbstractItemModel 转换为字典格式的 JSON 数据。
+            注意：此函数假设模型结构是简单的表格形式，没有分层。
+            """
+        data = []
+        rowCount = self.TableModel.rowCount()
+        columnCount = self.TableModel.columnCount()
+
+        for row in range(rowCount):
+            row_data = {}
+            for column in range(columnCount):
+                index = self.TableModel.index(row, column, QModelIndex())
+                value = self.TableModel.data(index, Qt.DisplayRole)
+                key = self.TableModel.headerData(column, Qt.Horizontal, Qt.DisplayRole)
+                row_data[key] = value
+            data.append(row_data)
+
+        return data
+
+    def dragEnterEvent(self, event):
+        # 记录初始拖拽位置
+        self.initialMousePos = event.pos()
+        self.initialRow = self.indexAt(event.pos()).row()
+        super().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event):
+        if self.initialMousePos is None:
+            super().dragMoveEvent(event)
+            return
+
+        # 保持水平位置不变，即使用初始的X坐标
+        currentVerticalPosition = event.pos().y()
+        fixedHorizontalPosition = self.initialMousePos.x()
+
+        # 创建新的位置，其中X坐标是初始的，Y坐标是当前的
+        adjustedPos = QPoint(fixedHorizontalPosition, currentVerticalPosition)
+
+        # 使用adjustedPos来确定索引和行
+        index = self.indexAt(adjustedPos)
+        row = index.row()
+
+        # 计算鼠标位置对应的行的中点，决定指示线位置
+        LineRowMidY = self.rowViewportPosition(row) + self.rowHeight(row) / 2
+
+        # print("dropRow:" + str(LineRowMidY) + "   initialRow:" + str(adjustedPos.y()))
+        if adjustedPos.y() < LineRowMidY:
+            self.dropRow = row
+        else:
+            self.dropRow = row + 1
+
+        # 计算鼠标位置对应的未来行的中点，决定指示线位置
+        SendRowMidY = self.rowViewportPosition(row) + self.rowHeight(row) / 2
+        if row > self.initialRow:
+            if adjustedPos.y() > SendRowMidY:
+                SendRow = row
+            else:
+                SendRow = row - 1
+        else:
+            if adjustedPos.y() > SendRowMidY:
+                SendRow = row + 1
+            else:
+                SendRow = row
+
+        # print("dropRow:" + str(SendRow) + "   initialRow:" + str(self.indexAt(self.initialMousePos).row()))
+
+        self.dropRowChangeSin.emit(SendRow)
+
+        event.setDropAction(Qt.MoveAction)
+        event.accept()
+        self.update()
+
+    def dropEvent(self, event):
+        index = self.indexAt(event.pos())
+        # row = index.row()
+        # mousePos = event.pos()
+        # rowMidY = self.rowViewportPosition(row) + self.rowHeight(row) / 2
+        #
+        # # 决定最终放置的行
+        # if mousePos.y() < rowMidY:
+        #     self.dropRow = row
+        # else:
+        #     self.dropRow = row + 1
+
+        event.setDropAction(Qt.MoveAction)
+        super().dropEvent(event)
+        event.accept()
+        self.update()
+        self.dropRow = -1  # 重置为-1表示没有高亮
+        self.update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.dropRow != -1:
+            painter = QPainter(self.viewport())
+            # 计算行的y坐标
+            y = self.rowViewportPosition(self.dropRow)
+
+            # 最后绘制实际的细线
+            finalPen = QPen(QColor(0, 0, 0), 1, Qt.SolidLine)  # 黑色的实线，宽度为1
+            painter.setPen(finalPen)
+            painter.drawLine(0, y, self.width(), y)
+
+    def getHighOfTable(self):
+        # 假设 tableView 是你的 QTableView 实例
+        rowHeight = self.rowHeight(0)  # 假设至少有一行
+        rowCount = self.TableModel.rowCount()
+
+        return rowHeight * (rowCount + 1)
 
     def updateData(self, jsonObj):
         state = jsonObj.get("enable", "")
@@ -112,7 +219,7 @@ class myTableModel(TableView):
         # 假设模型中有一些数据，因此有列
         column_count = self.model().columnCount()
         # 设置倒数第二列既适应内容又拉伸
-        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
         # 将倒数第二列的调整模式设置为 Stretch
         # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
         # 设置列宽模式为Interactive，允许用户手动调整列宽
@@ -124,22 +231,30 @@ class myTableModel(TableView):
         # 确保列宽至少是min_section_size
         min_section_size = 80  # 设置最小列宽
         for section in range(header.count()):
-            if (section == 0):
-                header.resizeSection(section, 280)
+            if (section == 1):
+                header.resizeSection(section, 250)
                 continue
             header.resizeSection(section, max(header.sectionSize(section), min_section_size))
 
 
 class PandasModel(QAbstractTableModel):
+
     def __init__(self, data):
         super(PandasModel, self).__init__()
         self._data = data
+        self.droprow = -1
+
+    def droprowRev(self, row):
+        self.droprow = row
 
     def appendRow(self, new_row_data):
         self.beginInsertRows(QModelIndex(), self.rowCount(),
                              self.rowCount())  # 在末尾插入            # 将 new_row_data 添加到 self._data 和 self.filtered_data
         self._data = self._data.append(new_row_data, ignore_index=True)
         self.endInsertRows()
+
+    def rowCount(self, parent=None):
+        return len(self._data)
 
     def removeRow(self, row):
         self.beginRemoveRows(QModelIndex(), row, row)
@@ -230,7 +345,13 @@ class PandasModel(QAbstractTableModel):
         stream = QDataStream(encodedData, QIODevice.ReadOnly)
         sourceRow = stream.readInt()
 
-        targetRow = row if row != -1 else self.rowCount()
+        row = self.droprow
+        print("sourceRow:", sourceRow, "row:", row)
+
+        if row != -1:
+            targetRow = row
+        else:
+            return False
 
         # 使用pandas的方法重新排序行
         # 从源行删除，然后插入到目标位置

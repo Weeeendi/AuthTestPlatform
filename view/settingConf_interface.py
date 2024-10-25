@@ -26,7 +26,7 @@ class SettingInterface(ScrollArea):
         self.vBoxLayout = QVBoxLayout(self.view)
 
         self.BasicSetCard = sysSettingCard(self)
-        self.SettingSelectCard = setSelectCard(self)
+        # self.SettingSelectCard = setSelectCard(self)
         self.TestSetHeaderCard = setDetailCard(self)
         self.DescriptionCard = DescriptionCard(self)
 
@@ -37,7 +37,7 @@ class SettingInterface(ScrollArea):
         self.vBoxLayout.setSpacing(5)
 
         self.vBoxLayout.addWidget(self.BasicSetCard, 0, Qt.AlignTop)
-        self.vBoxLayout.addWidget(self.SettingSelectCard, 0, Qt.AlignTop)
+        # self.vBoxLayout.addWidget(self.SettingSelectCard, 0, Qt.AlignTop)
         self.vBoxLayout.addWidget(self.TestSetHeaderCard, 0, Qt.AlignTop)
         self.vBoxLayout.addWidget(self.DescriptionCard, 0, Qt.AlignTop)
 
@@ -113,9 +113,7 @@ class setSelectCard(HeaderCardWidget):
         self.file = 'resources/config/userConfig.json'
 
         self.setSelectWidget = data_manage.TestItemEditFactory(self.file, self)
-        self.viewLayout.addWidget(self.setSelectWidget,0, Qt.AlignLeft)
-
-        self._setComponentState(False)
+        self.viewLayout.addWidget(self.setSelectWidget, 0, Qt.AlignLeft)
 
     def _setComponentState(self, isChecked: bool):
         """set lineEdit"""
@@ -183,8 +181,7 @@ class setDetailCard(HeaderCardWidget):
 
         self.detailInfo = testSetTableWidget.myTableModel(self.testItemsData["TestItems"])
         self.viewLayout.addWidget(self.detailInfo)
-
-
+        self.setMinimumHeight(self.detailInfo.getHighOfTable() + 100)
 
 
 class DescriptionCard(HeaderCardWidget):
