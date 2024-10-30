@@ -457,7 +457,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             try:
                 param = json.loads(DpParam.value)
             except Exception as e:
-                log.logging.error(e)
+                log.logger.error(e)
                 return
             if DpParam.page == 0:
                 getattr(self, f"HWVersion").setText(param.get('hard_ver', ''))

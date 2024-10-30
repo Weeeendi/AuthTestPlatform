@@ -1,7 +1,17 @@
 [
     {
-        "select": true,
+        "select": false,
         "des": "\u6545\u969c\u67e5\u8be2",
         "hexx": "1C 01 00 01 01"
+    },
+    {
+        "select": true,
+        "des": "\u5f00\u706f",
+        "hexx": "0e 01 00 01 01"
+    },
+    {
+        "select": true,
+        "des": "\u6321\u4f4d",
+        "hexx": "04 04 00 01 05"
     }
 ]

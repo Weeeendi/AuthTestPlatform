@@ -9,7 +9,7 @@
       "property":{"maxlen":20,"type":"bitmap"}
     },
     {
-      "code":"pedal_speed","id": 50,"msg":"data","defaultValue":"","desc":"","name":"脚踏转速",
+      "code":"pedal_speed","id": 48,"msg":"data","defaultValue":"","desc":"","name":"脚踏转速",
       "property":{"maxlen":4,"type":"value","unit":"rpm","scale":0,"step":1}
     },
     {
@@ -126,13 +126,13 @@
       "property":{"maxlen":4,"type":"value","scale":0,"step":1}
     },
     {
-      "code":"single_strength","id":36,"msg":"data","defaultValue":"","desc":"","name":"蜂窝信号强度",
+      "code":"single_strength","id":37,"msg":"data","defaultValue":"","desc":"","name":"蜂窝信号强度",
       "property":{"maxlen":4,"type":"value","scale":0,"step":1}
     }
   ],
     "SubBMS_Dp_Data": [
     {
-      "code":"sub_bms_fault","id":77,"msg":"data","defaultValue":"","desc":"","name":"副电池故障信息",
+      "code":"sub_bms_fault","id":83,"msg":"data","defaultValue":"","desc":"","name":"副电池故障信息",
       "property":{"maxlen":4,"type":"bitmap"}
     }
   ]

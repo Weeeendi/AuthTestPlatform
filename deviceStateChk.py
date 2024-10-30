@@ -556,15 +556,18 @@ class DeviceStateChkThread(QThread):
                     log.logger.debug("OTA 退出成功")
                     self.PCB.otaExit = True
 
-                elif hexx[1] == 0x01:
+                elif hexx[1] == 0x02:
                     log.logger.debug("数据总长度错误")
                     self.UpdateProcessState('数据总长度错误', OTAState.Fail)
-                elif hexx[1] == 0x02:
+                elif hexx[1] == 0x03:
                     log.logger.debug("数据总crc校验失败")
                     self.UpdateProcessState('数据总crc校验失败', OTAState.Fail)
                 elif hexx[1] == 0x04:
-                    log.logger.debug("数据总长度错误")
-                    self.UpdateProcessState('数据总长度错误', OTAState.Fail)
+                    log.logger.debug("设备回复超时")
+                    self.UpdateProcessState('设备回复超时', OTAState.Fail)
+                elif hexx[1] == 0x05:
+                    log.logger.debug("设备类型出错")
+                    self.UpdateProcessState('设备类型出错', OTAState.Fail)
                 elif hexx[1] == 0xFF:
                     log.logger.debug("OTA 退出失败")
                 else:
@@ -587,14 +590,14 @@ class DeviceStateChkThread(QThread):
             log.logger.debug('OTA 包头命令错误应答，未在对应状态！ %s' % hexx)
 
     def cmd_OTAState(self, hexx):
-        if MachineState.OTABlockTail >= self.stateMachine >= MachineState.OTAStart:
-            if len(hexx) != 5:
+        if MachineState.OTABlockSend == self.stateMachine or MachineState.OTAStart == self.stateMachine:
+            if len(hexx) != 2:
                 if hexx[0] == 0x00:
                     log.logger.debug('设备主动退出 OTA 升级')
                     self.UpdateProcessState('设备主动退出 OTA 升级', OTAState.Fail)
                 elif hexx[0] == 0x01:
-                    log.logger.debug('OTA 升级失败，未在对应状态！ %s' % hexx[4])
-                    errorCode = hexx[4].hex()
+                    log.logger.debug('OTA 升级失败，未在对应状态！ %s' % hexx[1])
+                    errorCode = hexx[1].hex()
                     self.UpdateProcessState('OTA 升级失败,原因： %s' % errorCode, OTAState.Fail)
                 elif hexx[0] == 0x02:
                     pass
@@ -602,8 +605,10 @@ class DeviceStateChkThread(QThread):
                     self.PCB.OTAState = OTAState.Success
                     log.logger.debug('OTA 完成')
                 elif hexx[0] == 0x04:
-                    revDataLen = hexx[1] * 0x1000000 + hexx[2] * 0x10000 + hexx[3] * 0x100 + hexx[4]
-                    log.logger.debug('OTA 已接收字节 %d' % revDataLen)
+                    revDataPercent = hexx[1]
+                    log.logger.debug('OTA 设备已接收 %d %%' % revDataPercent)
+                    if revDataPercent == 100:
+                        self.PCB.OTAState = OTAState.Success
 
             else:
                 log.logger.debug('OTA 状态数据长度错误')
@@ -854,10 +859,10 @@ class DeviceStateChkThread(QThread):
                     crc16Cal = calc_crc16_modbus(chunk)
                     self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
 
-                    # 等待1000ms
+                    # 等待10s
                     while self.PCB.blockLock:
-                        time.sleep(0.01)  # 根据实际情况调整
-                        if self.cycleCnt >= 300:
+                        time.sleep(0.1)  # 根据实际情况调整
+                        if self.cycleCnt >= 100:
                             self.PCB.OTAState = OTAState.OverTime
                             break
                         self.cycleCnt += 1
@@ -890,7 +895,7 @@ class DeviceStateChkThread(QThread):
                             self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
                             offset = offset + pkg_last
                             self.PCB.PkgCnt = 0
-                        time.sleep(0.02)  # 根据实际情况调整
+                        time.sleep(0.1)  # 根据实际情况调整
 
                         if PkgIdx == 255:
                             PkgIdx = 1
@@ -909,10 +914,10 @@ class DeviceStateChkThread(QThread):
                         self.PCB.BlockCnt = self.PCB.BlockCnt + 1
                     offset = 0
 
-                    # 等待1000ms
+                    # 等待10s
                     while self.PCB.blockLock:
-                        time.sleep(0.01)  # 根据实际情况调整
-                        if self.cycleCnt >= 300:
+                        time.sleep(0.1)  # 根据实际情况调整
+                        if self.cycleCnt >= 100:
                             self.PCB.OTAState = OTAState.OverTime
                             break
                         self.cycleCnt += 1
@@ -934,7 +939,7 @@ class DeviceStateChkThread(QThread):
 
                         while not self.PCB.otaExit:
                             time.sleep(0.2)  # 根据实际情况调整
-                            if self.cycleCnt >= 300:
+                            if self.cycleCnt >= 500:
                                 self.PCB.OTAState = OTAState.OverTime
                                 break
                             self.cycleCnt += 1
