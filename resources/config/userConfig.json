@@ -63,7 +63,7 @@
             "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
             "rev_dict": "{\"Volt\":0,\"subVolt\":0}",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
