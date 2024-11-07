@@ -68,7 +68,7 @@ class myTableModel(TableView):
         data_list = []
 
         for item in self.jsonData:
-
+            # 获取测试项类型名称
             headerName = next(iter(item))
             nameValue = item.get(headerName)
             # 如果name还未被处理过，添加到集合和数据列表
@@ -83,7 +83,7 @@ class myTableModel(TableView):
         # 将数据列表转换为DataFrame
         return pd.DataFrame(data_list)
 
-    def __saveData2Json(self):
+    def updateData2Json(self) -> dict:
         """
             将 QAbstractItemModel 转换为字典格式的 JSON 数据。
             注意：此函数假设模型结构是简单的表格形式，没有分层。
@@ -91,6 +91,8 @@ class myTableModel(TableView):
         data = []
         rowCount = self.TableModel.rowCount()
         columnCount = self.TableModel.columnCount()
+
+        # 更新并保存数据
 
         for row in range(rowCount):
             row_data = {}
@@ -220,6 +222,7 @@ class myTableModel(TableView):
         column_count = self.model().columnCount()
         # 设置倒数第二列既适应内容又拉伸
         header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
         # 将倒数第二列的调整模式设置为 Stretch
         # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
         # 设置列宽模式为Interactive，允许用户手动调整列宽
@@ -252,9 +255,6 @@ class PandasModel(QAbstractTableModel):
                              self.rowCount())  # 在末尾插入            # 将 new_row_data 添加到 self._data 和 self.filtered_data
         self._data = self._data.append(new_row_data, ignore_index=True)
         self.endInsertRows()
-
-    def rowCount(self, parent=None):
-        return len(self._data)
 
     def removeRow(self, row):
         self.beginRemoveRows(QModelIndex(), row, row)
@@ -369,7 +369,6 @@ class PandasModel(QAbstractTableModel):
         # 使用Pandas来查找匹配的值
         mask = self._data[self._data.columns[column]] == value
         matching_rows = mask[mask].index.tolist()
-
         return matching_rows[0] if matching_rows else None
 
 

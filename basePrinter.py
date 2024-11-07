@@ -12,6 +12,7 @@ util = baseUtils.BaseUtils()
 # 加载dll库
 mydll = ctypes.WinDLL("resources/Seagull.BarTender.Print.dll")
 
+
 # 可能会出现“Import "Seagull.BarTender.Print" could not be resolved”这个波浪线错误，这里不用管
 
 class BaseBarTender():  # 创建打印机类方便在上位机主程序中调用
@@ -89,18 +90,29 @@ class BasePrinterThread(QThread):
 
         print("创建BasePrinterThread线程")
 
-    def insertMsg(self, bleMac, deviceIotId, PID):
-        print("basePrinter.insertMsg", bleMac, deviceIotId, PID)
+    def insertMsg(self, MAC_or_IMEI, Area, deviceIotId, PID=''):
+        print("basePrinter.insertMsg", MAC_or_IMEI, Area, deviceIotId, PID)
         log.logger.info("开始打印标签！")
+        if len(MAC_or_IMEI) == 12:
+            Pdict = {"deviceIotId": deviceIotId,
+                     "bleMac": 'BLE: ' + MAC_or_IMEI[0:2] + ': ' + MAC_or_IMEI[2:4] + ': ' + MAC_or_IMEI[
+                                                                                             4:6] + ': ' + MAC_or_IMEI[
+                                                                                                           6:8] + ': '
+                               + MAC_or_IMEI[8:10] + ': ' + MAC_or_IMEI[10:12],
+                     "Area": Area[2:],
+                     "PID": 'PID: ' + PID,
+                     "showId": 'IoTID: ' + deviceIotId[0:2] + deviceIotId[7:]
+                     }
 
-        dict = {}
-        dict["deviceIotId"] = deviceIotId
-        dict["bleMac"] = 'BLE:' + bleMac
-        dict["PID"] = 'PID:' + PID
-        dict["showId"] = '设备编号：' + deviceIotId[0:2] + deviceIotId[7:]
+        else:
+            Pdict = {"deviceIotId": deviceIotId,
+                     "IMEI": 'IMEI: ' + MAC_or_IMEI,
+                     "Area": Area[2:],
+                     "showId": 'IoTID: ' + deviceIotId
+                     }
 
-        print("basePrinter.insertMsg", dict, type(dict))
-        self.list.insert(0, dict)
+        print("basePrinter.insertMsg", Pdict, type(Pdict))
+        self.list.insert(0, Pdict)
 
     def run(self):
         print("启动BasePrinterThread线程")

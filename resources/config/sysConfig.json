@@ -4,14 +4,7 @@
         "debug",
         "warning"
     ],
-    "current_logger_level": "info",
-    "device_type": [
-        "Only BLE",
-        "BLE & Cat1",
-        "Only Cat1",
-        "GPS"
-    ],
-    "current_device_type": "BLE & Cat1",
+    "current_logger_level": "debug",
     "tag_print_times": 3,
     "reg_urls": [
         {

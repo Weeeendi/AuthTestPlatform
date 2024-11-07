@@ -2,9 +2,10 @@
 import json
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize, pyqtSignal, Qt
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGridLayout, QSizePolicy, \
+    QTableView
 
 import data_manage
 import testSetTableWidget
@@ -20,6 +21,7 @@ class SettingInterface(ScrollArea):
         super().__init__(parent=parent)
 
         # self.setupUi(self)
+        self.forbidSetting = False  # 在测试执行时禁止进行设置
 
         self.view = QtWidgets.QWidget()
         self.view.setObjectName("scrollAreaWidgetContents")
@@ -48,6 +50,7 @@ class SettingInterface(ScrollArea):
 
         self.setStyleSheet("QScrollArea {border: none; background:transparent}")
         self.view.setStyleSheet('QWidget {background:transparent}')
+
 
     def setShadowEffect(self, card: QWidget):
         shadowEffect = QGraphicsDropShadowEffect(self)
@@ -128,8 +131,6 @@ class setSelectCard(HeaderCardWidget):
 
 
 class sysSettingCard(HeaderCardWidget):
-    # 自定义信号，用来发送注册地址的值
-    reg_url_sinOut = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -144,7 +145,7 @@ class sysSettingCard(HeaderCardWidget):
 
         self.systemSettingWidget = data_manage.SysItemEditFactory()
         self.viewLayout.addWidget(self.systemSettingWidget, 0, Qt.AlignLeft)
-
+        self.viewLayout.setContentsMargins(20, 20, 20, 20)
         # self.options = TestOptions()
         # self.loading_data()
 
@@ -172,6 +173,15 @@ class sysSettingCard(HeaderCardWidget):
 class setDetailCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # 卡片右上角添加编辑按钮
+        self.expandButton = PillToolButton(FIF.EDIT, self)
+        self.expandButton.setFixedSize(32, 32)
+        self.expandButton.setIconSize(QSize(12, 12))
+        self.headerLayout.addWidget(self.expandButton, 1, Qt.AlignRight)
+
+        self.expandButton.toggled.connect(self.setComponentState)
+
         # 读配置文件
         self.file = 'resources/config/userConfig.json'
         with open(self.file, 'r', encoding='utf-8', errors='ignore') as file:
@@ -182,6 +192,21 @@ class setDetailCard(HeaderCardWidget):
         self.detailInfo = testSetTableWidget.myTableModel(self.testItemsData["TestItems"])
         self.viewLayout.addWidget(self.detailInfo)
         self.setMinimumHeight(self.detailInfo.getHighOfTable() + 100)
+        self.viewLayout.setContentsMargins(20, 20, 20, 20)
+
+        # self.detailInfo.setEditTriggers(QTableView.NoEditTriggers)
+
+    def setComponentState(self, isChecked: bool):
+        if isChecked:
+            self.detailInfo.setEditTriggers(QTableView.NoEditTriggers)
+        else:
+            self.detailInfo.setEditTriggers(QTableView.AllEditTriggers)
+            with open(self.file, 'w', encoding='utf-8', errors='ignore') as file:
+                # 将数据以JSON格式写入文件，确保中文不被转义
+                self.testItemsData["TestItems"] = self.detailInfo.updateData2Json()
+                json.dump(self.testItemsData, file, ensure_ascii=False, indent=4)
+
+            createSaveInfoBar(self)
 
 
 class DescriptionCard(HeaderCardWidget):
@@ -190,9 +215,8 @@ class DescriptionCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.QGridLayOut = QGridLayout(self)
-
-        self.horizontalLayout = QHBoxLayout()
-        self.descriptionLabel = BodyLabel('详细配置说明请见', self)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.descriptionLabel = BodyLabel('本工具用于云迹物联生产测试使用,详细配置说明请见', self)
 
         self.hyperlinkButton = HyperlinkButton(
             url='https://funhez50ho.feishu.cn/wiki/Ejf2wb8Nji68YTkqdE7cEvAQnId',
@@ -204,15 +228,15 @@ class DescriptionCard(HeaderCardWidget):
         self.versionLabel = BodyLabel('版本号 v231113.1.1.0', self)
         self.helpLabel = BodyLabel('技术支持：云迹物联\r\nCopyright© 2021-2025 All right reverse', self)
 
-        self.horizontalLayout.addWidget(self.descriptionLabel)
-        self.horizontalLayout.addWidget(self.hyperlinkButton)
-        self.horizontalLayout.setAlignment(Qt.AlignLeft)
-
-        self.QGridLayOut.addLayout(self.horizontalLayout, 0, 0, Qt.AlignLeft)
+        self.QGridLayOut.addWidget(self.descriptionLabel, 0, 0, Qt.AlignLeft)
+        self.QGridLayOut.addWidget(self.hyperlinkButton, 0, 1, Qt.AlignLeft)
+        self.QGridLayOut.setColumnStretch(1,1)
 
         self.QGridLayOut.addWidget(self.versionLabel, 1, 0, Qt.AlignLeft)
         self.QGridLayOut.addWidget(self.helpLabel, 2, 0, Qt.AlignLeft)
 
         self.viewLayout.addLayout(self.QGridLayOut)
+        self.viewLayout.setSpacing(0)
+        self.viewLayout.setContentsMargins(20, 20, 20, 20)
 
         self.setTitle('关于')

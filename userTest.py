@@ -2,35 +2,77 @@ import codecs
 import json
 import time
 import traceback
+from enum import Enum
 
 import requests
-from PyQt5.QtCore import QThread, QDateTime, Qt, pyqtSignal, QSettings
+from PyQt5.QtCore import QThread, QDateTime, Qt, pyqtSignal
 
 import baseUtils
 from baseLogger import log
+
+
+# 测试状态
+class testStatus(Enum):
+    S_ENTER = 0  # 进入测试
+    S_RESET = 1  # 重置
+    S_GET_PRODINFO = 2  # 获取产品信息
+    S_GET_DEV_SN = 3  # 获取设备唯一标识信息
+    S_AUTH_LOAD = 4  # 烧录授权
+    S_AUTH_QUERY = 5  # 查询授权
+    S_TEST = 6  # 测试
+    S_END = 7  # 结束测试
+
+
+# 测试模型
+class ItemTestModel:
+    def __init__(self, funcName, dspName, cmd, data, rev_dict, interval, retry):
+        # 测试参数
+        self.funcName = funcName  # 测试函数名称
+        self.dspName = dspName  # 测试名称
+        self.cmd = cmd  # 测试命令
+        self.data = data  # 测试数据
+        self.interval = interval  # 测试间隔
+        self.retry = retry  # 重试次数
+
+        # 测试结果
+        self.result = False  # 用于记录测试结果
+        self.rev_dict = rev_dict  # 测试返回数据
+        self.testTime = ''  # 用于记录测试时间
+
+    def getTestInfo(self):
+        return self.testInfo
+
+    def getTestResult(self):
+        return self.result
 
 
 class UserTestThread(QThread):
     # 自定义信号，用来发送串口write数据
     uartWrite_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送打印信息及授权信息
-    printMsg_sinOut = pyqtSignal(str, str, str)
+    printMsg_sinOut = pyqtSignal(str, str, str, str)
     # 自定义信号，用来界面显示完整的授权信息
     authInfo_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
 
-    def __init__(self, Ser, PID, Auth, manualInput, FactoryTest, regUrl):
+    def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
         # 创建BaseUtils实例
         self.util = baseUtils.BaseUtils()
+        self.AuthTestFlag = False
         # 接受主函数传递的参数
         self.Ser = Ser
         self.PID = PID
+        self.hostAddr = hostAddr
+        self.hostPort = hostPort
         self.Auth = Auth
-        self.manualInput = manualInput
+        self.Area = Area
+        self.AuthParam = AuthParam
         self.FactoryTest = FactoryTest
         self.regUrl = regUrl
+        # 创建设备类型
+        self.deviceType = DevType  # 设备类型
         # 创建串口读到的数据缓冲区
         self.readBuf = ''
         # 创建硬件唯一标识码，BLE MAC/4G IMEI
@@ -42,23 +84,23 @@ class UserTestThread(QThread):
         # 创建设备密钥
         self.deviceSecret = ''
         # 创建小型状态机，主状态
-        self.stateMachine = 'state_enterTest'
+        self.stateMachine = testStatus.S_ENTER
         # 创建小型状态机，子状态
         self.stateMachineSub = ''
-        # 创建循环次数变量
-        self.cycleCnt = 0
-        # 创建重新测试次数变量
-        self.retryCnt = 0
+
         # 定义发送互斥标志位，除了FF00是循环发送查询，其他指令只发一次，返回错误或者超时，直接判错，True可以发送，False不能发送
         self.sendMutexFlag = True
-        # 创建ACK CMD表
-        self.cmdProcessor = {}
+        # 创建 test 项成员表
+        self.testProcessor = []
+        # 创建 命令 成员表
+        self.cmdProcessor = []
+        # 创建测试项索引
+        self.testIndex = 0
+        # 测试命令数量,从文件中进行读取
+        self.TestItemsNum = 0
 
-        # 授权命令数量
-        self.AuthItemsNum = 3
-
-        # 测试命令数量
-        self.TestItemsNum = 5
+        # 授权命令数量,授权相关命令不通过文件配置 包含:设备产品信息查询，设备唯一标识查询，烧录授权命令，查询授权命令
+        self.AuthItemsNum = 4
 
         # 当前授权通过命令数量
         self.CurrentPassItemsNum = 0
@@ -69,27 +111,14 @@ class UserTestThread(QThread):
         self.endStamp = 0
         # 测试时间间隔
         self.testInterval = 0
+        # 测试重试次数
+        self.retryCnt = 0
 
-        # FLASH测试结果标志位
-        self.testFlashFlag = False
-        # G-sensor测试结果标志位
-        self.testGsensorFlag = False
-        # ADC测试结果标志位
-        self.testAdcFlag = False
-        # volt值
-        self.adcVolt = 0
-        # subVolt值
-        self.adcSubVolt = 0
         # ICCID信息
         self.ICCID = ''
         # IMEI信息
         self.IMEI = ''
-        # 4G测试结果标志位
-        self.testLteFlag = False
-        # 4G CSQ值
-        self.lteCsq = 0
-        # GPS测试结果标志位
-        self.testGpsFlag = False
+
         # GPS有用星数
         self.gpsUStarNum = 0
 
@@ -101,78 +130,89 @@ class UserTestThread(QThread):
         # 创建列表索引
         self.listIndex = 0
 
-        # 通过外部ini文件配置相关测试参数
-        try:
-            self.settings = QSettings("resources/config/user_config.ini", QSettings.IniFormat)
-            self.lteTestFlag = self.settings.value("TEST/lteTest_flag")
-            self.subBattFlag = self.settings.value("TEST/subBattFlag")
+        # 创建测试协议cmd字典
+        self.cmdInsideProcessor = {
+            bytes.fromhex("FF00"): self.cmd_FF00,
+            bytes.fromhex("FF01"): self.cmd_FF01,
+            bytes.fromhex("FF02"): self.cmd_FF02,
+            bytes.fromhex("AA00"): self.cmd_AA00,
+            bytes.fromhex("AA01"): self.cmd_AA01,
+            bytes.fromhex("AA02"): self.cmd_AA02,
+            bytes.fromhex("AA03"): self.cmd_AA03,
+            bytes.fromhex("AA04"): self.cmd_AA04,
+            bytes.fromhex("AA05"): self.cmd_AA05,
+            bytes.fromhex("AA06"): self.cmd_AA06,
+        }
 
-            self.flashRetryNum = int(self.settings.value("TEST/flash_retryNum"))
-            self.gSensorRetryNum = int(self.settings.value("TEST/gSensor_retryNum"))
-
-            self.voltMaxTh = int(self.settings.value("TEST/volt_maxTh"))
-            self.voltMinTh = int(self.settings.value("TEST/volt_minTh"))
-            self.subVoltMaxTh = int(self.settings.value("TEST/subVolt_maxTh"))
-            self.subVoltMinTh = int(self.settings.value("TEST/subVolt_minTh"))
-            self.voltRetryNum = int(self.settings.value("TEST/volt_retryNum"))
-
-            self.lteInfoRetryNum = int(self.settings.value("TEST/lteInfo_retryNum"))
-
-            self.csqMinTh = int(self.settings.value("TEST/csq_minTh"))
-            self.csqRetryNum = int(self.settings.value("TEST/csq_retryNum"))
-            self.uStarNum = int(self.settings.value("TEST/uStarNum_minTh"))
-            self.uStarNumRetryNum = int(self.settings.value("TEST/uStarNum_retryNum"))
-
-        except IOError:
-            log.logger.error('userTest缺少user_config.ini文件！')
-            self.lteTestFlag = 'false'
-
-            self.flashRetryNum = 5
-            self.gSensorRetryNum = 5
-
-            self.voltMaxTh = 4900
-            self.voltMinTh = 4700
-            self.subVoltMaxTh = 420
-            self.subVoltMinTh = 300
-            self.voltRetryNum = 5
-
-            self.lteInfoRetryNum = 10
-
-            self.csqMinTh = 10
-            self.csqRetryNum = 120
-            self.uStarNum = 3
-            self.uStarNumRetryNum = 360
-
-        print("userTest中获取外部ini参数: lteTest_flag:", self.lteTestFlag)
-        print("userTest中获取外部ini参数: subBattFlag:", self.subBattFlag)
-        print("userTest中获取外部ini参数: flash_retryNum:", self.flashRetryNum)
-        print("userTest中获取外部ini参数: gSensor_retryNum:", self.gSensorRetryNum)
-        print("userTest中获取外部ini参数: volt_maxTh:", self.voltMaxTh)
-        print("userTest中获取外部ini参数: volt_minTh:", self.voltMinTh)
-        print("userTest中获取外部ini参数: subVolt_maxTh:", self.subVoltMaxTh)
-        print("userTest中获取外部ini参数: subVolt_minTh:", self.subVoltMinTh)
-        print("userTest中获取外部ini参数: volt_retryNum:", self.voltRetryNum)
-        print("userTest中获取外部ini参数: lteInfo_retryNum:", self.lteInfoRetryNum)
-        print("userTest中获取外部ini参数: csq_minTh:", self.csqMinTh)
-        print("userTest中获取外部ini参数: csq_retryNum:", self.csqRetryNum)
-        print("userTest中获取外部ini参数: uStarNum_minTh:", self.uStarNum)
-        print("userTest中获取外部ini参数: uStarNum_retryNum:", self.uStarNumRetryNum)
-
+        ret = self._init_param_from_json()
+        if ret == 0:
+            return None
         print("创建UserTestThread线程")
 
+    # 从json 子结构创建测试项
+    def _init_obj_json(self, jsondate):
+        testItemsList = jsondate.get("TestItems", [])
+        for item in testItemsList:
+            funcName = item.get("funcName", "")
+            name = item.get("dspName", "")
+            cmd = item.get("cmd", "")
+            state = item.get("enable", False)
+            data = item.get("data", "")
+            rev_dict = item.get("rev_dict", {})
+            interval = item.get("interval(ms)", 0)
+            process = item.get("process", "")
+            retry = item.get("retry", 0)
+
+            if state and funcName != '' and name != '' and cmd != '' and interval != 0 and process != '':
+                if process == "ALL" or (self.deviceType == 'CAT1' and process == "CAT1"):
+                    testCell = ItemTestModel(funcName, name, cmd, data, rev_dict, interval, retry)
+
+                    self.testProcessor.append(testCell)
+                    self.cmdProcessor.append(cmd)
+
+        # 测试命令数量
+        self.TestItemsNum = len(self.testProcessor)
+
+    # 从json加载配置
+    def _init_param_from_json(self):
+        try:
+            with open('resources/config/userConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
+                self.jsonData = json.load(file)
+                if isinstance(self.jsonData, dict):
+                    for item in self.jsonData.get("TestItems", []):
+                        # 逐项加载
+                        self._init_obj_json(item)
+                else:
+                    print("userConfig.json is not a dictionary.")
+                    return False
+
+            return True
+        except Exception as e:
+            log.logger.error('[userTest]加载json配置文件异常，%s' % e)
+            return False
+
+    # 计算测试进度
     def testPercentCal(self):
         # 总测试项目包含开始测试命令
+        ret = 0
+
         if self.FactoryTest and self.Auth:
-            return int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 1))
+            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 2))
         elif self.FactoryTest:
-            return int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 1))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 2))
         else:
-            return int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 1))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 2))
+
+        if ret == 100:
+            self.AuthTestFlag = True
+
+        return ret
 
     # 发送测试指令
-    def userTestSend(self, testCmd, testLen, testData=''):
+    def userTestSend(self, testCmd: str, testLen: int, testData=''):
         # 发送数据组包
-        dataTmp = "66AA" + testCmd + testLen + testData
+        lenStr = testLen.to_bytes(2, byteorder='big', signed=False).hex()
+        dataTmp = "66AA" + testCmd + str(lenStr) + testData
         # print("userTestSend", dataTmp, type(dataTmp))
         tmp = self.util.uchar_checksum(dataTmp)
         dataTmp = dataTmp + tmp
@@ -185,51 +225,47 @@ class UserTestThread(QThread):
         log.logger.debug("cmd_FF00接受数据：%s" % hexx)
 
         # 如果在'state_enterTest'状态
-        if self.stateMachine == 'state_enterTest':
+        if self.stateMachine == testStatus.S_ENTER:
 
-            if len(hexx) == 1:
-                # 长度符合
-                if hexx[0] == 0:
-                    # 进入产测模式成功
-                    self.listIndex = self.listIndex + 1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    log.logger.info('待测设备已接入!')
+            # b"example"  --->  "example",转换成字符串
+            authtmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                authtmp = json.loads(authtmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]FF00返回json异常，%s' % e)
+                return
 
-                    if self.lteTestFlag != 'true':
-                        self.TestItemsNum = 3
+            if authtmp.get('ret', False):
+                # 进入产测模式成功
+                self.listIndex = self.listIndex + 1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.info('待测设备已接入!')
 
-                    self.CurrentPassItemsNum += 1
-                    self.progressBar_sinOut.emit(self.testPercentCal(), True,"待测设备已接入")
-
-                    # 初始化授权与测试信息
-                    self.nodeId = ''
-                    self.deviceIotId = ''
-                    self.deviceSecret = ''
-                    self.testFlashFlag = False
-                    self.testGsensorFlag = False
-                    self.testAdcFlag = False
-                    self.adcVolt = 0
-                    self.adcSubVolt = 0
-                    self.ICCID = ''
-                    self.IMEI = ''
-                    self.testLteFlag = False
-                    self.lteCsq = 0
-                    self.testGpsFlag = False
-                    self.gpsUStarNum = 0
-
-                    # 获取开始时间戳
-                    self.startStamp = time.time()
-
-                else:
-                    # 进入产测模式失败
-                    self.listIndex = 0
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False,"进入产测失败")
-                    self.CurrentPassItemsNum = 0
-                    log.logger.info('进入产测失败!')
-
+                # 通过项目计数
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "待测设备已接入")
                 # 清零周期次数变量
-                self.cycleCnt = 0
+                self.retryCnt = 0
+
+                # 初始化授权与测试信息
+                self.nodeId = ''
+                self.deviceIotId = ''
+                self.deviceSecret = ''
+                self.ICCID = ''
+                self.IMEI = ''
+
+                # 获取开始时间戳
+                self.startStamp = time.time()
+
+            else:
+                # 进入产测模式失败
+                self.listIndex = 0
+                self.stateMachine = self.stateList[self.listIndex]
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "进入产测失败")
+                self.CurrentPassItemsNum = 0
+                log.logger.info('进入产测失败!')
+
                 # 初始化发送互斥标志位
                 self.sendMutexFlag = True
         else:
@@ -244,36 +280,29 @@ class UserTestThread(QThread):
         log.logger.debug("cmd_FF01接受数据：%s" % hexx)
 
         # 如果在'state_quitTest'状态
-        if self.stateMachine == 'state_quitTest':
+        if self.stateMachine == testStatus.S_END:
+            # b"example"  --->  "example",转换成字符串
+            authtmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                authtmp = json.loads(authtmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]FF01 返回结果json异常，%s' % e)
+                return
 
-            if len(hexx) == 1:
+            if authtmp.get('ret', False):
                 # 长度符合
                 # 退出产测模式成功
-                self.listIndex = 0
+                self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
                 log.logger.info('待测设备退出产测模式!')
 
-                # self.CurrentPassItemsNum += 1
-                # self.progressBar_sinOut.emit(self.testPercentCal(), True,"待测设备退出产测模式")
-
-
-                # 初始化授权与测试信息
-                self.nodeId = ''
-                self.deviceIotId = ''
-                self.deviceSecret = ''
-                self.testFlashFlag = False
-                self.testGsensorFlag = False
-                self.testAdcFlag = False
-                self.adcVolt = 0
-                self.adcSubVolt = 0
-                self.ICCID = ''
-                self.IMEI = ''
-                self.testLteFlag = False
-                self.lteCsq = 0
-                self.testGpsFlag = False
-                self.gpsUStarNum = 0
                 # 发送打印标签及授权信息
-                self.printMsg_sinOut.emit(self.nodeId, self.deviceIotId, self.PID)
+                if self.AuthTestFlag:
+                    if self.deviceType == "BLE" or self.deviceType == "BLE&CAT1":
+                        self.printMsg_sinOut.emit(self.nodeId, self.Area, self.deviceIotId, self.PID)
+                    else:
+                        self.printMsg_sinOut.emit(self.IMEI, self.Area, self.deviceIotId, self.PID)
 
                 # 获取结束时间戳
                 self.endStamp = time.time()
@@ -284,17 +313,12 @@ class UserTestThread(QThread):
                 log.logger.info("本次耗费时间(秒)：%s", self.testInterval)
 
                 # 记录测试结果
-                self.regInfoDict['TEST_FLASH'] = self.testFlashFlag
-                self.regInfoDict['TEST_GSENSOR'] = self.testGsensorFlag
-                self.regInfoDict['VOLT'] = self.adcVolt
-                self.regInfoDict['SUBVOLT'] = self.adcSubVolt
-                self.regInfoDict['TEST_ADC'] = self.testAdcFlag
-                self.regInfoDict['TEST_4G'] = self.testLteFlag
-                self.regInfoDict['CSQ'] = self.lteCsq
-                self.regInfoDict['ICCID'] = self.ICCID
-                self.regInfoDict['IMEI'] = self.IMEI
-                self.regInfoDict['TEST_GPS'] = self.testGpsFlag
-                self.regInfoDict['GPSNUM'] = self.gpsUStarNum
+                for item in self.testProcessor:
+                    self.regInfoDict[item.dspName] = item.result
+                    if item.rev_dict != {}:
+                        for sub_item in item.rev_dict:
+                            self.regInfoDict[sub_item.key()] = sub_item.value()
+
                 self.regInfoDict['TIME_CONS(s)'] = self.testInterval
 
                 print('FF01', str(self.regInfoDict))
@@ -303,63 +327,239 @@ class UserTestThread(QThread):
                 log.logger.info('**************************************************')
 
                 # 清零周期次数变量
-                self.cycleCnt = 0
+                self.retryCnt = 0
                 # 初始化发送互斥标志位
                 self.sendMutexFlag = True
 
         else:
             log.logger.warning('FF01错误应答，未在对应状态！')
 
-    # 解析授权烧录指令AA00
-    def cmd_AA00(self, hexx):
-        # print("userTest.cmd_AA00", hexx)
-        log.logger.debug("cmd_AA00接受数据：%s" % hexx)
+    def cmd_FF02(self,hexx):
+        log.logger.debug("cmd_FF02接受数据：%s" % hexx)
 
-        # 如果在'state_authLoad'状态
-        if self.stateMachine == 'state_authLoad':
-
-            if len(hexx) == 1:
-                # 长度符合
-                if hexx[0] == 0:
-                    # 授权信息烧录成功
-                    self.listIndex = self.listIndex + 1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    log.logger.info('设备授权信息烧录完毕！')
-
-                    # 发送进度条信息
-                    self.CurrentPassItemsNum += 1
-                    self.progressBar_sinOut.emit(self.testPercentCal(), True,"设备授权烧录成功")
-                else:
-                    # 授权信息烧录不成功，请重试
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self
-                    log.logger.info('设备授权信息烧录出错！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(),False, "设备授权烧录失败")
-                    self.CurrentPassItemsNum = 0
-
-                # 清零周期次数变量
-                self.cycleCnt = 0
-                # 初始化发送互斥标志位
-                self.sendMutexFlag = True
-        else:
-            log.logger.warning('AA00错误应答，未在对应状态！')
-
-    # 解析授权查询指令AA01
-    def cmd_AA01(self, hexx):
-        # print("userTest.cmd_AA01", hexx)
-        log.logger.debug("cmd_AA01接受数据：%s" % hexx)
-
-        # 如果在'state_authQuery'状态
-        if self.stateMachine == 'state_authQuery':
-
+        if self.stateMachine == testStatus.S_RESET:
             # b"example"  --->  "example",转换成字符串
             authtmp_str = self.util.BytesToStr(hexx)
             # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-            if authtmp['deviceIotId'] == self.deviceIotId and authtmp['deviceSecret'] == self.deviceSecret:
+            try:
+                authtmp = json.loads(authtmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]FF02 返回结果json异常，%s' % e)
+                return
+
+            if authtmp.get('ret', False):
+                # 重置成功
+                self.listIndex = self.listIndex + 1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.info('待测设备重置成功!')
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "待测设备重置成功")
+            else:
+                # 重置失败
+                self.listIndex = -1
+                self.stateMachine = self.stateList[self.listIndex]
+                # 发送进度条信息
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "待测设备重置失败")
+                self.CurrentPassItemsNum = 0
+
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+
+    def cmd_AA00(self, hexx):
+        log.logger.debug("cmd_AA00接受数据：%s" % hexx)
+
+        # 如果在 S_GET_PRODINFO 状态
+        if self.stateMachine == testStatus.S_GET_PRODINFO:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            if tmp.get('productId', '') != self.PID:
+                # 查询设备产品信息不成功，请重试
+                self.listIndex = -1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.info('查询设备产品信息PID出错！')
+
+                # 发送进度条信息
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备产品信息PID和固件配置不符")
+                self.CurrentPassItemsNum = 0
+                return
+
+            if tmp.get('devType', '') != self.deviceType:
+                self.listIndex = -1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.info('设备类型和配置不符！')
+
+                # 发送进度条信息
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备类型和固件配置不符")
+                self.CurrentPassItemsNum = 0
+                return
+
+            self.listIndex = self.listIndex + 1
+            self.stateMachine = self.stateList[self.listIndex]
+            # 通过项目计数
+            self.CurrentPassItemsNum += 1
+            self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询产品信息完成")
+
+            # 清零周期次数变量
+            self.retryCnt = 0
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+
+        else:
+            log.logger.warning('AA02错误应答，未在对应状态！')
+
+    def cmd_AA01(self, hexx):
+        # print("userTest.cmd_AA02", hexx)
+        log.logger.debug("cmd_AA01接受数据：%s" % hexx)
+
+        # 如果在 S_GET_PRODINFO 状态
+        if self.stateMachine == testStatus.S_GET_DEV_SN:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            if len(tmp.get('MAC', '')) == 12:
+
+                log.logger.info("已查询nodeId:" + tmp['MAC'])
+                self.nodeId = tmp['mac']
+
+                if self.dealHttpDeviceAuth(self.nodeId):
+                    self.listIndex = self.listIndex + 1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    log.logger.info('查询设备产品信息完毕！')
+
+                    # 发送进度条信息
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "云端校验设备产品信息完成")
+                    # 清零周期次数变量
+                    self.retryCnt = 0
+
+                else:
+                    self.listIndex = -1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    log.logger.info('查询设备产品信息出错！')
+
+                    # 发送进度条信息
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "云端校验设备产品信息出错")
+                    self.CurrentPassItemsNum = 0
+
+            else:
+                # 查询MAC失败，请重试
+                self.retryCnt += 1
+                log.logger.error('查询MAC失败')
+
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+
+        else:
+            log.logger.warning('AA01错误应答，未在对应状态！')
+
+    def cmd_AA02(self, hexx):
+        log.logger.debug("cmd_AA02接受数据：%s" % hexx)
+
+        # 如果在 S_GET_PRODINFO 状态
+        if self.stateMachine == testStatus.S_GET_DEV_SN:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            if len(tmp.get('iccid', '')) > 0 and len(tmp.get('IMEI', '')) > 0:
+
+                self.IMEI = tmp['IMEI'] + '\t'
+                self.ICCID = tmp['iccid'] + '\t'
+
+                self.listIndex = self.listIndex + 1
+                self.stateMachine = self.stateList[self.listIndex]
+                # 通过项目计数
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
+                log.logger.info('查询设备蜂窝信息正确！')
+
+                # 重试次数清零
+                self.retryCnt = 0
+
+            else:
+                self.retryCnt = self.retryCnt + 1
+                log.logger.debug('查询设备蜂窝信息失败')
+
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+
+        else:
+            log.logger.warning('AA02错误应答，未在对应状态！')
+
+    # 解析设备入网信息烧录AA03
+    def cmd_AA03(self, hexx):
+        log.logger.debug("cmd_AA03接受数据：%s" % hexx)
+
+        # 如果在'S_AUTH_LOAD'状态
+        if self.stateMachine == testStatus.S_AUTH_LOAD:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            if tmp.get('ret', False):
+                # 授权信息烧录成功
+                self.listIndex = self.listIndex + 1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.info('设备授权信息烧录完毕！')
+
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "设备授权烧录成功")
+            else:
+                # 授权信息烧录不成功，请重试
+                self.retryCnt += 1
+                log.logger.info('设备授权信息烧录出错！')
+
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+        else:
+            log.logger.warning('AA00错误应答，未在对应状态！')
+
+    # 解析入网信息查询指令AA04
+    def cmd_AA04(self, hexx):
+        log.logger.debug("cmd_AA04接受数据：%s" % hexx)
+
+        # 如果在'state_authQuery'状态
+        if self.stateMachine == testStatus.S_AUTH_QUERY:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            if tmp.get('deviceIotId', '') == self.deviceIotId and tmp('deviceSecret', '') == self.deviceSecret:
                 # 查询设备烧录授权信息正确
                 self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
@@ -368,6 +568,8 @@ class UserTestThread(QThread):
                 # 发送进度条信息
                 self.CurrentPassItemsNum += 1
                 self.progressBar_sinOut.emit(self.testPercentCal(), True, '授权信息查询成功')
+                # 清零周期次数变量
+                self.retryCnt = 0
             else:
                 # 查询设备烧录授权信息不正确
                 self.listIndex = -1
@@ -378,71 +580,48 @@ class UserTestThread(QThread):
                 self.progressBar_sinOut.emit(self.testPercentCal(), False, '授权信息查询失败')
                 self.CurrentPassItemsNum = 0
 
-            # 清零周期次数变量
-            self.cycleCnt = 0
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
         else:
             log.logger.warning('AA01错误应答，未在对应状态！')
 
-    # 解析授权查询指令AA02
-    def cmd_AA02(self, hexx):
-        # print("userTest.cmd_AA02", hexx)
-        log.logger.debug("cmd_AA02接受数据：%s" % hexx)
+    # 解析设备蓝牙信息查询 AA01
+    def cmd_AA05(self, hexx):
+        log.logger.debug("cmd_AA05接受数据：%s" % hexx)
 
-        # 如果在'state_obtainDeviceInfo'状态
-        if self.stateMachine == 'state_obtainDeviceInfo':
+        # 如果在 S_AUTH_LOAD 状态
+        if self.stateMachine == testStatus.S_AUTH_LOAD:
 
+            tmp = ''
             # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
+            tmp_str = self.util.BytesToStr(hexx)
             # 加载成json格式
-            authtmp = json.loads(authtmp_str)
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
 
-            if not authtmp['mac'] or len(authtmp['mac']) != 12:
-                self.listIndex = -1
+            if tmp.get('ret', False):
+                # 授权信息烧录成功
+                self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('查询设备mac出错！')
+                log.logger.info('设备授权信息烧录成功！')
 
                 # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备mac出错")
-                self.CurrentPassItemsNum = 0
-                return
-
-            if authtmp['productId'] == self.PID:
-
-                log.logger.info("已查询nodeId:" + authtmp['mac'])
-                self.nodeId = authtmp['mac']
-
-                if self.dealHttpDeviceAuth(self.nodeId):
-                    self.listIndex = self.listIndex + 1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    log.logger.info('查询设备产品信息完毕！')
-
-                    # 发送进度条信息
-                    self.CurrentPassItemsNum += 1
-                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备产品信息完成")
-                else:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    log.logger.info('查询设备产品信息出错！')
-
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备产品信息出错")
-                    self.CurrentPassItemsNum = 0
-
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "设备授权信息烧录成功")
+                # 清零周期次数变量
+                self.retryCnt = 0
             else:
-                # 查询设备产品信息不成功，请重试
+                # 重试次数加一
                 self.listIndex = -1
                 self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('查询设备产品信息PID出错！')
+                log.logger.info('设备授权信息烧录失败！')
 
                 # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备产品信息PID出错")
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, '授权信息烧录失败')
                 self.CurrentPassItemsNum = 0
 
-            # 清零周期次数变量
-            self.cycleCnt = 0
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
 
@@ -450,326 +629,104 @@ class UserTestThread(QThread):
             log.logger.warning('AA02错误应答，未在对应状态！')
 
     # 解析授权查询指令AA03
-    def cmd_AA03(self, hexx):
-        # print("userTest.cmd_AA03", hexx)
-        log.logger.debug("cmd_AA03接受数据：%s" % hexx)
+    def cmd_AA06(self, hexx):
+        log.logger.debug("cmd_AA06接受数据：%s" % hexx)
 
-        # 如果在'state_obtain4GInfo'状态
-        if self.stateMachine == 'state_obtain4GInfo':
+        # 如果在'S_AUTH_QUERY'状态
+        if self.stateMachine == testStatus.S_AUTH_QUERY:
 
+            tmp = ''
             # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
+            tmp_str = self.util.BytesToStr(hexx)
             # 加载成json格式
-            authtmp = json.loads(authtmp_str)
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
 
-            if len(authtmp['iccid']) > 0 and len(authtmp['IMEI']) > 0:
-
-                self.ICCID = authtmp['iccid'] + '\t'
-                self.IMEI = authtmp['IMEI'] + '\t'
-
+            if (tmp.get('deviceIotId', "") == self.deviceIotId and tmp.get('hostAddr', '') == self.hostAddr and
+                    tmp.get('hostPort', "") == self.hostPort):
+                # 查询设备烧录授权信息正确
+                self.deviceIotId = tmp.get('deviceIotId') + '\t'
                 self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('查询设备蜂窝信息正确！')
+                log.logger.info('查询LET待测设备烧录的授权信息正确！')
+
+                # 发送进度条信息
+                self.CurrentPassItemsNum += 1
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询LET待测设备烧录的授权信息正确")
+            else:
+                # 查询设备烧录授权信息不正确
+                self.listIndex = -1
+                self.stateMachine = self.stateList[self.listIndex]
+                log.logger.error('查询LET设备烧录授权信息不正确!')
+
+                # 发送进度条信息
+                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询LET设备烧录授权信息不正确")
+
+            # 清零周期次数变量
+            self.retryCnt = 0
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
+        else:
+            log.logger.warning('AA06错误应答，未在对应状态！')
+
+    # 解析用户测试指令
+    def cmd_testItem(self, cmd, hexx):
+        log.logger.debug("cmd %s 接受数据：%s" % cmd % hexx)
+
+        # 如果在测试项状态 并且 回复命令等于当前测试命令
+        if self.stateMachine == testStatus.S_TEST and cmd == self.testProcessor[self.testIndex].cmd:
+
+            tmp = ''
+            # b"example"  --->  "example",转换成字符串
+            tmp_str = self.util.BytesToStr(hexx)
+            # 加载成json格式
+            try:
+                tmp = json.loads(tmp_str)
+            except Exception as e:
+                log.logger.error('[userTest]返回结果json异常，%s' % e)
+
+            name = self.testProcessor[self.testIndex].dspName
+
+            if tmp.get('ret', False):
+                # 设备返回成功
+                log.logger.info('测试[%s]成功！' % name)
+
+                # 记录测试结果
+                self.testProcessor[self.testIndex].result = True
+
+                if self.testProcessor[self.testIndex].rev_dict != {}:
+                    for item in self.testProcessor[self.testIndex].rev_dict:
+                        try:
+                            ret = tmp.get(item.key())
+                            self.testProcessor[self.testIndex].rev_dict[item.key] = ret
+                        except Exception as e:
+                            log.logger.error("解析 %s 命令回复中不含有 %s 字段，%s" % (cmd, item.key(), str(e)))
+
+                self.testIndex = self.testIndex + 1
+                if self.testIndex == self.TestItemsNum:
+                    # 测试全部结束
+                    self.listIndex += 1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    log.logger.info('测试全部结束，测试成功')
 
                 # 重试次数清零
                 self.retryCnt = 0
 
                 # 发送进度条信息
                 self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
+                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试[%s]成功" % name)
 
             else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.lteInfoRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
+                # 设备返回失败
+                log.logger.info('测试[%s]出错！' % name)
 
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备蜂窝信息出错")
-                    self.CurrentPassItemsNum = 0
-
-                    log.logger.info('查询设备蜂窝信息出错！')
-                # log.logger.debug('查询设备蜂窝信息中...')
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
 
         else:
-            log.logger.warning('AA03错误应答，未在对应状态！')
-
-    # 解析授权查询指令0001
-    def cmd_0001(self, hexx):
-        # print("userTest.cmd_0001", hexx)
-        log.logger.debug("cmd_0001接受数据：%s" % hexx)
-
-        # 如果在'state_testFlash'状态
-        if self.stateMachine == 'state_testFlash':
-
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-
-            if authtmp['ret'] == 0:
-                # 设备返回成功
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                self.testFlashFlag = True
-                log.logger.info('测试FLASH成功！')
-
-                # 重试次数清零
-                self.retryCnt = 0
-
-                # 发送进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试FLASH成功")
-
-            else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.flashRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.testFlashFlag = False
-                    log.logger.info('测试FLASH出错！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试FLASH出错")
-                    self.CurrentPassItemsNum = 0
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
-
-        else:
-            log.logger.warning('0001错误应答，未在对应状态！')
-
-    # 解析授权查询指令0002
-    def cmd_0002(self, hexx):
-        # print("userTest.cmd_0002", hexx)
-        log.logger.debug("cmd_0002接受数据：%s" % hexx)
-
-        # 如果在'state_testGsensor'状态
-        if self.stateMachine == 'state_testGsensor':
-
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-
-            if authtmp['ret'] == 0:
-                # 设备返回成功
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                self.testGsensorFlag = True
-                log.logger.info('测试G-sensor成功！')
-
-                # 重试次数清零
-                self.retryCnt = 0
-
-                # 发送进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), 1, "测试G-sensor成功")
-
-            else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.gSensorRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.testGsensorFlag = False
-                    log.logger.info('测试G-sensor出错！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试G-sensor出错")
-                    self.CurrentPassItemsNum = 0
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
-
-        else:
-            log.logger.warning('0002错误应答，未在对应状态！')
-
-    # 解析授权查询指令0006
-    def cmd_0006(self, hexx):
-        # print("userTest.cmd_0006", hexx)
-        log.logger.debug("cmd_0006接受数据：%s" % hexx)
-
-        # 如果在'state_testAdc'状态
-        if self.stateMachine == 'state_testAdc':
-
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-
-            self.adcVolt = authtmp['Volt']
-            self.adcSubVolt = authtmp['SubVolt']
-            if self.subBattFlag == 'true':
-                ret = ((self.voltMinTh <= authtmp['Volt'] <= self.voltMaxTh) and (self.subVoltMinTh <= authtmp[
-                    'SubVolt'] <= self.subVoltMaxTh))
-            else:
-                ret = (self.voltMinTh <= authtmp['Volt'] <= self.voltMaxTh)
-
-            if ret:
-                # 设备返回成功
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                self.testAdcFlag = True
-                log.logger.info('测试ADC功能成功！')
-
-                # 重试次数清零
-                self.retryCnt = 0
-
-                # 发送测试进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试ADC功能成功")
-
-            else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.voltRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.testAdcFlag = False
-                    log.logger.info("volt: %d" % self.adcVolt)
-                    log.logger.info("subVolt: %d" % self.adcSubVolt)
-                    log.logger.info('测试ADC功能出错！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试ADC功能出错")
-                    self.CurrentPassItemsNum = 0
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
-
-        else:
-            log.logger.warning('0006错误应答，未在对应状态！')
-
-    # 解析授权查询指令0020
-    def cmd_0020(self, hexx):
-        # print("userTest.cmd_0020", hexx)
-        log.logger.debug("cmd_0020接受数据：%s" % hexx)
-
-        # 如果在'state_test4G'状态
-        if self.stateMachine == 'state_test4G':
-
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-
-            self.lteCsq = authtmp['CSQ']
-
-            if authtmp['ret'] == 0 and authtmp['CSQ'] >= self.csqMinTh:
-                # 设备返回成功
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                self.testLteFlag = True
-                log.logger.info('测试4G功能成功！')
-
-                # 重试次数清零
-                self.retryCnt = 0
-
-                # 发送测试进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试4G功能成功")
-
-            else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.csqRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.testLteFlag = False
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试4G功能出错")
-                    self.CurrentPassItemsNum = 0
-                    log.logger.info("4G CSQ: %d" % self.lteCsq)
-                    log.logger.info('测试4G功能出错！')
-                log.logger.debug('测试4G功能中...')
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
-
-        else:
-            log.logger.warning('0020错误应答，未在对应状态！')
-
-    # 解析授权查询指令0021
-    def cmd_0021(self, hexx):
-        # print("userTest.cmd_0021", hexx)
-        log.logger.debug("cmd_0021接受数据：%s" % hexx)
-
-        # 如果在'state_testGps'状态
-        if self.stateMachine == 'state_testGps':
-
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            authtmp = json.loads(authtmp_str)
-
-            self.gpsUStarNum = authtmp['star']
-
-            # if authtmp['ret'] == 0 and authtmp['star'] >= self.uStarNum:
-            if authtmp['star'] >= self.uStarNum:
-                # 设备返回成功
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                self.testGpsFlag = True
-                log.logger.info('测试GPS功能成功！')
-
-                # 重试次数清零
-                self.retryCnt = 0
-
-                # 发送测试进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "测试GPS功能成功")
-            else:
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == self.uStarNumRetryNum:
-                    # 重试次数清零
-                    self.retryCnt = 0
-                    # 更新状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.testGpsFlag = False
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "测试GPS功能出错")
-                    self.CurrentPassItemsNum = 0
-
-                    log.logger.info("GPS有用星数: %d" % self.gpsUStarNum)
-                    log.logger.info('测试GPS功能出错！')
-                # log.logger.debug('测试GPS功能中...')
-
-            # 清零周期次数变量
-            self.cycleCnt = 0
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
-
-        else:
-            log.logger.warning('0021错误应答，未在对应状态！')
+            log.logger.warning('cmd %s 错误应答，未在对应状态！' % cmd)
 
     # 按照帧结构解析处理一条完整的帧数据
     def uartParse(self, data):
@@ -822,27 +779,12 @@ class UserTestThread(QThread):
         # 获取2字节功能码
         cmd = data[headIdx + 2:headIdx + 4]
 
-        # 创建测试协议cmd字典
-        self.cmdProcessor = {
-            bytes.fromhex("FF00"): self.cmd_FF00,
-            bytes.fromhex("FF01"): self.cmd_FF01,
-            bytes.fromhex("AA00"): self.cmd_AA00,
-            bytes.fromhex("AA01"): self.cmd_AA01,
-            bytes.fromhex("AA02"): self.cmd_AA02,
-            bytes.fromhex("AA03"): self.cmd_AA03,
-            bytes.fromhex("0001"): self.cmd_0001,
-            bytes.fromhex("0002"): self.cmd_0002,
-            bytes.fromhex("0006"): self.cmd_0006,
-            bytes.fromhex("0020"): self.cmd_0020,
-            bytes.fromhex("0021"): self.cmd_0021,
-        }
-
-        # 可能存在没有相应指令函数，则报错退出
-        try:
-            # 执行相应指令
-            self.cmdProcessor[cmd](data[headIdx + 6:headIdx + cnt + 6])
-        except:
-            # print("userTest.uartParse", "parse cmd error", cmd)
+        # 执行相应指令
+        if cmd in self.cmdInsideProcessor.keys():
+            self.cmdInsideProcessor[cmd](data[headIdx + 6:headIdx + cnt + 6])
+        elif cmd in self.testProcessor.keys():
+            self.cmd_testItem(cmd, data[headIdx + 6:headIdx + cnt + 6])
+        else:
             log.logger.error("userTest.uartParse parse cmd error!")
             return False, data[headIdx + cnt + 7:]
 
@@ -919,7 +861,7 @@ class UserTestThread(QThread):
                     # 内容状态码正确
                     try:
                         self.deviceIotId = regRequest['data']['deviceIotId']
-                        self.deviceSecret = regRequest['data']['deviceSecret']
+                        self.deviceSecret = regRequest['data'].get('deviceSecret', "")
                         tmpPid = regRequest['data']['productIotId']
                     except Exception as e:
                         log.logger.error("主程序抛错：")
@@ -940,6 +882,7 @@ class UserTestThread(QThread):
                         self.regInfoDict['DID'] = self.deviceIotId
                         self.regInfoDict['DSECRET'] = self.deviceSecret
                         self.regInfoDict['MAC'] = self.nodeId
+
                         print('AA02', str(self.regInfoDict))
 
                         # 发送完整的授权信息
@@ -958,41 +901,19 @@ class UserTestThread(QThread):
                 log.logger.error("设备注册Http失败！ status_code：%d" % y.status_code)
                 return False
 
-    # 接受输入的硬件标识码
-    def dealInputDeviceId(self, text):
-        if self.stateMachine == 'state_manualInputInfo':
-            log.logger.info("已输入nodeId:" + text)
-            self.nodeId = text
-
-            if self.dealHttpDeviceAuth(self.nodeId):
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('手动输入设备产品信息完毕！')
-            else:
-                self.listIndex = 0
-                self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('手动输入设备产品信息出错！')
-
-        else:
-            log.logger.warning("未在设备授权模式")
-
     def run(self):
         # 创建小型状态机，处理与下位机的通讯
-        # state_enterTest:进入产测,FF00命令
+        # S_ENTER:进入产测,FF00命令
+        # S_RESET:重置，FF01命令
         #############
-        # ---state_obtainDeviceInfo:查询设备信息，AA02命令
-        # ---state_manualInputInfo:手动输入设备信息，无命令
-        # ---state_authLoad:授权信息烧录，AA00命令
-        # ---state_authQuery：授权信息查询，AA01命令
+        # ---S_GET_PRODINFO:查询设备信息，AA00命令
+        # ---S_GET_DEV_SN:查询设备唯一码信息，AA01\AA02命令
+        # ---S_AUTH_LOAD:授权信息烧录，AA03\AA05命令
+        # ---S_AUTH_QUERY：授权信息查询，AA04\AA06命令
         #############
-        # ---state_testFlash：测试FLASH，0001命令
-        # ---state_testGsensor：测试G-sensor，0002命令
-        # ---state_testAdc：测试ADC功能，0006命令
-        # ---state_obtain4GInfo:查询蜂窝信息，AA03命令
-        # ---state_test4G：测试4G，0020命令
-        # ---state_testGps：测试GPS，0021命令
+        # ---S_TEST：根据配置进行测试
         #############
-        # state_quitTest:退出产测，FF01指令
+        # S_END:退出产测，FF01指令
 
         print("启动UserTestThread线程")
 
@@ -1005,7 +926,10 @@ class UserTestThread(QThread):
         self.listIndex = 0
 
         # 增加'state_enterTest'状态，初始状态
-        self.stateList.append('state_enterTest')
+        self.stateList.append(testStatus.S_ENTER)
+
+        # 增加'state_reset'状态,进行设备重启
+        # self.stateList.append(testStatus.S_RESET)
 
         if self.Auth:
             # 提示进入授权模式
@@ -1013,37 +937,24 @@ class UserTestThread(QThread):
             # 打印PID
             log.logger.info("待测设备PID：%s" % self.PID)
 
-            # 增加'state_obtainDeviceInfo'状态
-            self.stateList.append('state_obtainDeviceInfo')
+            # 增加获取产品信息状态
+            self.stateList.append(testStatus.S_GET_PRODINFO)
 
-            # 增加'state_authLoad'状态
-            self.stateList.append('state_authLoad')
+            # 增加获取设备唯一码状态
+            self.stateList.append(testStatus.S_GET_DEV_SN)
 
-            # 增加'state_authQuery'状态
-            self.stateList.append('state_authQuery')
+            # 增加授权烧录状态
+            self.stateList.append(testStatus.S_AUTH_LOAD)
+
+            # 增加授权查询状态
+            self.stateList.append(testStatus.S_AUTH_QUERY)
 
         if self.FactoryTest:
-            # 增加'state_testFlash'状态
-            self.stateList.append('state_testFlash')
+            # 增加测试状态
+            self.stateList.append(testStatus.S_TEST)
 
-            # 增加'state_testGsensor'状态
-            self.stateList.append('state_testGsensor')
-
-            # 增加'state_testAdc'状态
-            self.stateList.append('state_testAdc')
-
-            if self.lteTestFlag == 'true':
-                # 增加'state_obtain4GInfo'状态
-                self.stateList.append('state_obtain4GInfo')
-
-                # 增加'state_test4G'状态
-                self.stateList.append('state_test4G')
-
-                # 增加'state_testGps'状态
-                self.stateList.append('state_testGps')
-
-        # 增加'state_quitTest'状态，结束状态
-        self.stateList.append('state_quitTest')
+        # 增加退出产测状态，结束状态
+        self.stateList.append(testStatus.S_END)
 
         print(self.stateList)
 
@@ -1052,69 +963,66 @@ class UserTestThread(QThread):
 
         while True:
 
-            if self.stateMachine == 'state_enterTest':
+            if self.stateMachine == testStatus.S_ENTER:
                 # 进入产测模式，持续查询，直到设备正确回复
-                self.userTestSend("FF00", "0000")
+                self.userTestSend("FF00", 0)
+                # 发送重启指令 不用回复
+                self.userTestSend("FF02", 0)
 
                 # 等待200ms
                 time.sleep(0.2)
 
-            elif self.stateMachine == 'state_obtainDeviceInfo':
+            elif self.stateMachine == testStatus.S_GET_PRODINFO:
                 # 进入通信获取设备信息状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
-                    self.userTestSend("AA02", "0000")
+                    self.userTestSend("AA02", 0)
 
                 # 等待500ms
                 time.sleep(0.5)
 
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('AA02设备通信超时！！！')
-
-                    # 发送进度条信息
-
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_manualInputInfo':
-                # 等到手动输入信息
-
-                # 等待500ms
-                time.sleep(0.5)
-
-            elif self.stateMachine == 'state_authLoad':
+            elif self.stateMachine == testStatus.S_AUTH_LOAD:
                 # 进入授权信息烧录状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
 
-                    try:
-                        authInf_str = '{"deviceIotId":"' + self.deviceIotId + '","deviceSecret":"' + self.deviceSecret + '"}'
-                        authInf_bytes = codecs.encode(authInf_str)
-                        authInf = ''.join(["%02X" % x for x in authInf_bytes])
-                        authInfLen = ''.join(["%04X" % len(authInf_str)])
+                    if self.deviceType == 'CAT1':
+                        try:
+                            authInf_str = ('{"deviceIotId":"' + self.deviceIotId + '","HostAddr":"' +
+                                           self.hostAddr + '","HostPort": ' + str(self.hostPort) + '}')
+                            authInf_bytes = codecs.encode(authInf_str)
+                            authInf = ''.join(["%02X" % x for x in authInf_bytes])
+                            authInfLen = len(authInf_str)
 
-                        self.userTestSend("AA00", authInfLen, authInf)
-                    except:
-                        log.logger.error('AA00授权数据解析错误！')
+                            self.userTestSend("AA05", authInfLen, authInf)
+                        except:
+                            log.logger.error('AA05授权数据解析错误！')
+
+                    if self.deviceType == 'BLE' or self.deviceType == 'BLE&CAT1':
+
+                        try:
+                            if self.deviceType == 'BLE':
+                                authInf_str = '{"deviceIotId":"' + self.deviceIotId + '"}'
+                            elif self.deviceType == 'BLE&CAT1':
+                                authInf_str = '{"deviceIotId":"' + self.deviceIotId + '","deviceSecret":"' + self.deviceSecret + '"}'
+
+                            authInf_bytes = codecs.encode(authInf_str)
+                            authInf = ''.join(["%02X" % x for x in authInf_bytes])
+                            authInfLen = len(authInf_str)
+
+                            self.userTestSend("AA03", authInfLen, authInf)
+                        except:
+                            log.logger.error('AA03授权数据解析错误！')
 
                 # 等待500ms
                 time.sleep(0.5)
 
                 # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
+                self.retryCnt = self.retryCnt + 1
+                if self.retryCnt == 3:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
+                    self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('AA00设备通信超时！！！')
 
@@ -1122,9 +1030,9 @@ class UserTestThread(QThread):
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
                     self.CurrentPassItemsNum = 0
                     # 等待
-                    time.sleep(3)
+                    time.sleep(0.1)
 
-            elif self.stateMachine == 'state_authQuery':
+            elif self.stateMachine == testStatus.S_AUTH_QUERY:
                 # 进入授权信息查询状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
@@ -1134,186 +1042,61 @@ class UserTestThread(QThread):
                 time.sleep(0.5)
 
                 # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
+                self.retryCnt = self.retryCnt + 1
+                if self.retryCnt == 3:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
+                    self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('AA01设备通信超时！！！')
 
                     # 发送进度条信息
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
                     self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
 
-            elif self.stateMachine == 'state_testFlash':
-                # 进入FLASH测试状态
+            elif self.stateMachine == testStatus.S_TEST:
+                # 进入测试项下发
+
+                cmd = self.testProcessor[self.testIndex].cmd
+                data = self.testProcessor[self.testIndex].date
+                name = self.testProcessor[self.testIndex].name
+                retry = self.testProcessor[self.testIndex].retry
+                inv = self.testProcessor[self.testIndex].interval
+
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
-                    self.userTestSend("0001", "0000")
+                    try:
+                        tmp_str = data
+                        tmp_bytes = codecs.encode(tmp_str)
+                        tmp = ''.join(["%02X" % x for x in tmp_bytes])
+                        tmpLen = len(tmp_str)
 
-                    if self.retryCnt == 0:
-                        log.logger.info('设备Flash功能测试中...')
+                        self.userTestSend(cmd, tmpLen, tmp)
 
-                # 等待500ms
-                time.sleep(0.5)
+                    except Exception as e:
+                        log.logger.error('%s授权数据解析错误！%s' % cmd % str(e))
 
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('0001设备通信超时！！！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_testGsensor':
-                # 进入G-sensor测试状态
-                if self.sendMutexFlag:
-                    self.sendMutexFlag = False
-                    self.userTestSend("0002", "0000")
-
-                    if self.retryCnt == 0:
-                        log.logger.info('设备G-sensor功能测试中...')
-
-                # 等待500ms
-                time.sleep(0.5)
+                # 等待命令对应延迟
+                time.sleep(inv)
 
                 # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
+                self.retryCnt = self.retryCnt + 1
+                if self.retryCnt == retry:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
+                    self.retryCnt = 0
                     self.sendMutexFlag = True
-                    log.logger.info('0002设备通信超时！！！')
+                    log.logger.info('%s%s设备通信超时！！！' % (cmd, name))
 
                     # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, '%s%s设备通信超时！！！' % (cmd, name))
                     self.CurrentPassItemsNum = 0
 
-
                     # 等待
-                    time.sleep(3)
+                    time.sleep(0.1)
 
-            elif self.stateMachine == 'state_testAdc':
-                # 进入ADC测试状态
-                if self.sendMutexFlag:
-                    self.sendMutexFlag = False
-                    self.userTestSend("0006", "0000")
-
-                    if self.retryCnt == 0:
-                        log.logger.info('设备ADC功能测试中...')
-
-                # 等待500ms
-                time.sleep(0.5)
-
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('0006设备通信超时！！！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_obtain4GInfo':
-                # 进入获取设备蜂窝信息状态
-                if self.sendMutexFlag:
-                    self.sendMutexFlag = False
-                    self.userTestSend("AA03", "0000")
-
-                    if self.retryCnt == 0:
-                        log.logger.info('设备蜂窝信息查询中...')
-
-                # 等待500ms
-                time.sleep(0.5)
-
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('AA03设备通信超时！！！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_test4G':
-                # 进入4G测试状态
-                if self.sendMutexFlag:
-                    self.sendMutexFlag = False
-                    self.userTestSend("0020", "0000")
-
-                    if self.retryCnt == 0:
-                        log.logger.info('4G功能测试中...')
-
-                # 等待500ms
-                time.sleep(0.5)
-
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('0020设备通信超时！！！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_testGps':
-                # 进入GPS测试状态
-                if self.sendMutexFlag:
-                    self.sendMutexFlag = False
-                    self.userTestSend("0021", "0000")
-
-                    if self.retryCnt == 0:
-                        log.logger.info('GPS定位测试中...')
-
-                # 等待500ms
-                time.sleep(0.5)
-
-                # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 10:
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
-                    self.sendMutexFlag = True
-                    log.logger.info('0021设备通信超时！！！')
-
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备通信超时")
-                    self.CurrentPassItemsNum = 0
-                    # 等待
-                    time.sleep(3)
-
-            elif self.stateMachine == 'state_quitTest':
-                # 进入GPS测试状态
+            elif self.stateMachine == testStatus.S_END:
+                # 进入退出测试状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
                     self.userTestSend("FF01", "0000")
@@ -1322,15 +1105,15 @@ class UserTestThread(QThread):
                 time.sleep(0.5)
 
                 # 超时
-                self.cycleCnt = self.cycleCnt + 1
-                if self.cycleCnt == 6:
+                self.retryCnt = self.retryCnt + 1
+                if self.retryCnt == 6:
                     self.listIndex = 0
                     self.stateMachine = self.stateList[self.listIndex]
-                    self.cycleCnt = 0
+                    self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('FF01设备通信超时！！！')
                     # 等待
-                    time.sleep(3)
+                    time.sleep(0.1)
 
             # 与BaseUartThread线程进行同步，统一都是由串口状态判定
             if not self.Ser.isOpen():

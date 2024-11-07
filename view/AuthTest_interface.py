@@ -1,8 +1,9 @@
 # coding:utf-8
+import json
 
 import serial
 import serial.tools.list_ports
-from PyQt5.QtCore import pyqtSignal, QDateTime, QSettings
+from PyQt5.QtCore import pyqtSignal, QDateTime
 from PyQt5.QtGui import QColor, QTextCursor, QTextCharFormat
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect
 
@@ -26,18 +27,25 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     deviceId_sinOut = pyqtSignal(str)
     # 自定义信号,用来显示授权信息
     authInfo_sinOut = pyqtSignal(str)
+    # 自定义信号,用来接收测试配置信息
+    testConfigInfo_sinIn = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-
-        self.regUrl = None
         self.setupUi(self)
 
+        self.regUrl = ''
         # Flag of StartButton
         self.testStart = 0
 
         # Authkey BLE MAC or IMEI
         self.AuthParam = ''
+
+        # Auth Url
+        self.regUrl = ''
+
+        # Tag Print Times
+        self.printerCnt = 1
 
         # set the icon of button
         self.Button_UpdateSerial.setIcon(FluentIcon.SYNC)
@@ -60,8 +68,13 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     # 组件初始化设置
     def InitModuleConfig(self):
         # 待测设备参数
-        self.ComboBox_AuthParam.addItem('BLE MAC')
-        self.ComboBox_AuthParam.addItem('4G IMEI')
+        self.ComboBox_AuthParam.addItems(['MAC', 'IMEI'])
+
+        # 设备类型
+        self.DevTypeComboBox.addItems(["BLE", "BLE&CAT1", "CAT1"])
+
+        # 区域选择
+        self.AreaComboBox.addItems(['中国(CN)', '美国(US)', '欧洲(EU)'])
 
         self.success = 0
         self.fail = 0
@@ -70,19 +83,15 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.util = baseUtils.BaseUtils()
         # 通过外部ini文件配置相关参数
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
-        try:
-            self.settings = QSettings("resources/config/sys_config.ini", QSettings.IniFormat)
-            self.printerCnt = int(self.settings.value("BASE_SETTING/tag_print_times"))
-            self.regUrl = self.settings.value("BASE_SETTING/reg_url")
-            print(self.regUrl)
-        except Exception as e:
-            log.logger.error(e)
-            log.logger.error('读配置文件异常！')
-            self.printerCnt = 1
-            self.regUrl = 'http://iot.stage.vehiclink.com'
+        self.File = 'resources/config/sysConfig.json'
 
-        # 绑定信号槽函数
-        # self.parent().settingInterface.BasicSetCard.reg_url_sinOut.connect(self.get_reg_url_slot)
+        with open(self.File, 'r', encoding='utf-8', errors='ignore') as file:
+            sysItemsData = json.loads(file.read())
+            # 确保sysItemsData是一个字典
+            if isinstance(sysItemsData, dict):
+                self.printerCnt = sysItemsData.get("tag_print_times", 1)
+                self.regUrl = sysItemsData.get("reg_url", 'http://iot.stage.vehiclink.com').startswith('http')
+                self.logLevel = sysItemsData.get("current_logger_level", "debug")
 
         # 默认使能配网参数授权
         self.CheckBox_AuthTest.setChecked(True)
@@ -106,12 +115,19 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.Button_Clear.setIcon(FluentIcon.BROOM)
         self.Button_Clear.clicked.connect(self.LogBoswer.clear)
 
+        # 绑定更新设置
+        self.testConfigInfo_sinIn.connect(self.updateSetting)
+
         # Test
-        self.ProuductIdLineEdit.setText('YJ00048odi')
+        # self.ProuductIdLineEdit.setText('YJ00048odi')
 
         # 初始化成功率统计接口
         self.SuccessCnt.setText(str(self.success))
         self.FailCnt.setText(str(self.fail))
+
+    def updateSetting(self, Setting_dict: dict):
+        self.printerCnt = Setting_dict.get("tag_print_times", 1)
+        self.regUrl = Setting_dict.get("reg_url", 'http://iot.stage.vehiclink.com').startswith('http')
 
     def get_reg_url_slot(self, url):
         if url != '':
@@ -167,7 +183,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
         for i in range(len(text)):
             if text[i] == ')':
-                text = text[:i+1]
+                text = text[:i + 1]
                 break
 
         for port in serial.tools.list_ports.comports():
@@ -205,8 +221,13 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
                 self.initialSerial()
                 # 获取PID
-
                 self.PID = self.ProuductIdLineEdit.text()
+
+                # 获取设备类型
+                self.DeviceType = self.DevTypeComboBox.currentText()
+
+                # 获取区域
+                self.Area = self.AreaComboBox.currentText()
 
                 # 检查PID输入是否为10字节
                 if len(self.PID) == 10:
@@ -247,8 +268,15 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             ###############################################################################
                             # 创建UserTestThread线程实例
                             self.testThread = UserTestThread(self.ser, self.PID, self.CheckBox_AuthTest.isChecked(),
-                                                             False,
+                                                             self.Area,
+                                                             self.AuthParam,
+                                                             self.DeviceType,
                                                              self.CheckBox_FuncTest.isChecked(), self.regUrl)
+                            if self.testThread is None:
+                                self.testStart = False
+                                showMessage("提示", "测试线程创建失败", self)
+                                return None
+
                             # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到BaseUartThread线程
                             self.testThread.uartWrite_sinOut.connect(self.serialThread.uartWrite)
                             # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到main主线程线程

@@ -29,12 +29,12 @@ class SysItemEditFactory(QWidget):
             self.logLevelComboBox.setCurrentText(self.logLevel)
 
             # 设置设备类型
-            self.deviceTypeList = self.sysItemsData.get("device_type", [])
-            self.deviceType = self.sysItemsData.get("current_device_type", "BLE & Cat1")
-            self.deviceTypeLabel = BodyLabel("设备类型:", self)
-            self.deviceTypeComboBox = ComboBox(self)
-            self.deviceTypeComboBox.addItems(self.deviceTypeList)
-            self.deviceTypeComboBox.setCurrentText(self.deviceType)
+            # self.deviceTypeList = self.sysItemsData.get("device_type", [])
+            # self.deviceType = self.sysItemsData.get("current_device_type", "BLE & Cat1")
+            # self.deviceTypeLabel = BodyLabel("设备类型:", self)
+            # self.deviceTypeComboBox = ComboBox(self)
+            # self.deviceTypeComboBox.addItems(self.deviceTypeList)
+            # self.deviceTypeComboBox.setCurrentText(self.deviceType)
 
             # 配置标签打印次数
             self.labelPrintCount = self.sysItemsData.get("tag_print_times", 3)
@@ -60,8 +60,8 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
             self.LayOut.addWidget(self.logLevelComboBox, 0, 1)
 
-            self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
-            self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
+            # self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
+            # self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
 
             self.LayOut.addWidget(self.labelPrintCountLabel, 2, 0)
             self.LayOut.addWidget(self.labelPrintCountSpinBox, 2, 1)
@@ -71,7 +71,7 @@ class SysItemEditFactory(QWidget):
 
             # 绑定事件
             self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
+            # self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
             self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
 
@@ -86,11 +86,12 @@ class SysItemEditFactory(QWidget):
         # 确保sysItemsData是一个字典
         if isinstance(self.sysItemsData, dict):
             self.sysItemsData["current_logger_level"] = self.logLevelComboBox.currentText()
-            self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
+            # self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
             self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
+
         else:
             print("sysItemsData is not a dictionary.")
 

@@ -6,8 +6,9 @@
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 3
         },
         {
@@ -16,8 +17,9 @@
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -26,8 +28,9 @@
             "dspName": "ACC控制功能测试",
             "cmd": "0003",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -36,8 +39,9 @@
             "dspName": "ACC电路功能综合测试",
             "cmd": "0004",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -46,8 +50,9 @@
             "dspName": "CAN功能测试",
             "cmd": "0005",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -56,6 +61,7 @@
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
+            "rev_dict": "{\"Volt\":0,\"subVolt\":0}",
             "interval(ms)": 500,
             "process": "P",
             "retry": 1
@@ -86,8 +92,9 @@
             "dspName": "串口测试",
             "cmd": "0009",
             "data": "",
+            "rev_dict": "{\"uart1\": false, \"uart2\": false}",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -96,8 +103,9 @@
             "dspName": "蜂窝信号强度测试",
             "cmd": "0020",
             "data": "{\"CSQ\":15}",
+            "rev_dict": "{\"CSQ\":0}",
             "interval(ms)": 1000,
-            "process": "F",
+            "process": "CAT1",
             "retry": 60
         },
         {
@@ -106,8 +114,9 @@
             "dspName": "GPS信号强度测试",
             "cmd": "0021",
             "data": "{\"star\":3}",
+            "rev_dict": "{\"star\":0}",
             "interval(ms)": 1000,
-            "process": "F",
+            "process": "CAT1",
             "retry": 180
         },
         {
@@ -116,8 +125,9 @@
             "dspName": "读取设备电压",
             "cmd": "0031",
             "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"out_5V\":500,\"tolerance\":10 }",
+            "rev_dict": "{\"power_5V\":0,\"power_3.8V\":0,\"power_3.3V\":0,\"out_5V\":0}",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -126,8 +136,9 @@
             "dspName": "读取设备充电电流",
             "cmd": "0032",
             "data": "{\"charge_current\":\"10\",\"tolerance\":10 } ",
+            "rev_dict": "{\"charge_current\":0}",
             "interval(ms)": 500,
-            "process": "F",
+            "process": "ALL",
             "retry": 1
         }
     ]
