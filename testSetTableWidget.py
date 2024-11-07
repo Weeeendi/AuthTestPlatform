@@ -40,7 +40,7 @@ class myTableModel(TableView):
         super().__init__()
         self.initialRow = -1  # 用于存储拖拽行的初始行数
         self.dropRow = -1  # 用于存储拖拽行的目标位置
-        self.dropHighlightColor = QColor(Qt.gray)  # 高亮颜色
+        self.dropHighlightColor = QColor(0, 0, 0, 20)  # 高亮颜色
         self.initialMousePos = None  # 用于存储初始拖拽时的鼠标位置
 
         # 存储所有去重后的name
@@ -83,11 +83,28 @@ class myTableModel(TableView):
         # 将数据列表转换为DataFrame
         return pd.DataFrame(data_list)
 
+    def getHighOfTable(self) -> int:
+        # 假设 tableView 是你的 QTableView 实例
+        rowHeight = self.rowHeight(0)  # 假设至少有一行
+        rowCount = self.TableModel.rowCount()
+
+        return rowHeight * (rowCount + 1)
+
+    def forbidEdit(self, state: bool):
+        if state:
+            self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            self.setDragEnabled(False)
+            self.setAcceptDrops(False)  # 不允许放置
+        else:
+            self.setEditTriggers(QAbstractItemView.AllEditTriggers)
+            self.setDragEnabled(True)
+            self.setAcceptDrops(True)
+
     def updateData2Json(self) -> dict:
         """
-            将 QAbstractItemModel 转换为字典格式的 JSON 数据。
-            注意：此函数假设模型结构是简单的表格形式，没有分层。
-            """
+        将 QAbstractItemModel 转换为字典格式的 JSON 数据。
+        注意：此函数假设模型结构是简单的表格形式，没有分层。
+        """
         data = []
         rowCount = self.TableModel.rowCount()
         columnCount = self.TableModel.columnCount()
@@ -188,30 +205,24 @@ class myTableModel(TableView):
             painter.setPen(finalPen)
             painter.drawLine(0, y, self.width(), y)
 
-    def getHighOfTable(self):
-        # 假设 tableView 是你的 QTableView 实例
-        rowHeight = self.rowHeight(0)  # 假设至少有一行
-        rowCount = self.TableModel.rowCount()
 
-        return rowHeight * (rowCount + 1)
-
-    def updateData(self, jsonObj):
-        state = jsonObj.get("enable", "")
-        if not state:
-            cmd = jsonObj.get("cmd", "")
-            row = PandasModel.search(self.TableModel, 2, cmd)
-            if row is not None:
-                self.TableModel.removeRow(row)
-        else:
-            headerName = next(iter(jsonObj))
-            nameValue = jsonObj.get(headerName)
-            if nameValue and nameValue not in self.unique_names:
-                self.unique_names.add(nameValue)
-                itemlist = jsonObj
-                ret1 = itemlist.pop(headerName, None)
-                ret2 = itemlist.pop("enable", None)
-                if ret1 and ret2:
-                    self.TableModel.appendRow(itemlist)
+    # def updateData(self, jsonObj):
+    #     state = jsonObj.get("enable", "")
+    #     if not state:
+    #         cmd = jsonObj.get("cmd", "")
+    #         row = PandasModel.search(self.TableModel, 2, cmd)
+    #         if row is not None:
+    #             self.TableModel.removeRow(row)
+    #     else:
+    #         headerName = next(iter(jsonObj))
+    #         nameValue = jsonObj.get(headerName)
+    #         if nameValue and nameValue not in self.unique_names:
+    #             self.unique_names.add(nameValue)
+    #             itemlist = jsonObj
+    #             ret1 = itemlist.pop(headerName, None)
+    #             ret2 = itemlist.pop("enable", None)
+    #             if ret1 and ret2:
+    #                 self.TableModel.appendRow(itemlist)
 
     def resizeEvent(self, event):
         # 调整列宽
@@ -232,13 +243,12 @@ class myTableModel(TableView):
         self.resizeColumnsToContents()
 
         # 确保列宽至少是min_section_size
-        min_section_size = 80  # 设置最小列宽
+        min_section_size = 75  # 设置最小列宽
         for section in range(header.count()):
             if (section == 1):
                 header.resizeSection(section, 250)
                 continue
             header.resizeSection(section, max(header.sectionSize(section), min_section_size))
-
 
 class PandasModel(QAbstractTableModel):
 

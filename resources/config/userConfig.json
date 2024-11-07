@@ -72,8 +72,9 @@
             "dspName": "故障检测功能测试",
             "cmd": "0007",
             "data": "",
+            "rev_dict": "",
             "interval(ms)": 500,
-            "process": "P",
+            "process": "ALL",
             "retry": 1
         },
         {
@@ -82,7 +83,8 @@
             "dspName": "蜂鸣器测试",
             "cmd": "0008",
             "data": "",
-            "process": "P",
+            "rev_dict": "",
+            "process": "ALL",
             "interval(ms)": 500,
             "retry": 1
         },

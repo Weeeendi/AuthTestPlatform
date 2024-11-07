@@ -4,8 +4,7 @@ import json
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGridLayout, QSizePolicy, \
-    QTableView
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGridLayout, QSizePolicy
 
 import data_manage
 import testSetTableWidget
@@ -194,13 +193,13 @@ class setDetailCard(HeaderCardWidget):
         self.setMinimumHeight(self.detailInfo.getHighOfTable() + 100)
         self.viewLayout.setContentsMargins(20, 20, 20, 20)
 
-        # self.detailInfo.setEditTriggers(QTableView.NoEditTriggers)
+        self.detailInfo.forbidEdit(True)
 
     def setComponentState(self, isChecked: bool):
         if isChecked:
-            self.detailInfo.setEditTriggers(QTableView.NoEditTriggers)
+            self.detailInfo.forbidEdit(False)
         else:
-            self.detailInfo.setEditTriggers(QTableView.AllEditTriggers)
+            self.detailInfo.forbidEdit(True)
             with open(self.file, 'w', encoding='utf-8', errors='ignore') as file:
                 # 将数据以JSON格式写入文件，确保中文不被转义
                 self.testItemsData["TestItems"] = self.detailInfo.updateData2Json()
