@@ -4,7 +4,7 @@
         "debug",
         "warning"
     ],
-    "current_logger_level": "debug",
+    "current_logger_level": "info",
     "tag_print_times": 3,
     "reg_urls": [
         {

@@ -13,7 +13,7 @@
         },
         {
             "funName": "GSensor_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
@@ -24,7 +24,7 @@
         },
         {
             "funName": "ACC_Ctrl_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ACC控制功能测试",
             "cmd": "0003",
             "data": "",
@@ -35,7 +35,7 @@
         },
         {
             "funName": "ACC_Func_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ACC电路功能综合测试",
             "cmd": "0004",
             "data": "",
@@ -84,8 +84,8 @@
             "cmd": "0008",
             "data": "",
             "rev_dict": "",
-            "process": "ALL",
             "interval(ms)": 500,
+            "process": "ALL",
             "retry": 1
         },
         {

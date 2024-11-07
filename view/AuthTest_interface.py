@@ -153,6 +153,10 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.LicenseLineEdit.setDisabled(bool_value)
         # 待测设备参数选择-禁止/使能
         self.ComboBox_AuthParam.setDisabled(bool_value)
+        # 区域选择-禁止/使能
+        self.AreaComboBox.setDisabled(bool_value)
+        # 设备类型选择-禁止/使能
+        self.DevTypeComboBox.setDisabled(bool_value)
         # 配网参数授权-禁止/使能
         self.CheckBox_AuthTest.setDisabled(bool_value)
         # 生产测试-禁止/使能

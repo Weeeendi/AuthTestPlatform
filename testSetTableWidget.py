@@ -26,11 +26,14 @@ class CustomTableItemDelegate(TableItemDelegate):
             QSize: The size hint of item delegate.
         """
         text = index.model().data(index, Qt.DisplayRole)
-        fontMetrics = QFontMetrics(option.font)
-        lines = text.split('\n')
-        height = fontMetrics.height() * (len(lines) if lines else 1)
-        height = height + 10
-        return option.decorationSize + QSize(0, height)
+        if text is not None:
+            text = str(text)  # Convert QVariant to string
+            fontMetrics = QFontMetrics(option.font)
+            lines = text.split('\n')
+            height = fontMetrics.height() * (len(lines) if lines else 1)
+            height = height + 10
+            return option.decorationSize + QSize(0, height)
+        return option.decorationSize
 
 
 class myTableModel(TableView):
@@ -46,11 +49,16 @@ class myTableModel(TableView):
         # 存储所有去重后的name
         self.unique_names = set()
         self.jsonData = jsonData
+
+        if not self.jsonData:
+            return None
+
         self.header = self.jsonData[0].keys()
 
         df = self.__fillTableByJson()
-        self.TableModel = PandasModel(df)
+        self.TableModel = PandasModel(df,"enable")
         self.dropRowChangeSin.connect(self.TableModel.droprowRev)
+
 
         self.setDragEnabled(True)  # 允许拖拽
         self.setAcceptDrops(True)  # 允许放置
@@ -58,6 +66,8 @@ class myTableModel(TableView):
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setModel(self.TableModel)
         self.setItemDelegate(CustomTableItemDelegate(self))
+        self.setColumnHidden(0, True)  # 隐藏第一列
+
         self.verticalHeader().hide()
         self.setBorderVisible(True)
         self.setBorderRadius(8)
@@ -67,17 +77,18 @@ class myTableModel(TableView):
         # 以name, type, value作为列标题的数据列表
         data_list = []
 
-        for item in self.jsonData:
-            # 获取测试项类型名称
-            headerName = next(iter(item))
-            nameValue = item.get(headerName)
-            # 如果name还未被处理过，添加到集合和数据列表
-            if nameValue and nameValue not in self.unique_names:
-                self.unique_names.add(nameValue)
-                itemlist = item
-                ret1 = itemlist.pop(headerName, None)
-                # ret2 = itemlist.pop("enable", None)
-                if ret1:
+        if self.jsonData:
+            for item in self.jsonData:
+                # 获取测试项类型名称
+                headerName = next(iter(item))
+                nameValue = item.get(headerName)
+                # 如果name还未被处理过，添加到集合和数据列表
+                if nameValue and nameValue not in self.unique_names:
+                    self.unique_names.add(nameValue)
+                    itemlist = item
+                    # ret1 = itemlist.pop(headerName, None)
+                    # ret2 = itemlist.pop("enable", None)
+                    # if ret1:
                     data_list.append(itemlist)
 
         # 将数据列表转换为DataFrame
@@ -93,10 +104,13 @@ class myTableModel(TableView):
     def forbidEdit(self, state: bool):
         if state:
             self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            self.TableModel.setCheckBoxEditable(False)
             self.setDragEnabled(False)
             self.setAcceptDrops(False)  # 不允许放置
+
         else:
             self.setEditTriggers(QAbstractItemView.AllEditTriggers)
+            self.TableModel.setCheckBoxEditable(True)
             self.setDragEnabled(True)
             self.setAcceptDrops(True)
 
@@ -115,8 +129,14 @@ class myTableModel(TableView):
             row_data = {}
             for column in range(columnCount):
                 index = self.TableModel.index(row, column, QModelIndex())
-                value = self.TableModel.data(index, Qt.DisplayRole)
+                if self.TableModel.headerData(column, Qt.Horizontal, Qt.DisplayRole) == 'enable':
+                    value = bool(self.TableModel.data(index, Qt.CheckStateRole))
+                else:
+                    value = self.TableModel.data(index, Qt.DisplayRole)
                 key = self.TableModel.headerData(column, Qt.Horizontal, Qt.DisplayRole)
+                if key == 'interval(ms)' or key == 'retry':
+                    value = int(value)
+
                 row_data[key] = value
             data.append(row_data)
 
@@ -228,12 +248,19 @@ class myTableModel(TableView):
         # 调整列宽
         super().resizeEvent(event)  # 调用父类的resizeEvent方法以确保窗口大小的自适应
 
-        header = self.horizontalHeader()
+        headers = self.horizontalHeader()
         # 假设模型中有一些数据，因此有列
         column_count = self.model().columnCount()
-        # 设置倒数第二列既适应内容又拉伸
-        header.setSectionResizeMode(3, QHeaderView.Stretch)
-        header.setSectionResizeMode(4, QHeaderView.Stretch)
+
+        # 确保列宽至少是min_section_size
+        min_section_size = 70  # 设置最小列宽
+        for section in range(column_count):
+            column_title = headers.model().headerData(section, Qt.Horizontal,Qt.DisplayRole)
+            if column_title == "data" or column_title == "rev_dict":
+                headers.setSectionResizeMode(section, QHeaderView.Stretch)
+            if column_title == "dspName":
+                headers.resizeSection(section, 250)
+            headers.resizeSection(section, max(headers.sectionSize(section), min_section_size))
         # 将倒数第二列的调整模式设置为 Stretch
         # header.setSectionResizeMode(column_count - 2, QHeaderView.Stretch)
         # 设置列宽模式为Interactive，允许用户手动调整列宽
@@ -242,19 +269,23 @@ class myTableModel(TableView):
         # 首次调整列宽以适应内容
         self.resizeColumnsToContents()
 
-        # 确保列宽至少是min_section_size
-        min_section_size = 75  # 设置最小列宽
-        for section in range(header.count()):
-            if (section == 1):
-                header.resizeSection(section, 250)
+
+        for section in range(headers.count()):
+            name = headers.model().headerData(section, Qt.Horizontal, Qt.DisplayRole)
+            if name == 'dspName':
+                headers.resizeSection(section, 250)
                 continue
-            header.resizeSection(section, max(header.sectionSize(section), min_section_size))
+            if name == 'enable':
+                headers.resizeSection(section, 60)
+                continue
+            headers.resizeSection(section, max(headers.sectionSize(section), min_section_size))
 
 class PandasModel(QAbstractTableModel):
 
-    def __init__(self, data):
+    def __init__(self, data, checkable_column_name=None):
         super(PandasModel, self).__init__()
         self._data = data
+        self.checkable_column_name = checkable_column_name  # 设置可勾选列的名称
         self.droprow = -1
 
     def droprowRev(self, row):
@@ -280,13 +311,23 @@ class PandasModel(QAbstractTableModel):
         return self._data.shape[1]
 
     def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole or role == Qt.EditRole:
-            # 获取数据
-            value = self._data.iloc[index.row(), index.column()]
-            return str(value)
+        if role == Qt.CheckStateRole:
+            # 根据列名查找索引
+            checkable_column_index = self._data.columns.get_loc(self.checkable_column_name)
+            if index.column() == checkable_column_index:
+                # 返回复选框的状态
+                return Qt.Checked if self._data.iat[index.row(), checkable_column_index] else Qt.Unchecked
+
+        elif role == Qt.DisplayRole or role == Qt.EditRole:
+            # 对于非复选框列，正常显示数据
+            checkable_column_index = self._data.columns.get_loc(self.checkable_column_name)
+            if index.column() != checkable_column_index:
+                value = self._data.iloc[index.row(), index.column()]
+                return str(value)
+            # 对于复选框列，不显示任何内容
+            return QVariant()
 
         elif role == Qt.TextAlignmentRole:
-            # 返回对齐方式为居中
             return int(Qt.AlignHCenter | Qt.AlignVCenter)
 
         return QVariant()
@@ -320,13 +361,33 @@ class PandasModel(QAbstractTableModel):
             # 发出数据变更信号
             self.dataChanged.emit(index, index)
             return True
+        elif role == Qt.CheckStateRole:
+            checkable_column_index = self._data.columns.get_loc(self.checkable_column_name)
+            if index.column() == checkable_column_index:
+                self._data.iat[index.row(), checkable_column_index] = value == Qt.Checked
+                self.dataChanged.emit(index, index, [Qt.DisplayRole])
+                return True
         return False
 
+    def setCheckBoxEditable(self, editable):
+        self.editable = editable
+
     def flags(self, index):
-        # 返回索引的 flags
         flags = super().flags(index)
         flags |= Qt.ItemIsEditable | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
+        # 根据列名查找索引
+        checkable_column_index = self._data.columns.get_loc(self.checkable_column_name)
+        if index.column() == checkable_column_index:
+            if self.editable:
+                flags |= Qt.ItemIsUserCheckable  # 允许复选框交互
+                flags &= ~Qt.ItemIsEditable  # 移除编辑标志
+            else:
+                flags &= ~(Qt.ItemIsUserCheckable | Qt.ItemIsEditable)  # 禁止复选框交互和编辑
+        else:
+            if self.editable:
+                flags |= Qt.ItemIsEditable  # 允许其他列编辑
         return flags
+
 
     # 如果要支持拖动行
     def supportedDropActions(self):

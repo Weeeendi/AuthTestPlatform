@@ -145,8 +145,14 @@ class sysSettingCard(HeaderCardWidget):
         self.systemSettingWidget = data_manage.SysItemEditFactory()
         self.viewLayout.addWidget(self.systemSettingWidget, 0, Qt.AlignLeft)
         self.viewLayout.setContentsMargins(20, 20, 20, 20)
-        # self.options = TestOptions()
-        # self.loading_data()
+
+        ComboBox_edits = self.findChildren(ComboBox)
+        SpinBox_edits = self.findChildren(SpinBox)
+
+        for le in ComboBox_edits:
+            le.setDisabled(True)
+        for le in SpinBox_edits:
+            le.setDisabled(True)
 
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
@@ -183,17 +189,32 @@ class setDetailCard(HeaderCardWidget):
 
         # 读配置文件
         self.file = 'resources/config/userConfig.json'
-        with open(self.file, 'r', encoding='utf-8', errors='ignore') as file:
-            self.testItemsData = json.load(file)
+        try :
+            with open(self.file, 'r', encoding='utf-8', errors='ignore') as file:
+                self.testItemsData = json.load(file)
+        except Exception:
+            self.testItemsData = {
+                "TestItems": []
+            }
 
         self.setTitle('测试项目详情')
 
         self.detailInfo = testSetTableWidget.myTableModel(self.testItemsData["TestItems"])
-        self.viewLayout.addWidget(self.detailInfo)
-        self.setMinimumHeight(self.detailInfo.getHighOfTable() + 100)
-        self.viewLayout.setContentsMargins(20, 20, 20, 20)
+        try:
+            self.detailInfo.forbidEdit(True)
+            self.viewLayout.addWidget(self.detailInfo)
+            self.setMinimumHeight(self.detailInfo.getHighOfTable() + 100)
 
-        self.detailInfo.forbidEdit(True)
+        except Exception:
+            # 处理 self.detailInfo 为 None 的情况
+            print("Failed to create table model")
+            # 可以选择添加一个占位符或其他提示信息
+            placeholder = BodyLabel("No data available")
+            self.viewLayout.addWidget(placeholder)
+            self.setMinimumHeight(placeholder.sizeHint().height() + 100)
+            self.expandButton.setDisabled(True)
+            pass
+        self.viewLayout.setContentsMargins(20, 20, 20, 20)
 
     def setComponentState(self, isChecked: bool):
         if isChecked:
