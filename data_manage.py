@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout
 
-from qfluentwidgets import CheckBox, setThemeColor, ComboBox, SpinBox, BodyLabel
+from qfluentwidgets import CheckBox, setThemeColor, ComboBox, SpinBox, BodyLabel, LineEdit
 
 
 class SysItemEditFactory(QWidget):
@@ -29,12 +29,12 @@ class SysItemEditFactory(QWidget):
             self.logLevelComboBox.setCurrentText(self.logLevel)
 
             # 设置设备类型
-            # self.deviceTypeList = self.sysItemsData.get("device_type", [])
-            # self.deviceType = self.sysItemsData.get("current_device_type", "BLE & Cat1")
-            # self.deviceTypeLabel = BodyLabel("设备类型:", self)
-            # self.deviceTypeComboBox = ComboBox(self)
-            # self.deviceTypeComboBox.addItems(self.deviceTypeList)
-            # self.deviceTypeComboBox.setCurrentText(self.deviceType)
+            self.deviceTypeList = self.sysItemsData.get("device_type", [])
+            self.deviceType = self.sysItemsData.get("current_device_type", "BLE")
+            self.deviceTypeLabel = BodyLabel("设备类型:", self)
+            self.deviceTypeComboBox = ComboBox(self)
+            self.deviceTypeComboBox.addItems(self.deviceTypeList)
+            self.deviceTypeComboBox.setCurrentText(self.deviceType)
 
             # 配置标签打印次数
             self.labelPrintCount = self.sysItemsData.get("tag_print_times", 3)
@@ -57,6 +57,17 @@ class SysItemEditFactory(QWidget):
             self.authAddrDictComboBox.addItems(urls)
             self.authAddrDictComboBox.setCurrentText(self.current_url)
 
+            # 配置JT808
+
+            self.hostAddrLabel = BodyLabel("JT808地址: host", self)
+            self.hostAddrLineEdit = LineEdit(self)
+            self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
+
+            self.hostPortLabel = BodyLabel("port", self)
+            self.hostPortLineEdit = LineEdit(self)
+            self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
+
+
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
             self.LayOut.addWidget(self.logLevelComboBox, 0, 1)
 
@@ -69,6 +80,15 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.authAddrDictLabel, 3, 0)
             self.LayOut.addWidget(self.authAddrDictComboBox, 3, 1)
 
+            self.LayOut.addWidget(self.deviceTypeLabel, 4, 0)
+            self.LayOut.addWidget(self.deviceTypeComboBox, 4, 1)
+
+            self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
+            self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
+
+            self.LayOut.addWidget(self.hostPortLabel, 5, 2)
+            self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
+
             # 绑定事件
             self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
             # self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
@@ -79,16 +99,34 @@ class SysItemEditFactory(QWidget):
             self.LayOut.setColumnStretch(1, 1)
             self.LayOut.setRowStretch(3, 1)
 
+            self.chk_device_type()
+            self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
+
         else:
             print("sysItemsData is not a dictionary.")
+
+    def chk_device_type(self):
+        if self.deviceTypeComboBox.currentText() == "4G":
+            self.hostAddrLabel.show()
+            self.hostAddrLineEdit.show()
+            self.hostPortLabel.show()
+            self.hostPortLineEdit.show()
+        else:
+            self.hostAddrLabel.hide()
+            self.hostAddrLineEdit.hide()
+            self.hostPortLabel.hide()
+            self.hostPortLineEdit.hide()
 
     def write_dict2Json(self):
         # 确保sysItemsData是一个字典
         if isinstance(self.sysItemsData, dict):
             self.sysItemsData["current_logger_level"] = self.logLevelComboBox.currentText()
-            # self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
+            self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
             self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
+            if self.deviceTypeComboBox.currentText() == "4G":
+                self.sysItemsData["host"] = self.hostAddrLineEdit.text()
+                self.sysItemsData["port"] = self.hostPortLineEdit.text()
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 

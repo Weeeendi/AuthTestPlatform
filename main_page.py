@@ -138,8 +138,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
             # 隐藏登录页
             self.close()
         else:
-            MessageBox("提示","用户名或密码错误，请重试",self).show()
-
+            MessageBox("提示", "用户名或密码错误，请重试", self).show()
 
     def show_win_slot(self):
         self.raise_()
@@ -251,7 +250,6 @@ class Window(FluentWindow):
         )
 
         # self.addSubInterface(self.albumInterface1, FIF.ALBUM, 'Album 1', parent=self.albumInterface)
-
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Operations Notice', NavigationItemPosition.BOTTOM)
 
     def account_set(self):
@@ -298,6 +296,7 @@ if __name__ == '__main__':
         LoginWin.login_succeed_signal.disconnect()
         MainWin.login_goback_signal.disconnect()
         print("Cleaning up before quit")
+
 
     app.aboutToQuit.connect(cleanup)
     LoginWin.show()

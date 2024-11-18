@@ -6,6 +6,7 @@ import sys
 import zlib
 from datetime import datetime
 
+import chardet
 import pandas as pd
 
 
@@ -119,6 +120,10 @@ class BaseUtils:
         # 判断输入bBytes是否有效
         if not bBytes or len(bBytes) == 0:
             return None
+        try:
+            return str(bBytes, encoding="utf8")
+        except UnicodeDecodeError as e:
+            print(str(e))
 
         return str(bBytes, encoding="utf8")
 
@@ -135,7 +140,7 @@ class BaseUtils:
 
     # 将生成的授权信息记录到regList列表
     @staticmethod
-    def addToRegList(regInfo):
+    def addToRegList(regInfo,fieldnames):
 
         # repFlag = False
         # 获取当前时间
@@ -143,38 +148,43 @@ class BaseUtils:
         # 格式化日期戳
         datestamp = current_time.strftime("%Y%m%d")
         RecordFilePath = 'resources/regList_'+datestamp+'.csv'
-
+        encoding = 'utf-8-sig'
         try:
             # 尝试读文件
             # 使用with来处理上下文，可以在读/写完成后自动关闭文件
-            with open(RecordFilePath, 'r', newline='') as csvfile:
+            with open(RecordFilePath, 'r', newline='',encoding='utf-8-sig') as csvfile:
                 reader = csv.DictReader(csvfile)
 
             # 写文件
-            with open(RecordFilePath, 'a', newline='') as csvfile:
-                fieldnames = ['TIME', 'PID', 'DID', 'DSECRET', 'MAC', 'ICCID', 'IMEI', 'TEST_FLASH', 'TEST_GSENSOR',
-                              'VOLT', 'SUBVOLT', 'TEST_ADC', 'CSQ', 'TEST_4G', 'GPSNUM', 'TEST_GPS', 'TIME_CONS(s)']
+            with open(RecordFilePath, 'a', newline='',encoding='utf-8-sig') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 writer.writerow(regInfo)
 
             print('记录成功！')
 
-        except Exception as e:
-            print(e)
+        except PermissionError:
+            print('文件正被其他进程占用！请关闭后重试')
+            return
+
+        except FileNotFoundError:
             print('没有发现regList,重新生成regList！')
 
-            with open(RecordFilePath, 'a', newline='') as csvfile:
-                fieldnames = ['TIME', 'PID', 'DID', 'DSECRET', 'MAC', 'ICCID', 'IMEI', 'TEST_FLASH', 'TEST_GSENSOR',
-                              'VOLT', 'SUBVOLT', 'TEST_ADC', 'CSQ', 'TEST_4G', 'GPSNUM', 'TEST_GPS', 'TIME_CONS(s)']
+            with open(RecordFilePath, 'a', newline='',encoding='utf-8-sig') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 # 重新生成的表格需要填写表格头
                 writer.writeheader()
                 writer.writerow(regInfo)
 
-        data = pd.read_csv(RecordFilePath)
+        except UnicodeDecodeError:
+            # 自动检测文件编码
+            with open(RecordFilePath, 'rb') as f:
+                result = chardet.detect(f.read())
+                encoding = result['encoding']
+
+        data = pd.read_csv(RecordFilePath,encoding=encoding)
         data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
-        data.to_csv(RecordFilePath, index=False)
+        data.to_csv(RecordFilePath, index=False,encoding='utf-8-sig')
 
 

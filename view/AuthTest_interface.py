@@ -32,6 +32,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+
         self.setupUi(self)
 
         self.regUrl = ''
@@ -43,6 +44,12 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
         # Auth Url
         self.regUrl = ''
+
+        # 808 address
+        self.hostAddr = ''
+
+        # 808 port
+        self.hostPort = 0
 
         # Tag Print Times
         self.printerCnt = 1
@@ -71,7 +78,10 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.ComboBox_AuthParam.addItems(['MAC', 'IMEI'])
 
         # 设备类型
-        self.DevTypeComboBox.addItems(["BLE", "BLE&CAT1", "CAT1"])
+        self.DevTypeComboBox.addItems(["BLE", "BLE&4G", "4G"])
+
+        self.DevTypeComboBox.setCurrentText("4G")
+        self.ProuductIdLineEdit.setText('YJTRACK001')
 
         # 区域选择
         self.AreaComboBox.addItems(['中国(CN)', '美国(US)', '欧洲(EU)'])
@@ -81,17 +91,6 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
         # 创建BaseUtils实例
         self.util = baseUtils.BaseUtils()
-        # 通过外部ini文件配置相关参数
-        # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
-        self.File = 'resources/config/sysConfig.json'
-
-        with open(self.File, 'r', encoding='utf-8', errors='ignore') as file:
-            sysItemsData = json.loads(file.read())
-            # 确保sysItemsData是一个字典
-            if isinstance(sysItemsData, dict):
-                self.printerCnt = sysItemsData.get("tag_print_times", 1)
-                self.regUrl = sysItemsData.get("reg_url", 'http://iot.stage.vehiclink.com').startswith('http')
-                self.logLevel = sysItemsData.get("current_logger_level", "debug")
 
         # 默认使能配网参数授权
         self.CheckBox_AuthTest.setChecked(True)
@@ -123,11 +122,21 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
         # 初始化成功率统计接口
         self.SuccessCnt.setText(str(self.success))
+
         self.FailCnt.setText(str(self.fail))
 
-    def updateSetting(self, Setting_dict: dict):
-        self.printerCnt = Setting_dict.get("tag_print_times", 1)
-        self.regUrl = Setting_dict.get("reg_url", 'http://iot.stage.vehiclink.com').startswith('http')
+    def updateSetting(self):
+        # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
+        File = 'resources/config/sysConfig.json'
+
+        with open(File, 'r', encoding='utf-8', errors='ignore') as file:
+            sysItemsData = json.loads(file.read())
+            # 确保sysItemsData是一个字典
+            if isinstance(sysItemsData, dict):
+                self.printerCnt = sysItemsData.get("tag_print_times", 1)
+                self.regUrl = sysItemsData.get("reg_url", 'http://iot-dev.vehiclink.com').startswith('http')
+                self.hostAddr = sysItemsData.get("host", 'tracker.us.navixy.com')
+                self.hostPort = int(sysItemsData.get("port", '47694'))
 
     def get_reg_url_slot(self, url):
         if url != '':
@@ -223,6 +232,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         if self.CheckBox_AuthTest.isChecked() or self.CheckBox_FuncTest.isChecked():
             if not self.testStart:
 
+                # 载入设置
+                self.updateSetting()
+
                 self.initialSerial()
                 # 获取PID
                 self.PID = self.ProuductIdLineEdit.text()
@@ -271,11 +283,23 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
                             ###############################################################################
                             # 创建UserTestThread线程实例
-                            self.testThread = UserTestThread(self.ser, self.PID, self.CheckBox_AuthTest.isChecked(),
-                                                             self.Area,
-                                                             self.AuthParam,
-                                                             self.DeviceType,
-                                                             self.CheckBox_FuncTest.isChecked(), self.regUrl)
+                            if self.DeviceType == '4G':
+                                self.testThread = UserTestThread(self.ser, self.PID,
+                                                                 self.CheckBox_AuthTest.isChecked(),
+                                                                 self.Area,
+                                                                 self.AuthParam,
+                                                                 self.DeviceType,
+                                                                 self.CheckBox_FuncTest.isChecked(),
+                                                                 self.regUrl,
+                                                                 self.hostAddr,
+                                                                 self.hostPort)
+                            else:
+                                self.testThread = UserTestThread(self.ser, self.PID,
+                                                                 self.CheckBox_AuthTest.isChecked(),
+                                                                 self.Area,
+                                                                 self.AuthParam,
+                                                                 self.DeviceType,
+                                                                 self.CheckBox_FuncTest.isChecked(), self.regUrl)
                             if self.testThread is None:
                                 self.testStart = False
                                 showMessage("提示", "测试线程创建失败", self)

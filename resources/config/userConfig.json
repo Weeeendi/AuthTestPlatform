@@ -24,7 +24,7 @@
         },
         {
             "funName": "ACC_Ctrl_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ACC控制功能测试",
             "cmd": "0003",
             "data": "",
@@ -35,7 +35,7 @@
         },
         {
             "funName": "ACC_Func_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ACC电路功能综合测试",
             "cmd": "0004",
             "data": "",
@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
@@ -79,7 +79,7 @@
         },
         {
             "funName": "Buzzer_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "蜂鸣器测试",
             "cmd": "0008",
             "data": "",
@@ -90,7 +90,7 @@
         },
         {
             "funName": "Serial_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "串口测试",
             "cmd": "0009",
             "data": "",
@@ -101,13 +101,13 @@
         },
         {
             "funName": "LTE_Signal_Strength",
-            "enable": false,
+            "enable": true,
             "dspName": "蜂窝信号强度测试",
             "cmd": "0020",
             "data": "{\"CSQ\":15}",
             "rev_dict": "{\"CSQ\":0}",
             "interval(ms)": 1000,
-            "process": "CAT1",
+            "process": "4G",
             "retry": 60
         },
         {
@@ -118,7 +118,7 @@
             "data": "{\"star\":3}",
             "rev_dict": "{\"star\":0}",
             "interval(ms)": 1000,
-            "process": "CAT1",
+            "process": "4G",
             "retry": 180
         },
         {

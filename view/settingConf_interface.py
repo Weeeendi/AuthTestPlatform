@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGr
 
 import data_manage
 import testSetTableWidget
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, LineEdit
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, SpinBox, PillToolButton,
                             CheckBox)
@@ -148,28 +148,35 @@ class sysSettingCard(HeaderCardWidget):
 
         ComboBox_edits = self.findChildren(ComboBox)
         SpinBox_edits = self.findChildren(SpinBox)
+        LineEdit_edits = self.findChildren(LineEdit)
 
         for le in ComboBox_edits:
             le.setDisabled(True)
         for le in SpinBox_edits:
+            le.setDisabled(True)
+        for le in LineEdit_edits:
             le.setDisabled(True)
 
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
         ComboBox_edits = self.findChildren(ComboBox)
         SpinBox_edits = self.findChildren(SpinBox)
-
+        LineEdit_edits = self.findChildren(LineEdit)
         # 设置所有控件状态
         if isChecked:
             for le in ComboBox_edits:
                 le.setDisabled(False)
             for le in SpinBox_edits:
                 le.setDisabled(False)
+            for le in LineEdit_edits:
+                le.setDisabled(False)
 
         else:
             for le in ComboBox_edits:
                 le.setDisabled(True)
             for le in SpinBox_edits:
+                le.setDisabled(True)
+            for le in LineEdit_edits:
                 le.setDisabled(True)
             # save data
             createSaveInfoBar(self)

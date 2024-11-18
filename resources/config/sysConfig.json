@@ -6,6 +6,8 @@
     ],
     "current_logger_level": "info",
     "tag_print_times": 3,
+    "device_type":["BLE","BLE&4G","4G"],
+    "current_device_type": "4G",
     "reg_urls": [
         {
             "desc": "公版线上",
@@ -32,5 +34,7 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(公版线上)http://web.eu.vehiclink.com"
+    "reg_url": "(公版线上)http://web.eu.vehiclink.com",
+    "host": "tracker.us.navixy.com",
+    "port": "47694"
 }
