@@ -20,7 +20,7 @@
             "rev_dict": "",
             "interval(ms)": 500,
             "process": "ALL",
-            "retry": 1
+            "retry": 3
         },
         {
             "funName": "ACC_Ctrl_Test",
@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
@@ -68,7 +68,7 @@
         },
         {
             "funName": "Fault_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "故障检测功能测试",
             "cmd": "0007",
             "data": "",
@@ -79,7 +79,7 @@
         },
         {
             "funName": "Buzzer_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "蜂鸣器测试",
             "cmd": "0008",
             "data": "",
@@ -90,7 +90,7 @@
         },
         {
             "funName": "Serial_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "串口测试",
             "cmd": "0009",
             "data": "",
@@ -101,7 +101,7 @@
         },
         {
             "funName": "LTE_Signal_Strength",
-            "enable": true,
+            "enable": false,
             "dspName": "蜂窝信号强度测试",
             "cmd": "0020",
             "data": "{\"CSQ\":15}",
@@ -112,7 +112,7 @@
         },
         {
             "funName": "GPS_Signal_Strength",
-            "enable": true,
+            "enable": false,
             "dspName": "GPS信号强度测试",
             "cmd": "0021",
             "data": "{\"star\":3}",
@@ -123,7 +123,7 @@
         },
         {
             "funName": "Device_Volt_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "读取设备电压",
             "cmd": "0031",
             "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"out_5V\":500,\"tolerance\":10 }",
@@ -134,7 +134,7 @@
         },
         {
             "funName": "Device_Charge_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "读取设备充电电流",
             "cmd": "0032",
             "data": "{\"charge_current\":\"10\",\"tolerance\":10 } ",

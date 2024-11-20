@@ -36,6 +36,13 @@ class SysItemEditFactory(QWidget):
             self.deviceTypeComboBox.addItems(self.deviceTypeList)
             self.deviceTypeComboBox.setCurrentText(self.deviceType)
 
+            # 配置授权凭证
+            self.authParamList = self.sysItemsData.get("auth_params", [])
+            self.authParamLabel = BodyLabel("授权凭证:", self)
+            self.authParamComboBox = ComboBox(self)
+            self.authParamComboBox.addItems(self.authParamList)
+            self.authParamComboBox.setCurrentText(self.sysItemsData.get("current_auth_param", "MAC"))
+
             # 配置标签打印次数
             self.labelPrintCount = self.sysItemsData.get("tag_print_times", 3)
             self.labelPrintCountLabel = BodyLabel("标签打印次数:", self)
@@ -45,8 +52,7 @@ class SysItemEditFactory(QWidget):
 
             # 配置授权地址
             urls = []
-            reg_url = self.sysItemsData.get("reg_url", "")
-            self.current_url = ''
+            self.current_url = self.sysItemsData.get("reg_url", "")
             self.authAddrDict = self.sysItemsData.get("reg_urls", "")
             for authAddr in self.authAddrDict:
                 desc = authAddr.get("desc", "")
@@ -83,6 +89,9 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.deviceTypeLabel, 4, 0)
             self.LayOut.addWidget(self.deviceTypeComboBox, 4, 1)
 
+            self.LayOut.addWidget(self.authParamLabel, 4, 2)
+            self.LayOut.addWidget(self.authParamComboBox, 4, 3)
+
             self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
             self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
 
@@ -91,7 +100,8 @@ class SysItemEditFactory(QWidget):
 
             # 绑定事件
             self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
-            # self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
+            self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
+            self.authParamComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
             self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
 
@@ -122,6 +132,7 @@ class SysItemEditFactory(QWidget):
         if isinstance(self.sysItemsData, dict):
             self.sysItemsData["current_logger_level"] = self.logLevelComboBox.currentText()
             self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
+            self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
             self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
             if self.deviceTypeComboBox.currentText() == "4G":

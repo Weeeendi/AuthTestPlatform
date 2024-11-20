@@ -89,6 +89,9 @@ cover/
 *.mo
 *.pot
 
+# output
+*.csv
+
 # Django stuff:
 *.log
 local_settings.py

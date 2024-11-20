@@ -40,7 +40,7 @@ def log_path_check():
 
 
 class Logger(object):
-    def __init__(self, filename=log_path_check(), level='info', when='D', backCount=3,
+    def __init__(self, filename=log_path_check(), level='debug', when='D', backCount=3,
                  fmt=formater):
         # 日志级别关系映射
         self.level_relations = {
@@ -56,11 +56,11 @@ class Logger(object):
         # 创建BaseUtils实例
         self.util = baseUtils.BaseUtils()
 
-        # 通过外部ini文件配置相关参数
+        # 通过外部json文件配置相关参数
         # 获取log level
         try:
             with open('resources/config/sysConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
-                level = json.loads(file.read()).get("logger_level", "info")
+                level = json.loads(file.read()).get("current_logger_level", "info")
         except:
             level = 'info'
 

@@ -1,5 +1,6 @@
 # coding:utf-8
 import json
+import re
 
 import serial
 import serial.tools.list_ports
@@ -54,6 +55,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         # Tag Print Times
         self.printerCnt = 1
 
+        # Deivece Type
+        self.DeviceType = ''
+
         # set the icon of button
         self.Button_UpdateSerial.setIcon(FluentIcon.SYNC)
         # self.PrimaryToolButton_playlog.setIcon(FluentIcon.PLAY)
@@ -75,13 +79,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     # 组件初始化设置
     def InitModuleConfig(self):
         # 待测设备参数
-        self.ComboBox_AuthParam.addItems(['MAC', 'IMEI'])
 
-        # 设备类型
-        self.DevTypeComboBox.addItems(["BLE", "BLE&4G", "4G"])
-
-        self.DevTypeComboBox.setCurrentText("4G")
-        self.ProuductIdLineEdit.setText('YJTRACK001')
+        self.ProuductIdLineEdit.setText('YJ0003kj2u')
 
         # 区域选择
         self.AreaComboBox.addItems(['中国(CN)', '美国(US)', '欧洲(EU)'])
@@ -125,6 +124,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
         self.FailCnt.setText(str(self.fail))
 
+        self.BodyLabelLinence.hide()
+        self.LicenseLineEdit.hide()
+
     def updateSetting(self):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
         File = 'resources/config/sysConfig.json'
@@ -134,14 +136,16 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             # 确保sysItemsData是一个字典
             if isinstance(sysItemsData, dict):
                 self.printerCnt = sysItemsData.get("tag_print_times", 1)
-                self.regUrl = sysItemsData.get("reg_url", 'http://iot-dev.vehiclink.com').startswith('http')
-                self.hostAddr = sysItemsData.get("host", 'tracker.us.navixy.com')
-                self.hostPort = int(sysItemsData.get("port", '47694'))
 
-    def get_reg_url_slot(self, url):
-        if url != '':
-            self.regUrl = url
-            print("注册地址变更为:" + self.regUrl)
+                # 使用正则表达式匹配以 http 开头的 URL
+                url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+                match = re.search(url_pattern, sysItemsData.get("reg_url", 'http://iot-dev.vehiclink.com'))
+                self.regUrl = match.group()
+                self.AuthParam = sysItemsData.get("current_auth_param", "MAC")
+                self.hostAddr = sysItemsData.get("host",  'tracker.us.navixy.com')
+                self.hostPort = int(sysItemsData.get("port", '47694'))
+                self.DeviceType = sysItemsData.get("current_device_type", "BLE")
+
 
     def setProcessBarColor(self, value, color):
         self.progressTestBar.setColor(color)
@@ -160,12 +164,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.ProuductIdLineEdit.setDisabled(bool_value)
         # License 输入-禁止/使能
         self.LicenseLineEdit.setDisabled(bool_value)
-        # 待测设备参数选择-禁止/使能
-        self.ComboBox_AuthParam.setDisabled(bool_value)
         # 区域选择-禁止/使能
         self.AreaComboBox.setDisabled(bool_value)
-        # 设备类型选择-禁止/使能
-        self.DevTypeComboBox.setDisabled(bool_value)
         # 配网参数授权-禁止/使能
         self.CheckBox_AuthTest.setDisabled(bool_value)
         # 生产测试-禁止/使能
@@ -239,9 +239,6 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 # 获取PID
                 self.PID = self.ProuductIdLineEdit.text()
 
-                # 获取设备类型
-                self.DeviceType = self.DevTypeComboBox.currentText()
-
                 # 获取区域
                 self.Area = self.AreaComboBox.currentText()
 
@@ -299,7 +296,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                                                  self.Area,
                                                                  self.AuthParam,
                                                                  self.DeviceType,
-                                                                 self.CheckBox_FuncTest.isChecked(), self.regUrl)
+                                                                 self.CheckBox_FuncTest.isChecked(),
+                                                                 self.regUrl)
                             if self.testThread is None:
                                 self.testStart = False
                                 showMessage("提示", "测试线程创建失败", self)
@@ -429,7 +427,6 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             # 如果是正常状态，更新进度
             self.setProcessBarColor(xInt, themeColor())
             if xInt == 100:
-                self.success += 1
                 self.setProcessBarColor(xInt, "green")
 
         else:

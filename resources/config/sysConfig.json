@@ -4,10 +4,20 @@
         "debug",
         "warning"
     ],
-    "current_logger_level": "info",
+    "current_logger_level": "debug",
     "tag_print_times": 3,
-    "device_type":["BLE","BLE&4G","4G"],
-    "current_device_type": "4G",
+    "device_type": [
+        "BLE",
+        "BLE&4G",
+        "4G"
+    ],
+    "auth_params": [
+        "MAC",
+        "IMEI",
+        "SN"
+    ],
+    "current_auth_param": "IMEI",
+    "current_device_type": "BLE&4G",
     "reg_urls": [
         {
             "desc": "公版线上",
@@ -34,7 +44,7 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(公版线上)http://web.eu.vehiclink.com",
+    "reg_url": "(测试注册)http://iot-dev.vehiclink.com",
     "host": "tracker.us.navixy.com",
     "port": "47694"
 }
