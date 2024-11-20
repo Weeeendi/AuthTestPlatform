@@ -183,8 +183,11 @@ class BaseUtils:
                 result = chardet.detect(f.read())
                 encoding = result['encoding']
 
-        data = pd.read_csv(RecordFilePath,encoding=encoding)
+        # 读取CSV文件
+        data = pd.read_csv(RecordFilePath, encoding=encoding)
+
         data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
+        # 保留最后一次出现的重复项（即具有"RESULT"为"PASS"的行）
         data.to_csv(RecordFilePath, index=False,encoding='utf-8-sig')
 
 

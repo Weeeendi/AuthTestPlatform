@@ -13,7 +13,7 @@
         },
         {
             "funName": "GSensor_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
@@ -57,14 +57,14 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ADC功能测试",
             "cmd": "0006",
-            "data": "{\"Volt_max\"：4800,\"Volt_min\":4300，\"subVolt_max\"：340, \"subVolt_min\":290}",
-            "rev_dict": "{\"Volt\":0,\"subVolt\":0}",
+            "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",
+            "rev_dict": "{\"Volt\":0,\"subVolt\"0}",
             "interval(ms)": 500,
             "process": "ALL",
-            "retry": 1
+            "retry": 3
         },
         {
             "funName": "Fault_Test",
@@ -94,7 +94,7 @@
             "dspName": "串口测试",
             "cmd": "0009",
             "data": "",
-            "rev_dict": "{\"uart1\": false, \"uart2\": false}",
+            "rev_dict": "{\"uart1\":false, \"uart2\":false}",
             "interval(ms)": 500,
             "process": "ALL",
             "retry": 1
@@ -126,7 +126,7 @@
             "enable": false,
             "dspName": "读取设备电压",
             "cmd": "0031",
-            "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"out_5V\":500,\"tolerance\":10 }",
+            "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"out_5V\":500,\"tolerance\":10}",
             "rev_dict": "{\"power_5V\":0,\"power_3.8V\":0,\"power_3.3V\":0,\"out_5V\":0}",
             "interval(ms)": 500,
             "process": "ALL",

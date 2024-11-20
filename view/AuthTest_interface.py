@@ -280,27 +280,30 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
                             ###############################################################################
                             # 创建UserTestThread线程实例
-                            if self.DeviceType == '4G':
-                                self.testThread = UserTestThread(self.ser, self.PID,
-                                                                 self.CheckBox_AuthTest.isChecked(),
-                                                                 self.Area,
-                                                                 self.AuthParam,
-                                                                 self.DeviceType,
-                                                                 self.CheckBox_FuncTest.isChecked(),
-                                                                 self.regUrl,
-                                                                 self.hostAddr,
-                                                                 self.hostPort)
-                            else:
-                                self.testThread = UserTestThread(self.ser, self.PID,
-                                                                 self.CheckBox_AuthTest.isChecked(),
-                                                                 self.Area,
-                                                                 self.AuthParam,
-                                                                 self.DeviceType,
-                                                                 self.CheckBox_FuncTest.isChecked(),
-                                                                 self.regUrl)
-                            if self.testThread is None:
+                            try:
+                                if self.DeviceType == '4G':
+                                    self.testThread = UserTestThread(self.ser, self.PID,
+                                                                     self.CheckBox_AuthTest.isChecked(),
+                                                                     self.Area,
+                                                                     self.AuthParam,
+                                                                     self.DeviceType,
+                                                                     self.CheckBox_FuncTest.isChecked(),
+                                                                     self.regUrl,
+                                                                     self.hostAddr,
+                                                                     self.hostPort)
+                                else:
+                                    self.testThread = UserTestThread(self.ser, self.PID,
+                                                                     self.CheckBox_AuthTest.isChecked(),
+                                                                     self.Area,
+                                                                     self.AuthParam,
+                                                                     self.DeviceType,
+                                                                     self.CheckBox_FuncTest.isChecked(),
+                                                                     self.regUrl)
+                            except Exception as e:
                                 self.testStart = False
-                                showMessage("提示", "测试线程创建失败", self)
+                                self.testSetStateChange(False)
+                                self.ser.close()
+                                showMessage("提示", "测试线程创建失败,请检查配置文件", self)
                                 return None
 
                             # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到BaseUartThread线程
@@ -426,7 +429,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         if state:
             # 如果是正常状态，更新进度
             self.setProcessBarColor(xInt, themeColor())
-            if xInt == 100:
+            if xInt == 100 and DescribeStr == "产测完成":
+                self.success += 1
                 self.setProcessBarColor(xInt, "green")
 
         else:

@@ -25,7 +25,7 @@ class testStatus(Enum):
 
 # 测试模型
 class ItemTestModel:
-    def __init__(self, funcName, dspName, cmd, data, rev_dict, interval, retry):
+    def __init__(self, funcName, dspName, cmd, data: str, rev_dict: dict, interval: int, retry: int):
         # 测试参数
         self.funcName = funcName  # 测试函数名称
         self.dspName = dspName  # 测试名称
@@ -52,6 +52,8 @@ class UserTestThread(QThread):
     authInfo_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
+    # show error
+    errorInfo_sinOut = pyqtSignal(str)
 
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
@@ -140,10 +142,13 @@ class UserTestThread(QThread):
             bytes.fromhex("AA05"): self.cmd_AA05,
             bytes.fromhex("AA06"): self.cmd_AA06,
         }
+        try:
+            self._init_param_from_json()
 
-        ret = self._init_param_from_json()
-        if ret == 0:
-            return None
+        except Exception as e:
+            print(f"初始化失败: {e}")
+            self = None
+            raise  # 重新抛出异常，这样调用者就可以捕获并处理它
         print("创建UserTestThread线程")
 
     # 从json 子结构创建测试项
@@ -155,7 +160,11 @@ class UserTestThread(QThread):
             cmd = item.get("cmd", "")
             state = item.get("enable", False)
             data = item.get("data", "")
-            rev_dict = item.get("rev_dict", {})
+            rev_str = item.get("rev_dict", "")
+            rev_dict = {}
+            if rev_str != '':
+                rev_dict = json.loads(rev_str)
+
             interval = item.get("interval(ms)", 0)
             process = item.get("process", "")
             retry = item.get("retry", 0)
@@ -171,31 +180,24 @@ class UserTestThread(QThread):
 
     # 从json加载配置
     def _init_param_from_json(self):
-        try:
-            with open('resources/config/userConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
-                jsonData = json.load(file)
-                if isinstance(jsonData, dict):
-                    self._init_obj_json(jsonData)
-                else:
-                    print("userConfig.json is not a dictionary.")
-                    return False
+        with open('resources/config/userConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
+            jsonData = json.load(file)
+            if isinstance(jsonData, dict):
+                self._init_obj_json(jsonData)
+            else:
+                print("userConfig.json is not a dictionary.")
+                return False
 
-            return True
-        except Exception as e:
-            log.logger.error('[userTest]加载json配置文件异常，%s' % e)
-            return False
 
     # 计算测试进度
     def testPercentCal(self):
         # 总测试项目包含开始测试命令
-        ret = 0
-
         if self.FactoryTest and self.Auth:
-            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 2))
+            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 1))
         elif self.FactoryTest:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 2))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 1))
         else:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 2))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 1))
 
         if ret == 100:
             self.AuthTestFlag = True
@@ -291,16 +293,15 @@ class UserTestThread(QThread):
 
                 log.logger.info('待测设备退出产测模式!')
 
-                self.CurrentPassItemsNum += 1
                 # 发送打印标签及授权信息
                 if self.AuthTestFlag:
-                    self.success += 1
                     if self.deviceType == "BLE" or self.deviceType == "BLE&4G":
                         self.printMsg_sinOut.emit(self.nodeId, self.Area, self.deviceIotId, self.PID)
                     else:
                         self.printMsg_sinOut.emit(self.IMEI, self.Area, self.deviceIotId, self.PID)
-                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "产测完成，退出产测模式")
 
+                    # 发送进度条信息
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "产测完成")
 
                 # 获取结束时间戳
                 self.endStamp = time.time()
@@ -316,6 +317,10 @@ class UserTestThread(QThread):
                 self.regInfoDict['PID'] = self.PID
                 self.regInfoDict['AREA'] = self.Area
                 self.regInfoDict['DID'] = self.deviceIotId
+                if self.AuthTestFlag:
+                    self.regInfoDict['RESULT'] = 'PASS'
+                else:
+                    self.regInfoDict['RESULT'] = 'FAIL'
 
                 if self.deviceType == "BLE":
                     self.regInfoDict['MAC'] = self.nodeId
@@ -340,9 +345,9 @@ class UserTestThread(QThread):
                     self.regInfoDict['PORT'] = self.hostPort
                     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
                             'AREA:' + self.Area + '\r\n' +
-                            'HOSTADDR:' +self.hostAddr + '\r\n' +
+                            'HOSTADDR:' + self.hostAddr + '\r\n' +
                             'HOSTPORT:' + str(self.hostPort) + '\r\n' +
-                            'IMEI:' + self.IMEI + '\r\n'+
+                            'IMEI:' + self.IMEI + '\r\n' +
                             'ICCID:' + str(self.ICCID) + '\r\n')
 
                 # 发送完整的授权信息
@@ -352,9 +357,8 @@ class UserTestThread(QThread):
                 # 记录测试结果
                 for item in self.testProcessor:
                     self.regInfoDict[item.dspName] = item.result
-                    if item.rev_dict != '':
-                        rev_dict = json.loads(item.rev_dict)
-                        for key, value in rev_dict.items():
+                    if item.rev_dict != {}:
+                        for key, value in item.rev_dict.items():
                             self.regInfoDict[key] = value
 
                 self.regInfoDict['TIME_CONS(s)'] = self.testInterval
@@ -362,8 +366,11 @@ class UserTestThread(QThread):
                 for key, value in self.regInfoDict.items():
                     filedsName.append(key)
 
-                self.util.addToRegList(self.regInfoDict,filedsName)
-
+                try:
+                    self.util.addToRegList(self.regInfoDict, filedsName)
+                except Exception as e:
+                    log.logger.error('[userTest]addToRegList异常，%s' % e)
+                    return
                 log.logger.info('**************************************************')
 
                 # 清零周期次数变量
@@ -727,23 +734,34 @@ class UserTestThread(QThread):
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
 
             name = self.testProcessor[self.testIndex].dspName
+            rev_dict = self.testProcessor[self.testIndex].rev_dict
+            index = self.testIndex
 
             if tmp.get('ret', False):
                 # 设备返回成功
                 log.logger.info('测试[%s]成功！' % name)
 
                 # 记录测试结果
-                self.testProcessor[self.testIndex].result = True
+                self.testProcessor[index].result = True
 
-                if self.testProcessor[self.testIndex].rev_dict != {}:
-                    for item in self.testProcessor[self.testIndex].rev_dict:
-                        try:
-                            ret = tmp.get(item.key())
-                            self.testProcessor[self.testIndex].rev_dict[item.key] = ret
-                        except Exception as e:
-                            log.logger.error("解析 %s 命令回复中不含有 %s 字段，%s" % (cmd, item.key(), str(e)))
+                if rev_dict != {}:
+                    try:
+                        for key in rev_dict.keys():
+                            ret = tmp.get(key, '')
+                            self.testProcessor[index].rev_dict[key] = ret
+                    except Exception:
+                        # 设备返回失败
+                        self.listIndex = -1
+                        self.stateMachine = self.stateList[self.listIndex]
+                        log.logger.info('[%s]命令字段返回异常！' % name)
+                        self.progressBar_sinOut.emit(self.testPercentCal(), False, "[%s]命令字段返回异常" % name)
+                        # 重试次数清零
+                        self.retryCnt = 0
+                        # 初始化发送互斥标志位
+                        self.sendMutexFlag = True
+                        return
 
-                self.testIndex = self.testIndex + 1
+                self.testIndex += 1
                 if self.testIndex == self.TestItemsNum:
                     # 测试全部结束
                     self.listIndex += 1
@@ -1177,15 +1195,14 @@ class UserTestThread(QThread):
                     # 发送进度条信息
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, '%s%s通信超时！！！' % (cmd, name))
 
-                # 等待
-                time.sleep(0.2)
+                    # 等待
+                    time.sleep(0.2)
 
             elif self.stateMachine == testStatus.S_END:
                 # 进入退出测试状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
                     self.userTestSend("FF01", 0)
-
 
                 # 等待500ms
                 time.sleep(0.5)
