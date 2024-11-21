@@ -52,8 +52,6 @@ class UserTestThread(QThread):
     authInfo_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
-    # show error
-    errorInfo_sinOut = pyqtSignal(str)
 
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
@@ -187,7 +185,6 @@ class UserTestThread(QThread):
             else:
                 print("userConfig.json is not a dictionary.")
                 return False
-
 
     # 计算测试进度
     def testPercentCal(self):
@@ -521,7 +518,7 @@ class UserTestThread(QThread):
         log.logger.debug("cmd_AA02接受数据：%s" % hexx)
 
         # 如果在 S_GET_DEV_SN 状态
-        if self.stateMachine == testStatus.S_GET_DEV_SN:
+        if self.stateMachine == testStatus.S_GET_DEV_SN or self.deviceType == "BLE&4G":
 
             tmp = ''
             # b"example"  --->  "example",转换成字符串
@@ -534,21 +531,25 @@ class UserTestThread(QThread):
 
             if len(tmp.get('iccid', '')) > 0 and len(tmp.get('IMEI', '')) > 0:
 
-                self.IMEI = tmp['IMEI'] + '\t'
-                self.ICCID = tmp['iccid'] + '\t'
+                self.IMEI = str(tmp['IMEI']) + '\t'
+                self.ICCID = str(tmp['iccid']) + '\t'
 
-                self.listIndex = self.listIndex + 1
-                self.stateMachine = self.stateList[self.listIndex]
-                # 通过项目计数
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
-                log.logger.info('查询设备蜂窝信息正确！')
+                if self.deviceType == "4G":
+                    self.listIndex = self.listIndex + 1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    # 通过项目计数
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
+                    log.logger.info('查询设备蜂窝信息正确！')
 
+                else:
+                    log.logger.info('仅查询设备IMEI和ICCID 为记录')
                 # 重试次数清零
                 self.retryCnt = 0
 
             else:
-                self.retryCnt = self.retryCnt + 1
+                if self.deviceType == "4G":
+                    self.retryCnt = self.retryCnt + 1
                 log.logger.debug('查询设备蜂窝信息失败')
 
             # 初始化发送互斥标志位
@@ -1051,8 +1052,13 @@ class UserTestThread(QThread):
                 # 进入通信获取设备信息状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
-                    if self.deviceType == 'BLE' or self.deviceType == 'BLE&4G':
+                    if self.deviceType == 'BLE':
                         self.userTestSend("AA01", 0)
+                    elif self.deviceType == 'BLE&4G':
+                        self.userTestSend("AA01", 0)
+                        time.sleep(0.1)
+                        self.userTestSend("AA02", 0)  # 仅为记录 IMEI和ICCID
+
                     elif self.deviceType == '4G':
                         self.userTestSend("AA02", 0)
 

@@ -61,7 +61,7 @@
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",
-            "rev_dict": "{\"Volt\":0,\"subVolt\"0}",
+            "rev_dict": "{\"Volt\":0,\"subVolt\":0}",
             "interval(ms)": 500,
             "process": "ALL",
             "retry": 3

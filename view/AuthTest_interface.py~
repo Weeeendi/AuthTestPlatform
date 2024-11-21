@@ -143,12 +143,12 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 match = re.search(url_pattern, sysItemsData.get("reg_url", 'http://iot-dev.vehiclink.com'))
                 self.regUrl = match.group()
                 self.AuthParam = sysItemsData.get("current_auth_param", "MAC")
-                self.hostAddr = sysItemsData.get("host", 'tracker.us.navixy.com')
+                self.hostAddr = sysItemsData.get("host",  'tracker.us.navixy.com')
                 self.hostPort = int(sysItemsData.get("port", '47694'))
                 self.DeviceType = sysItemsData.get("current_device_type", "BLE")
 
-    def setProcessBarColor(self, value: int, color: str):
-        """设置进度条"""
+
+    def setProcessBarColor(self, value, color):
         self.progressTestBar.setColor(color)
         if self.progressTestBar.maximum() < value:
             self.progressTestBar.setVal(self.progressTestBar.maximum())

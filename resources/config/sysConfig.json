@@ -16,7 +16,7 @@
         "IMEI",
         "SN"
     ],
-    "current_auth_param": "IMEI",
+    "current_auth_param": "MAC",
     "current_device_type": "BLE&4G",
     "reg_urls": [
         {
