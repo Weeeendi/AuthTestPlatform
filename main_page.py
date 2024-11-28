@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication
 from qframelesswindow import TitleBar, AcrylicWindow
 
+import baseUtils
 from qfluentwidgets import FluentIcon as FIF, SplashScreen, NavigationAvatarWidget, SplitTitleBar, MessageBox
 from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeColor, \
     FluentWindow
@@ -30,10 +31,11 @@ def save_credentials(username, password, enable_remember):
 
     # 将数据写入文件（或者数据库中）
     try:
-        with open('resources/user/credentials.json', 'w') as file:
+        configPath = baseUtils.resource_path("resources\\user\\credentials.json")
+        with open(configPath, 'w') as file:
             json.dump(credentials, file)
     except FileNotFoundError:
-        with open('resources/user/credentials.json', 'x') as file:
+        with open(configPath, 'x') as file:
             json.dump(credentials, file)
 
 
@@ -89,9 +91,9 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     #     return sha256.hexdigest()
 
     def read_credentials(self):
-
+        configPath = baseUtils.resource_path("resources\\user\\credentials.json")
         try:
-            with open('resources/user/credentials.json', 'r') as file:
+            with open(configPath, 'r') as file:
                 stored_credentials = json.load(file)
         except FileNotFoundError:
             print("没有存储的用户信息")
@@ -109,7 +111,8 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def check_credentials(self, username, password):
         # 读取存储的数据
-        with open('resources/user/credentials.json', 'r') as file:
+        configPath = baseUtils.resource_path("resources\\user\\credentials.json")
+        with open(configPath, 'r') as file:
             stored_credentials = json.load(file)
 
         # 获取存储的用户名和密码
@@ -146,13 +149,13 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        pixmap = QPixmap("resources/background.jpg").scaled(
+        pixmap = QPixmap(baseUtils.resource_path("resources\\background.jpg")).scaled(
             self.label.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self.label.setPixmap(pixmap)
 
     def initWindow(self):
         self.resize(1000, 650)
-        self.setWindowIcon(QIcon("resources/logo.png"))
+        self.setWindowIcon(QIcon(baseUtils.resource_path("resources\\logo.png")))
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
         # 隐藏窗口标题栏
@@ -194,7 +197,7 @@ class Window(FluentWindow):
         self.close_cnt = 1;
         # self.initWindow()
         self.resize(1000, 700)
-        self.setWindowIcon(QIcon("resources/logo.png"))
+        self.setWindowIcon(QIcon(baseUtils.resource_path("resources\\logo.png")))
         self.version = "v23111.0.0"
         self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
 
@@ -244,7 +247,7 @@ class Window(FluentWindow):
 
         self.navigationInterface.addWidget(
             routeKey='avatar',
-            widget=NavigationAvatarWidget('Account', QPixmap('resources/logo.png'), self),
+            widget=NavigationAvatarWidget('Account', QPixmap(baseUtils.resource_path('resources\\logo.png')), self),
             onClick=self.account_set,
             position=NavigationItemPosition.BOTTOM
         )

@@ -58,8 +58,10 @@ class Logger(object):
 
         # 通过外部json文件配置相关参数
         # 获取log level
+        configPath = baseUtils.resource_path("resources\\config\\sysConfig.json")
+
         try:
-            with open('resources/config/sysConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
+            with open(configPath, 'r', encoding='utf-8', errors='ignore') as file:
                 level = json.loads(file.read()).get("current_logger_level", "info")
         except:
             level = 'info'

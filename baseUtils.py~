@@ -10,18 +10,6 @@ import chardet
 import pandas as pd
 
 
-def resource_path(relative_path):
-    """ Get the absolute path to the resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        # If not running in PyInstaller, use the actual path
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
 class BaseUtils:
 
     # ascii码转hex字符串
@@ -66,7 +54,7 @@ class BaseUtils:
 
         for i in range(0, len(tmp)):
             checksum += tmp[i]
-            checksum &= 0xFF  # 强制截断，保留低8位
+            checksum &= 0xFF   # 强制截断，保留低8位
         # print(checksum)
 
         strHex = "%02x" % checksum
@@ -82,6 +70,7 @@ class BaseUtils:
                 crc = zlib.crc32(chunk, crc)
         return total_size, crc & 0xFFFFFFFF  # CRC32返回一个有符号整数，可能需要转换
 
+
     # 累加无符号字节串，返回低8位累加和，bytes类型
     @staticmethod
     def uchar_byte_checksum(data):
@@ -90,7 +79,7 @@ class BaseUtils:
 
         for i in range(0, len(data)):
             checksum += data[i]
-            checksum &= 0xFF  # 强制截断，保留低8位
+            checksum &= 0xFF   # 强制截断，保留低8位
         # print(checksum)
         return checksum
 
@@ -103,7 +92,7 @@ class BaseUtils:
 
         # 默认hex字符串是通过空格分隔的，如果不需要，则传入实参False
         if spaceFlag:
-            return ''.join(["%02X" % x + " " for x in bins]).strip()
+            return ''.join(["%02X" % x+" " for x in bins]).strip()
         else:
             return ''.join(["%02X" % x for x in bins]).strip()
 
@@ -151,14 +140,14 @@ class BaseUtils:
 
     # 将生成的授权信息记录到regList列表
     @staticmethod
-    def addToRegList(regInfo, fieldnames):
+    def addToRegList(regInfo,fieldnames):
 
         # repFlag = False
         # 获取当前时间
         current_time = datetime.now().date()
         # 格式化日期戳
         datestamp = current_time.strftime("%Y%m%d")
-        RecordFilePath = 'output/regList_' + regInfo['PID'] + '_' + datestamp + '.csv'
+        RecordFilePath = 'output/regList_'+regInfo['PID']+'_'+datestamp+'.csv'
         encoding = 'utf-8-sig'
         # 分离文件路径和文件名
         folder_path = os.path.dirname(RecordFilePath)
@@ -169,11 +158,11 @@ class BaseUtils:
         try:
             # 尝试读文件
             # 使用with来处理上下文，可以在读/写完成后自动关闭文件
-            with open(RecordFilePath, 'r', newline='', encoding='utf-8-sig') as csvfile:
+            with open(RecordFilePath, 'r', newline='',encoding='utf-8-sig') as csvfile:
                 reader = csv.DictReader(csvfile)
 
             # 写文件
-            with open(RecordFilePath, 'a', newline='', encoding='utf-8-sig') as csvfile:
+            with open(RecordFilePath, 'a', newline='',encoding='utf-8-sig') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 writer.writerow(regInfo)
@@ -187,7 +176,7 @@ class BaseUtils:
         except FileNotFoundError:
             print('没有发现regList,重新生成regList！')
 
-            with open(RecordFilePath, 'a', newline='', encoding='utf-8-sig') as csvfile:
+            with open(RecordFilePath, 'a', newline='',encoding='utf-8-sig') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 # 重新生成的表格需要填写表格头
@@ -205,4 +194,6 @@ class BaseUtils:
 
         data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
         # 保留最后一次出现的重复项（即具有"RESULT"为"PASS"的行）
-        data.to_csv(RecordFilePath, index=False, encoding='utf-8-sig')
+        data.to_csv(RecordFilePath, index=False,encoding='utf-8-sig')
+
+

@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout
 
+import baseUtils
 from qfluentwidgets import CheckBox, setThemeColor, ComboBox, SpinBox, BodyLabel, LineEdit
 
 
@@ -12,7 +13,7 @@ class SysItemEditFactory(QWidget):
         super().__init__(parent)
         self.LayOut = QGridLayout()
         self.setLayout(self.LayOut)
-        self.File = 'resources/config/sysConfig.json'
+        self.File = baseUtils.resource_path('resources\\config\\sysConfig.json')
 
         with open(self.File, 'r', encoding='utf-8', errors='ignore') as file:
             self.sysItemsData = json.loads(file.read())

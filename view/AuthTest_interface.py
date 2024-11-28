@@ -130,9 +130,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
     def updateSetting(self):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
-        File = 'resources/config/sysConfig.json'
+        configPath = baseUtils.resource_path('resources\\config\\sysConfig.json')
 
-        with open(File, 'r', encoding='utf-8', errors='ignore') as file:
+        with open(configPath, 'r', encoding='utf-8', errors='ignore') as file:
             sysItemsData = json.loads(file.read())
             # 确保sysItemsData是一个字典
             if isinstance(sysItemsData, dict):

@@ -178,7 +178,8 @@ class UserTestThread(QThread):
 
     # 从json加载配置
     def _init_param_from_json(self):
-        with open('resources/config/userConfig.json', 'r', encoding='utf-8', errors='ignore') as file:
+        configPath = baseUtils.resource_path("resources\\config\\userConfig.json")
+        with open(configPath, 'r', encoding='utf-8', errors='ignore') as file:
             jsonData = json.load(file)
             if isinstance(jsonData, dict):
                 self._init_obj_json(jsonData)

@@ -6,6 +6,7 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGridLayout, QSizePolicy
 
+import baseUtils
 import data_manage
 import testSetTableWidget
 from qfluentwidgets import FluentIcon as FIF, LineEdit
@@ -112,7 +113,8 @@ class setSelectCard(HeaderCardWidget):
 
         self.expandButton.toggled.connect(self._setComponentState)
         # 读配置文件
-        self.file = 'resources/config/userConfig.json'
+        configPath = baseUtils.resource_path("resources\\config\\userConfig.json")
+        self.file = configPath
 
         self.setSelectWidget = data_manage.TestItemEditFactory(self.file, self)
         self.viewLayout.addWidget(self.setSelectWidget, 0, Qt.AlignLeft)
@@ -195,7 +197,7 @@ class setDetailCard(HeaderCardWidget):
         self.expandButton.toggled.connect(self.setComponentState)
 
         # 读配置文件
-        self.file = 'resources/config/userConfig.json'
+        self.file = baseUtils.resource_path('resources\\config\\userConfig.json')
         try :
             with open(self.file, 'r', encoding='utf-8', errors='ignore') as file:
                 self.testItemsData = json.load(file)

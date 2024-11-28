@@ -2,11 +2,11 @@
 from enum import Enum
 from typing import Union
 
-from PyQt5.QtXml import QDomDocument
 from PyQt5.QtCore import QRectF, Qt, QFile, QObject, QRect
 from PyQt5.QtGui import QIcon, QIconEngine, QColor, QPixmap, QImage, QPainter
-from PyQt5.QtWidgets import QAction, qApp
 from PyQt5.QtSvg import QSvgRenderer
+from PyQt5.QtWidgets import QAction
+from PyQt5.QtXml import QDomDocument
 
 from .config import isDarkTheme, Theme
 from .overload import singledispatchmethod
@@ -300,7 +300,7 @@ class FluentIcon(FluentIconBase, Enum):
     UNPIN = "Unpin"
     VIDEO = "Video"
     TRAIN = "Train"
-    ADD_TO  ="AddTo"
+    ADD_TO = "AddTo"
     ACCEPT = "Accept"
     CAMERA = "Camera"
     CANCEL = "Cancel"
