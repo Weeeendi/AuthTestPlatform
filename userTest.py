@@ -1003,8 +1003,7 @@ class UserTestThread(QThread):
             if self.stateMachine == testStatus.S_ENTER:
                 # 进入产测模式，持续查询，直到设备正确回复
                 self.userTestSend("FF00", 0)
-                # 发送重启指令 不用回复
-                # self.userTestSend("0030", 0)
+
                 # 测试项索引初始化
                 self.testIndex = 0
                 # self.progressBar_sinOut.emit(self.testPercentCal(), True, "等待设备进入产测")

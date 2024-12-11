@@ -1,6 +1,8 @@
 # coding:utf-8
+import codecs
 import json
 import re
+import time
 
 import serial
 import serial.tools.list_ports
@@ -191,7 +193,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             isClosable=True
         )
 
-    def initialSerial(self):
+    def initialSerial(self, baudrate):
         # 默认 115200 波特率，8位数据位，1位停止位，无校验
         text = self.ComboBox_Serial.currentText()
 
@@ -206,7 +208,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 break
 
         # self.ser.port = self.ComboBox_Serial.currentText()
-        self.ser.baudrate = 115200
+        self.ser.baudrate = baudrate
         self.ser.bytesize = 8
         self.ser.stopbits = 1
         self.ser.parity = 'N'
@@ -236,7 +238,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 # 载入设置
                 self.updateSetting()
 
-                self.initialSerial()
+                self.initialSerial(921600)
                 # 获取PID
                 self.PID = self.ProuductIdLineEdit.text()
                 # 获取区域
@@ -249,7 +251,23 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         # 尝试打开串口，并建立串口线程、授权线程、测试线程
                         try:
                             self.ser.open()  # 打开串口有可能失败，做try-except异常处理
-                        except Exception:
+                            # 发送复位命令
+                            data = "66AA0030000040"
+                            tmp = codecs.decode(data, "hex_codec")
+
+                            # 发送重启指令 不用回复
+                            while not self.ser.isOpen():
+                                pass
+
+                            for i in range(3):
+                                self.ser.write(tmp)
+                                # 等待
+                                time.sleep(0.2)
+
+                            self.initialSerial(115200)
+
+                        except Exception as e:
+                            print(str(e));
                             self.testStart = False
                             showMessage("提示", "当前无串口或者串口被占用", self)
                             return None
