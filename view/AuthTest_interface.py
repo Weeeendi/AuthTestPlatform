@@ -252,7 +252,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         try:
                             self.ser.open()  # 打开串口有可能失败，做try-except异常处理
                             # 发送复位命令
-                            data = "66AA0030000040"
+                            data = "66AABB000000CB"
                             tmp = codecs.decode(data, "hex_codec")
 
                             # 发送重启指令 不用回复
@@ -447,7 +447,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         if state:
             # 如果是正常状态，更新进度
             self.setProcessBarColor(xInt, themeColor())
-            if xInt == 100 and DescribeStr == "产测完成":
+            if xInt == 100:
                 self.success += 1
                 self.setProcessBarColor(xInt, "green")
 
