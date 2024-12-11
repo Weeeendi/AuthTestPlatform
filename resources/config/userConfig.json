@@ -2,7 +2,7 @@
     "TestItems": [
         {
             "funName": "Flash_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
@@ -31,7 +31,7 @@
             "rev_dict": "",
             "interval(ms)": 500,
             "process": "ALL",
-            "retry": 1
+            "retry": 3
         },
         {
             "funName": "ACC_Func_Test",
@@ -42,7 +42,7 @@
             "rev_dict": "",
             "interval(ms)": 500,
             "process": "ALL",
-            "retry": 1
+            "retry": 3
         },
         {
             "funName": "CAN_Test",
@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",
@@ -142,6 +142,17 @@
             "interval(ms)": 500,
             "process": "ALL",
             "retry": 1
+        },
+        {
+            "funName": "IMEI_Read",
+            "enable": true,
+            "dspName": "读取IMEI",
+            "cmd": "AA07",
+            "data": "",
+            "rev_dict": "{\"IMEI\": \"\"}",
+            "interval(ms)": 1000,
+            "process": "ALL",
+            "retry": 5
         }
     ]
 }

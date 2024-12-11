@@ -494,22 +494,18 @@ class UserTestThread(QThread):
                     # 发送进度条信息
                     self.CurrentPassItemsNum += 1
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "设备唯一码查询成功")
-                    # 清零周期次数变量
-                    self.retryCnt = 0
 
                 else:
-                    self.retryCnt += 1
                     log.logger.info('设备MAC查询出错！')
-
                     # 发送进度条信息
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备MAC查询出错")
 
             else:
                 # 查询MAC失败，请重试
-                self.retryCnt += 1
                 log.logger.error('查询MAC长度异常')
 
             # 初始化发送互斥标志位
+            self.retryCnt = 0
             self.sendMutexFlag = True
 
         else:
@@ -584,9 +580,9 @@ class UserTestThread(QThread):
                 # 发送进度条信息
                 self.CurrentPassItemsNum += 1
                 self.progressBar_sinOut.emit(self.testPercentCal(), True, "设备授权烧录成功")
+                self.retryCnt = 0
             else:
                 # 授权信息烧录不成功，请重试
-                self.retryCnt += 1
                 log.logger.info('设备授权信息烧录出错！')
 
             # 初始化发送互斥标志位
@@ -623,12 +619,7 @@ class UserTestThread(QThread):
                 self.retryCnt = 0
             else:
                 # 查询设备烧录授权信息不正确
-                self.retryCnt = self.retryCnt + 1
-                self.stateMachine = self.stateList[self.listIndex]
                 log.logger.error('查询设备烧录授权信息不正确!')
-
-                # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, '授权信息查询失败')
 
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
@@ -663,12 +654,7 @@ class UserTestThread(QThread):
                 # 清零周期次数变量
                 self.retryCnt = 0
             else:
-                # 重试次数加一
-                self.retryCnt += 1
                 log.logger.info('LET待测设备授权信息烧录失败！')
-
-                # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, 'LET待测设备授权信息烧录失败')
 
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
@@ -699,20 +685,15 @@ class UserTestThread(QThread):
                 self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
                 log.logger.info('查询LET待测设备烧录的授权信息正确！')
-
+                # 清零周期次数变量
+                self.retryCnt = 0
                 # 发送进度条信息
                 self.CurrentPassItemsNum += 1
                 self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询LET待测设备烧录的授权信息正确")
             else:
                 # 查询设备烧录授权信息不正确
-                self.retryCnt = self.retryCnt + 1
                 log.logger.error('查询LET设备烧录授权信息不正确!')
 
-                # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询LET设备烧录授权信息不正确")
-
-            # 清零周期次数变量
-            self.retryCnt = 0
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
         else:
@@ -738,51 +719,53 @@ class UserTestThread(QThread):
             name = self.testProcessor[self.testIndex].dspName
             rev_dict = self.testProcessor[self.testIndex].rev_dict
             index = self.testIndex
+            try:
+                if tmp.get('ret', False):
+                    # 设备返回成功
+                    log.logger.info('测试[%s]成功！' % name)
 
-            if tmp.get('ret', False):
-                # 设备返回成功
-                log.logger.info('测试[%s]成功！' % name)
+                    # 记录测试结果
+                    self.testProcessor[index].result = True
 
-                # 记录测试结果
-                self.testProcessor[index].result = True
+                    if rev_dict != {}:
+                        try:
+                            for key in rev_dict.keys():
+                                ret = tmp.get(key, '')
+                                self.testProcessor[index].rev_dict[key] = ret
+                        except Exception:
+                            # 设备返回失败
+                            self.listIndex = -1
+                            self.stateMachine = self.stateList[self.listIndex]
+                            log.logger.info('[%s]命令字段返回异常！' % name)
+                            self.progressBar_sinOut.emit(self.testPercentCal(), False, "[%s]命令字段返回异常" % name)
+                            # 重试次数清零
+                            self.retryCnt = 0
+                            # 初始化发送互斥标志位
+                            self.sendMutexFlag = True
+                            return
 
-                if rev_dict != {}:
-                    try:
-                        for key in rev_dict.keys():
-                            ret = tmp.get(key, '')
-                            self.testProcessor[index].rev_dict[key] = ret
-                    except Exception:
-                        # 设备返回失败
-                        self.listIndex = -1
+                    self.testIndex += 1
+                    if self.testIndex == self.TestItemsNum:
+                        # 测试全部结束
+                        self.listIndex += 1
                         self.stateMachine = self.stateList[self.listIndex]
-                        log.logger.info('[%s]命令字段返回异常！' % name)
-                        self.progressBar_sinOut.emit(self.testPercentCal(), False, "[%s]命令字段返回异常" % name)
-                        # 重试次数清零
-                        self.retryCnt = 0
-                        # 初始化发送互斥标志位
-                        self.sendMutexFlag = True
-                        return
+                        log.logger.info('测试全部结束，测试成功')
 
-                self.testIndex += 1
-                if self.testIndex == self.TestItemsNum:
-                    # 测试全部结束
-                    self.listIndex += 1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    log.logger.info('测试全部结束，测试成功')
+                    # 清零周期次数变量
+                    self.retryCnt = 0
 
-                # 发送进度条信息
-                self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "[%s]成功" % name)
+                    # 发送进度条信息
+                    self.CurrentPassItemsNum += 1
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "[%s]成功" % name)
 
-            else:
+                else:
+                    # 设备返回失败
+                    log.logger.info('测试[%s]出错！' % name)
+
+            except AttributeError:
                 # 设备返回失败
-                self.listIndex = -1
-                self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('测试[%s]出错！' % name)
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, "[%s]失败" % name)
+                log.logger.info('[%s]命令字段返回异常！' % name)
 
-            # 重试次数清零
-            self.retryCnt = 0
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
 
@@ -1065,18 +1048,22 @@ class UserTestThread(QThread):
 
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "获取设备唯一码")
                 # 等待500ms
-                time.sleep(0.1)
+                time.sleep(1)
                 # 超时
 
                 if self.retryCnt == 5:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
-                    self.sendMutexFlag = True
                     log.logger.info('AA01设备通信超时！！！')
 
                     # 发送进度条信息
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "获取设备唯一码超时")
+                    # 等待
+                    time.sleep(0.1)
+                else:
+                    self.retryCnt += 1
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_LOAD:
                 # 进入授权信息烧录状态
@@ -1122,12 +1109,10 @@ class UserTestThread(QThread):
                 time.sleep(0.5)
 
                 # 超时
-                self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == 10:
+                if self.retryCnt == 5:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
-                    self.sendMutexFlag = True
                     log.logger.info('设备烧录通信超时！！！')
 
                     # 发送进度条信息
@@ -1135,6 +1120,10 @@ class UserTestThread(QThread):
 
                     # 等待
                     time.sleep(0.1)
+                else:
+                    self.retryCnt = self.retryCnt + 1
+
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_QUERY:
                 # 进入授权信息查询状态
@@ -1151,19 +1140,21 @@ class UserTestThread(QThread):
                 time.sleep(0.5)
 
                 # 超时
-                self.retryCnt = self.retryCnt + 1
+
                 if self.retryCnt == 10:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
-                    self.sendMutexFlag = True
                     log.logger.info('查询设备授权信息通信超时！！！')
-
                     # 发送进度条信息
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备授权信息通信超时")
 
                     # 等待
                     time.sleep(0.1)
+                else:
+                    self.retryCnt = self.retryCnt + 1
+
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_TEST:
                 # 进入测试项下发
@@ -1191,12 +1182,12 @@ class UserTestThread(QThread):
                 time.sleep(inv / 1000.0)
 
                 # 超时
-                self.retryCnt = self.retryCnt + 1
+
                 if self.retryCnt == retry:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
-                    self.sendMutexFlag = True
+
                     log.logger.info('%s%s通信超时！！！' % (cmd, name))
 
                     # 发送进度条信息
@@ -1204,6 +1195,9 @@ class UserTestThread(QThread):
 
                     # 等待
                     time.sleep(0.2)
+
+                self.retryCnt = self.retryCnt + 1
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_END:
                 # 进入退出测试状态
