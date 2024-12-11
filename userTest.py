@@ -298,9 +298,6 @@ class UserTestThread(QThread):
                     else:
                         self.printMsg_sinOut.emit(self.IMEI, self.Area, self.deviceIotId, self.PID)
 
-                    # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "产测完成")
-
                 # 获取结束时间戳
                 self.endStamp = time.time()
                 # self.testInterval = self.endStamp - self.startStamp

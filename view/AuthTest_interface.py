@@ -262,7 +262,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             for i in range(3):
                                 self.ser.write(tmp)
                                 # 等待
-                                time.sleep(0.2)
+                                time.sleep(0.1)
 
                             self.initialSerial(115200)
 
