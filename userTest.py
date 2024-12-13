@@ -14,13 +14,12 @@ from baseLogger import log
 # 测试状态
 class testStatus(Enum):
     S_ENTER = 0  # 进入测试
-    S_RESET = 1  # 重置
-    S_GET_PRODINFO = 2  # 获取产品信息
-    S_GET_DEV_SN = 3  # 获取设备唯一标识信息
-    S_AUTH_LOAD = 4  # 烧录授权
-    S_AUTH_QUERY = 5  # 查询授权
-    S_TEST = 6  # 测试
-    S_END = 7  # 结束测试
+    S_GET_PRODINFO = 1  # 获取产品信息
+    S_GET_DEV_SN = 2  # 获取设备唯一标识信息
+    S_AUTH_LOAD = 3  # 烧录授权
+    S_AUTH_QUERY = 4  # 查询授权
+    S_TEST = 5  # 测试
+    S_END = 6  # 结束测试
 
 
 # 测试模型
@@ -52,6 +51,9 @@ class UserTestThread(QThread):
     authInfo_sinOut = pyqtSignal(str)
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
+
+    # 自定义信号，用来发送测试结果
+    testExit_sinOut = pyqtSignal()
 
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
@@ -131,7 +133,6 @@ class UserTestThread(QThread):
         self.cmdInsideProcessor = {
             bytes.fromhex("FF00"): self.cmd_FF00,
             bytes.fromhex("FF01"): self.cmd_FF01,
-            bytes.fromhex("0030"): self.cmd_0030,
             bytes.fromhex("AA00"): self.cmd_AA00,
             bytes.fromhex("AA01"): self.cmd_AA01,
             bytes.fromhex("AA02"): self.cmd_AA02,
@@ -140,13 +141,15 @@ class UserTestThread(QThread):
             bytes.fromhex("AA05"): self.cmd_AA05,
             bytes.fromhex("AA06"): self.cmd_AA06,
         }
-        try:
-            self._init_param_from_json()
 
-        except Exception as e:
-            print(f"初始化失败: {e}")
-            self = None
-            raise  # 重新抛出异常，这样调用者就可以捕获并处理它
+        if self.FactoryTest:
+            try:
+                self._init_param_from_json()
+
+            except Exception as e:
+                print(f"初始化失败: {e}")
+                self = None
+                raise  # 重新抛出异常，这样调用者就可以捕获并处理它
         print("创建UserTestThread线程")
 
     # 从json 子结构创建测试项
@@ -260,8 +263,8 @@ class UserTestThread(QThread):
                 self.progressBar_sinOut.emit(self.testPercentCal(), False, "进入产测失败")
                 log.logger.info('进入产测失败!')
 
-                # 初始化发送互斥标志位
-                self.sendMutexFlag = True
+            # 初始化发送互斥标志位
+            self.sendMutexFlag = True
         else:
             log.logger.debug('FF00错误应答，未在对应状态！')
 
@@ -350,11 +353,12 @@ class UserTestThread(QThread):
 
                 filedsName = []
                 # 记录测试结果
-                for item in self.testProcessor:
-                    self.regInfoDict[item.dspName] = item.result
-                    if item.rev_dict != {}:
-                        for key, value in item.rev_dict.items():
-                            self.regInfoDict[key] = value
+                if self.FactoryTest:
+                    for item in self.testProcessor:
+                        self.regInfoDict[item.dspName] = item.result
+                        if item.rev_dict != {}:
+                            for key, value in item.rev_dict.items():
+                                self.regInfoDict[key] = value
 
                 self.regInfoDict['TIME_CONS(s)'] = self.testInterval
 
@@ -373,6 +377,8 @@ class UserTestThread(QThread):
                 # 初始化发送互斥标志位
                 self.sendMutexFlag = True
 
+                #退出产测
+                self.testExit_sinOut.emit()
                 # 等待设备退出产测
                 time.sleep(1)
 
@@ -380,36 +386,6 @@ class UserTestThread(QThread):
         else:
             log.logger.warning('FF01错误应答，未在对应状态！')
 
-    def cmd_0030(self, hexx):
-        log.logger.debug("cmd_FF02接受数据：%s" % hexx)
-
-        if self.stateMachine == testStatus.S_RESET:
-            # b"example"  --->  "example",转换成字符串
-            authtmp_str = self.util.BytesToStr(hexx)
-            # 加载成json格式
-            try:
-                authtmp = json.loads(authtmp_str)
-            except Exception as e:
-                log.logger.error('[userTest]FF02 返回结果json异常，%s' % e)
-                return
-
-            if authtmp.get('ret', False):
-                # 重置成功
-                # self.listIndex = self.listIndex + 1
-                # self.stateMachine = self.stateList[self.listIndex]
-                log.logger.info('待测设备重置成功!')
-                # 发送进度条信息
-                # self.CurrentPassItemsNum += 1
-                self.progressBar_sinOut.emit(self.testPercentCal(), True, "待测设备重置成功")
-            else:
-                # 重置失败
-                # self.listIndex = -1
-                # self.stateMachine = self.stateList[self.listIndex]
-                # 发送进度条信息
-                self.progressBar_sinOut.emit(self.testPercentCal(), False, "待测设备重置失败")
-
-            # 初始化发送互斥标志位
-            self.sendMutexFlag = True
 
     def cmd_AA00(self, hexx):
         log.logger.debug("cmd_AA00接受数据：%s" % hexx)
@@ -1027,6 +1003,8 @@ class UserTestThread(QThread):
                     self.progressBar_sinOut.emit(self.testPercentCal(), False, "获取设备信息超时")
                     # 等待
                     time.sleep(0.1)
+                else :
+                    self.retryCnt = self.retryCnt + 1
 
             elif self.stateMachine == testStatus.S_GET_DEV_SN:
                 # 进入通信获取设备信息状态
@@ -1043,7 +1021,7 @@ class UserTestThread(QThread):
                         self.userTestSend("AA02", 0)
 
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "获取设备唯一码")
-                # 等待500ms
+                # 等待1000ms
                 time.sleep(1)
                 # 超时
 
@@ -1212,8 +1190,10 @@ class UserTestThread(QThread):
                     self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('FF01设备通信超时！！！')
+                    # 退出产测
+                    self.testExit_sinOut.emit()
                     # 等待
-                    time.sleep(0.1)
+                    time.sleep(1)
 
             # 与BaseUartThread线程进行同步，统一都是由串口状态判定
             if not self.Ser.isOpen():

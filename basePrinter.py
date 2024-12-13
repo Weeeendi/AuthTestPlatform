@@ -87,6 +87,7 @@ class BasePrinterThread(QThread):
             self.seagullBartender.btFormat.PrintSetup.PrinterName = self.seagullBartender.printerName
             # 绑定打印机
             self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = self.cnt
+
         except Exception as e:
             print("打印机初始化失败！%s", str(e))
             raise
@@ -132,14 +133,14 @@ class BasePrinterThread(QThread):
 
                 # 开始打印
                 printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
-                log.logger.info("标签打印结果：%s" % printerResult)
+                # log.logger.info("标签打印结果：%s" % printerResult)
                 # log.logger.info(printerResult)
 
                 # 等待0.1秒
                 time.sleep(0.1)
 
             # 等待0.2秒
-            time.sleep(0.2)
+            time.sleep(0.1)
             if self.Ser.isOpen() == False:
                 print("关闭BasePrinterThread线程")
                 self.quit()

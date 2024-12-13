@@ -251,20 +251,6 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         # 尝试打开串口，并建立串口线程、授权线程、测试线程
                         try:
                             self.ser.open()  # 打开串口有可能失败，做try-except异常处理
-                            # 发送复位命令
-                            data = "66AABB000000CB"
-                            tmp = codecs.decode(data, "hex_codec")
-
-                            # 发送重启指令 不用回复
-                            while not self.ser.isOpen():
-                                pass
-
-                            for i in range(3):
-                                self.ser.write(tmp)
-                                # 等待
-                                time.sleep(0.1)
-
-                            self.initialSerial(115200)
 
                         except Exception as e:
                             print(str(e));
@@ -272,91 +258,113 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             showMessage("提示", "当前无串口或者串口被占用", self)
                             return None
 
-                        else:
-                            self.testSetStateChange(True)
-                            # 测试开始标志位置位
-                            self.testStart = True
-                            # 清空通讯交互区窗口
-                            self.LogBoswer.clear()
-                            # 清空授权结果区窗口
-                            self.AuthRES_TextEdit.clear()
 
-                            ###############################################################################
-                            # 创建BaseUartThread线程实例,
-                            self.serialThread = BaseUartThread(self.ser)
-                            # 自定义信号与槽连接，处理串口接受数据，由BaseUartThread线程发送到main主线程
-                            self.serialThread.revData_sinOut.connect(self.dealRevData)
+                        self.testSetStateChange(True)
+                        # 测试开始标志位置位
+                        self.testStart = True
+                        # 清空通讯交互区窗口
+                        self.LogBoswer.clear()
+                        # 清空授权结果区窗口
+                        self.AuthRES_TextEdit.clear()
 
-                            # 自定义信号与槽连接，用于发送测试发送区内容，由主线程发送到BaseUartThread线程
-                            try:  # 如果之前已建立连接，先断开，防止重复连接
-                                self.testSend_sinOut.disconnect()
-                            except:
-                                pass
-                            self.testSend_sinOut.connect(self.serialThread.uartWrite)
-                            # 启动BaseUartThread线程
-                            self.serialThread.start()
+                        ###############################################################################
+                        # 创建BaseUartThread线程实例,
+                        self.serialThread = BaseUartThread(self.ser)
+                        # 自定义信号与槽连接，处理串口接受数据，由BaseUartThread线程发送到main主线程
+                        self.serialThread.revData_sinOut.connect(self.dealRevData)
 
-                            ###############################################################################
-                            # 创建UserTestThread线程实例
+                        # 自定义信号与槽连接，用于发送测试发送区内容，由主线程发送到BaseUartThread线程
+                        try:  # 如果之前已建立连接，先断开，防止重复连接
+                            self.testSend_sinOut.disconnect()
+                        except:
+                            pass
+                        self.testSend_sinOut.connect(self.serialThread.uartWrite)
+                        # 启动BaseUartThread线程
+                        self.serialThread.start()
+
+                        ###############################################################################
+                        # 创建UserTestThread线程实例
+                        try:
+                            if self.DeviceType == '4G':
+                                self.testThread = UserTestThread(self.ser, self.PID,
+                                                                 self.CheckBox_AuthTest.isChecked(),
+                                                                 self.Area,
+                                                                 self.AuthParam,
+                                                                 self.DeviceType,
+                                                                 self.CheckBox_FuncTest.isChecked(),
+                                                                 self.regUrl,
+                                                                 self.hostAddr,
+                                                                 self.hostPort)
+
+                            else:
+                                self.testThread = UserTestThread(self.ser, self.PID,
+                                                                 self.CheckBox_AuthTest.isChecked(),
+                                                                 self.Area,
+                                                                 self.AuthParam,
+                                                                 self.DeviceType,
+                                                                 self.CheckBox_FuncTest.isChecked(),
+                                                                 self.regUrl)
+
+                        except Exception as e:
+                            self.testStart = False
+                            self.testSetStateChange(False)
+                            self.ser.close()
+                            showMessage("提示", "测试线程创建失败,请检查配置文件", self)
+                            return None
+
+                        # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到BaseUartThread线程
+                        self.testThread.uartWrite_sinOut.connect(self.serialThread.uartWrite)
+                        # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到main主线程线程
+                        self.testThread.uartWrite_sinOut.connect(self.dealSendData)
+                        # 自定义信号与槽连接，接受串口接受数据，由BaseUartThread线程发送到UserTestThread线程
+                        self.serialThread.revData_sinOut.connect(self.testThread.uartProc)
+                        # 自定义信号与槽连接，进度条数据，由UserTestThread线程发送到main主线程线程
+                        self.testThread.progressBar_sinOut.connect(self.dealProgressBar)
+                        # 自定义信号与槽连接，完整授权信息，由UserTestThread线程发送到main主线程
+                        self.testThread.authInfo_sinOut.connect(self.dealAuthData)
+
+                        # 自定义信号与槽连接，授权结果，由UserTestThread线程发送到main主线程
+                        self.testThread.testExit_sinOut.connect(self.ser.close)
+
+                        # 启动UserTestThread线程
+                        self.testThread.start()
+
+                        ###############################################################################
+                        # 判断打印机是否使能
+                        if self.CheckBox_EnablePrinter.isChecked():
+                            log.logger.info("打印机初始化中，请稍等...")
+                            # 如果使能，创建打印机线程
                             try:
-                                if self.DeviceType == '4G':
-                                    self.testThread = UserTestThread(self.ser, self.PID,
-                                                                     self.CheckBox_AuthTest.isChecked(),
-                                                                     self.Area,
-                                                                     self.AuthParam,
-                                                                     self.DeviceType,
-                                                                     self.CheckBox_FuncTest.isChecked(),
-                                                                     self.regUrl,
-                                                                     self.hostAddr,
-                                                                     self.hostPort)
-                                else:
-                                    self.testThread = UserTestThread(self.ser, self.PID,
-                                                                     self.CheckBox_AuthTest.isChecked(),
-                                                                     self.Area,
-                                                                     self.AuthParam,
-                                                                     self.DeviceType,
-                                                                     self.CheckBox_FuncTest.isChecked(),
-                                                                     self.regUrl)
+                                self.printerThread = BasePrinterThread(self.ser,self.printerCnt)
+                                # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
+                                self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
+                                # 启动BasePrinterThread线程
+                                self.printerThread.start()
                             except Exception as e:
                                 self.testStart = False
                                 self.testSetStateChange(False)
                                 self.ser.close()
-                                showMessage("提示", "测试线程创建失败,请检查配置文件", self)
+                                showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
                                 return None
 
-                            # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到BaseUartThread线程
-                            self.testThread.uartWrite_sinOut.connect(self.serialThread.uartWrite)
-                            # 自定义信号与槽连接，写串口数据，由UserTestThread线程发送到main主线程线程
-                            self.testThread.uartWrite_sinOut.connect(self.dealSendData)
-                            # 自定义信号与槽连接，接受串口接受数据，由BaseUartThread线程发送到UserTestThread线程
-                            self.serialThread.revData_sinOut.connect(self.testThread.uartProc)
-                            # 自定义信号与槽连接，进度条数据，由UserTestThread线程发送到main主线程线程
-                            self.testThread.progressBar_sinOut.connect(self.dealProgressBar)
-                            # 自定义信号与槽连接，完整授权信息，由UserTestThread线程发送到main主线程
-                            self.testThread.authInfo_sinOut.connect(self.dealAuthData)
+                        ###############################################################################
+                        # 发送复位命令
+                        time.sleep(1)
 
-                            # 启动UserTestThread线程
-                            self.testThread.start()
+                        data = "66AABB000000CB"
+                        tmp = codecs.decode(data, "hex_codec")
 
-                            # 判断打印机是否使能
-                            if self.CheckBox_EnablePrinter.isChecked():
-                                log.logger.info("打印机初始化中，请稍等...")
-                                # 如果使能，创建打印机线程
-                                try:
-                                    self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
-                                except Exception as e:
-                                    self.testStart = False
-                                    self.testSetStateChange(False)
-                                    self.ser.close()
-                                    showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
-                                    return None
+                        # 发送重启指令 不用回复
+                        while not self.ser.isOpen():
+                            pass
 
-                                # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
-                                self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
+                        for i in range(3):
+                            self.ser.write(tmp)
+                            # 等待
+                            time.sleep(0.1)
 
-                                # 启动BasePrinterThread线程
-                                self.printerThread.start()
-                                # log.logger.info("打印机初始化成功！")
+                        self.initialSerial(115200)
+
                     else:
                         self.testStart = False
                         showMessage('提示', 'PID错误：非YJ开头', self)
@@ -458,6 +466,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             if xInt == 100:
                 self.success += 1
                 self.setProcessBarColor(xInt, "green")
+                DescribeStr = "产测完成"
 
         else:
             self.fail += 1
