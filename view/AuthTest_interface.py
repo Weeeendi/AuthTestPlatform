@@ -342,7 +342,15 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             if self.CheckBox_EnablePrinter.isChecked():
                                 log.logger.info("打印机初始化中，请稍等...")
                                 # 如果使能，创建打印机线程
-                                self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
+                                try:
+                                    self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
+                                except Exception as e:
+                                    self.testStart = False
+                                    self.testSetStateChange(False)
+                                    self.ser.close()
+                                    showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
+                                    return None
+
                                 # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
                                 self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
 

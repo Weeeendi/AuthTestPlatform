@@ -1,5 +1,6 @@
 import time
 
+import clr  # 通过这个模块来调用C#的dll库
 from PyQt5.QtCore import QThread
 
 import baseUtils
@@ -8,23 +9,23 @@ from baseLogger import log
 # 创建BaseUtils实例
 util = baseUtils.BaseUtils()
 
-# 加载dll库
-configPath = baseUtils.resource_path("resources\\Seagull.BarTender.Print.dll")
 
-mydll = configPath
+#加载dll库
+clr.AddReference(util.resource_path("resources/Seagull.BarTender.Print.dll"))
+from Seagull.BarTender.Print import Engine, Printers
 
 # 可能会出现“Import "Seagull.BarTender.Print" could not be resolved”这个波浪线错误，这里不用管
 
-class BaseBarTender():  # 创建打印机类方便在上位机主程序中调用
+class BaseBarTender:  # 创建打印机类方便在上位机主程序中调用
     def __init__(self, filePath):
         # 启用引擎
-        self.btEngine = mydll.Engine(True)
+        self.btEngine = Engine(True)
         self.filePath = filePath
         # self.printerName = ''
         # self.btFormat = ''
 
     def getPrinterList(self):  # 获取你电脑上的打印机列表
-        printers = mydll.Printers()
+        printers = Printers()
         printerList = []
         for printer in printers:
             printerList.append(printer.PrinterName)
@@ -76,8 +77,8 @@ class BasePrinterThread(QThread):
 
         try:
             # 生成bartender对象
-            path = baseUtils.resource_path("resources\\yunJi_tag.btw")
-            self.seagullBartender = BaseBarTender(util.resource_path(path))
+            self.seagullBartender = BaseBarTender(util.resource_path("resources/yunJi_tag.btw"))
+
             # 生成目标文件对象
             self.seagullBartender.createTask()
             # 搜寻默认打印机
@@ -86,8 +87,9 @@ class BasePrinterThread(QThread):
             self.seagullBartender.btFormat.PrintSetup.PrinterName = self.seagullBartender.printerName
             # 绑定打印机
             self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = self.cnt
-        except:
-            print("打印机初始化失败！")
+        except Exception as e:
+            print("打印机初始化失败！%s", str(e))
+            raise
 
         print("创建BasePrinterThread线程")
 
