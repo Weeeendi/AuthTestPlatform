@@ -362,7 +362,6 @@ class Ui_AuthTestInterface_UI(object):
         self.CheckBox_AuthTest.setEnabled(True)
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
-        font.setPointSize(-1)
         font.setBold(False)
         font.setItalic(False)
         font.setWeight(50)

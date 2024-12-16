@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",

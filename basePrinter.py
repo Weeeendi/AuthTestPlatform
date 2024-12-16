@@ -9,10 +9,10 @@ from baseLogger import log
 # 创建BaseUtils实例
 util = baseUtils.BaseUtils()
 
-
 #加载dll库
 clr.AddReference(util.resource_path("resources/Seagull.BarTender.Print.dll"))
 from Seagull.BarTender.Print import Engine, Printers
+
 
 # 可能会出现“Import "Seagull.BarTender.Print" could not be resolved”这个波浪线错误，这里不用管
 
@@ -69,7 +69,7 @@ class BasePrinterThread(QThread):
         # # 创建BaseUtils实例
         # self.util = baseUtils.BaseUtils()
         # 接受主函数传递的参数
-        self.Ser = Ser  # 串口实例
+        self.Ser = Ser
         self.cnt = cnt  # 打印次数
         # 创建一个空列表，接受打印消息队列
         self.list = []
@@ -85,7 +85,7 @@ class BasePrinterThread(QThread):
             self.seagullBartender.getPrinterList()
             # 绑定打印机
             self.seagullBartender.btFormat.PrintSetup.PrinterName = self.seagullBartender.printerName
-            # 绑定打印机
+            # 设置打印次数
             self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = self.cnt
 
         except Exception as e:
@@ -93,6 +93,9 @@ class BasePrinterThread(QThread):
             raise
 
         print("创建BasePrinterThread线程")
+
+    def change_PrintCnt(self, cnt):
+        self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = cnt
 
     def insertMsg(self, MAC_or_IMEI, Area, deviceIotId, PID=''):
         print("basePrinter.insertMsg", MAC_or_IMEI, Area, deviceIotId, PID)
@@ -116,54 +119,59 @@ class BasePrinterThread(QThread):
                      }
 
         print("basePrinter.insertMsg", Pdict, type(Pdict))
-        self.list.insert(0, Pdict)
+        # 打印内容设置
+        self.seagullBartender.set_data_dict(Pdict)
+
+        # 开始打印
+        printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
 
     def run(self):
         print("启动BasePrinterThread线程")
 
         while True:
             # 处理打印消息队列中的信息
-            while len(self.list) > 0:
-                # 获取列表中的字典信息
-                outMsg = self.list.pop()
-                print("outMsg:", outMsg)
-
-                # 打印内容设置
-                self.seagullBartender.set_data_dict(outMsg)
-
-                # 开始打印
-                printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
-                # log.logger.info("标签打印结果：%s" % printerResult)
-                # log.logger.info(printerResult)
-
-                # 等待0.1秒
-                time.sleep(0.1)
+            # while len(self.list) > 0:
+            #     # 获取列表中的字典信息
+            #     outMsg = self.list.pop()
+            #     print("outMsg:", outMsg)
+            #
+            #     # 打印内容设置
+            #     self.seagullBartender.set_data_dict(outMsg)
+            #
+            #     # 开始打印
+            #     printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
+            #
+            #     log.logger.info(printerResult)
+            #
+            #     # 等待0.1秒
+            #     time.sleep(0.1)
 
             # 等待0.2秒
-            time.sleep(0.1)
-            if self.Ser.isOpen() == False:
+            if not self.Ser.isOpen():
                 print("关闭BasePrinterThread线程")
                 self.quit()
                 return
+            else:
+                time.sleep(0.2)
 
-# if __name__ == "__main__":
-# dict = {
-# "deviceIotId" : "sxq123456"
-# }
-# #key:"num"为在bartender中命名的数据源，value:"1234567"为你想输出的条码内容
-# # b= BarTender(os.getcwd()+"\\barTender_test.btw")#path为先前设计的标签路径
-# b= BarTender(os.getcwd()+"\\yunJi_iGo.btw")#path为先前设计的标签路径
-# b.getPrinterList()
-# b.createTask()
-# b.btFormat.PrintSetup.PrinterName = b.printerName
-# b.set_data_dict(dict)
-# result = b.btFormat.Print("printjob",2000)
-# print(result)
+if __name__ == "__main__":
+    dict = {
+        "deviceIotId" : "sxq123456"
+    }
+    #key:"num"为在bartender中命名的数据源，value:"1234567"为你想输出的条码内容
+    # b= BarTender(os.getcwd()+"\\barTender_test.btw")#path为先前设计的标签路径
+    b= BaseBarTender(util.resource_path("resources/yunJi_tag.btw"))
+    b.getPrinterList()
+    b.createTask()
+    b.btFormat.PrintSetup.PrinterName = b.printerName
+    b.set_data_dict(dict)
+    result = b.btFormat.Print("printjob",2000)
+    print(result)
 
 
-# b = BasePrinterThread(3)
-# # b.start()
-# # b.insertMsg('112233445566', 'sxq123456', '1234567890')
-# b.seagullBartender.set_data_dict(dict)
-# result = b.seagullBartender.btFormat.Print("printjob",2000)
-# print(result)
+    b = BasePrinterThread(1)
+    # b.start()
+    # b.insertMsg('112233445566', 'sxq123456', '1234567890')
+    b.seagullBartender.set_data_dict(dict)
+    result = b.seagullBartender.btFormat.Print("printjob",2000)
+    print(result)

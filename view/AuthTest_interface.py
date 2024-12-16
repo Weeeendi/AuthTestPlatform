@@ -130,6 +130,19 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.BodyLabelLinence.hide()
         self.LicenseLineEdit.hide()
 
+        log.logger.info("打印机初始化中，请稍等...")
+        # 如果使能，创建打印机线程
+        try:
+            self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
+            # 启动BasePrinterThread线程
+            self.printerThread.start()
+        except Exception as e:
+            self.testStart = False
+            self.testSetStateChange(False)
+            self.ser.close()
+            showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
+            return None
+
     def updateSetting(self):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
         configPath = baseUtils.resource_path('resources\\config\\sysConfig.json')
@@ -139,6 +152,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             # 确保sysItemsData是一个字典
             if isinstance(sysItemsData, dict):
                 self.printerCnt = sysItemsData.get("tag_print_times", 1)
+                self.printerThread.change_PrintCnt(self.printerCnt)
 
                 # 使用正则表达式匹配以 http 开头的 URL
                 url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -217,8 +231,11 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     def closeEvent(self, event):
         if self.ser.isOpen():
             self.serialThread.quit()
+            self.serialThread.wait()
             self.testThread.quit()
+            self.testThread.wait()
             self.printerThread.quit()
+            self.printerThread.wait()
 
     def enableLogPrint(self):
         try:  # 如果之前已建立连接，先断开，防止重复连接
@@ -251,13 +268,27 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         # 尝试打开串口，并建立串口线程、授权线程、测试线程
                         try:
                             self.ser.open()  # 打开串口有可能失败，做try-except异常处理
+                            # 发送复位命令
+
+                            data = "66AABB000000CB"
+                            tmp = codecs.decode(data, "hex_codec")
+
+                            # 发送重启指令 不用回复
+                            while not self.ser.isOpen():
+                                pass
+
+                            for i in range(3):
+                                self.ser.write(tmp)
+                                # 等待
+                                time.sleep(0.2)
+
+                            self.initialSerial(115200)
 
                         except Exception as e:
                             print(str(e));
                             self.testStart = False
                             showMessage("提示", "当前无串口或者串口被占用", self)
                             return None
-
 
                         self.testSetStateChange(True)
                         # 测试开始标志位置位
@@ -323,47 +354,20 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         # 自定义信号与槽连接，完整授权信息，由UserTestThread线程发送到main主线程
                         self.testThread.authInfo_sinOut.connect(self.dealAuthData)
 
-                        # 自定义信号与槽连接，授权结果，由UserTestThread线程发送到main主线程
-                        self.testThread.testExit_sinOut.connect(self.ser.close)
-
                         # 启动UserTestThread线程
                         self.testThread.start()
 
                         ###############################################################################
                         # 判断打印机是否使能
                         if self.CheckBox_EnablePrinter.isChecked():
-                            log.logger.info("打印机初始化中，请稍等...")
-                            # 如果使能，创建打印机线程
-                            try:
-                                self.printerThread = BasePrinterThread(self.ser,self.printerCnt)
-                                # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
-                                self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
-                                # 启动BasePrinterThread线程
-                                self.printerThread.start()
-                            except Exception as e:
-                                self.testStart = False
-                                self.testSetStateChange(False)
-                                self.ser.close()
-                                showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
-                                return None
+                            try:  # 如果之前已建立连接，先断开，防止重复连接
+                                self.testThread.printMsg_sinOut.disconnect()
+                            except:
+                                pass
+                            # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
+                            self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
 
                         ###############################################################################
-                        # 发送复位命令
-                        time.sleep(1)
-
-                        data = "66AABB000000CB"
-                        tmp = codecs.decode(data, "hex_codec")
-
-                        # 发送重启指令 不用回复
-                        while not self.ser.isOpen():
-                            pass
-
-                        for i in range(3):
-                            self.ser.write(tmp)
-                            # 等待
-                            time.sleep(0.1)
-
-                        self.initialSerial(115200)
 
                     else:
                         self.testStart = False

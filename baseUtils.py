@@ -151,7 +151,7 @@ class BaseUtils:
 
     # 将生成的授权信息记录到regList列表
     @staticmethod
-    def addToRegList(regInfo, fieldnames):
+    def addToRegList(regInfo, fieldnames,type):
 
         # repFlag = False
         # 获取当前时间
@@ -203,6 +203,9 @@ class BaseUtils:
         # 读取CSV文件
         data = pd.read_csv(RecordFilePath, encoding=encoding)
 
-        data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
+        if type:
+            data.drop_duplicates(subset=['IMEI'], keep='last', inplace=True)
+        else:
+            data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
         # 保留最后一次出现的重复项（即具有"RESULT"为"PASS"的行）
         data.to_csv(RecordFilePath, index=False, encoding='utf-8-sig')

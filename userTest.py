@@ -52,9 +52,6 @@ class UserTestThread(QThread):
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
 
-    # 自定义信号，用来发送测试结果
-    testExit_sinOut = pyqtSignal()
-
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
         # 创建BaseUtils实例
@@ -294,13 +291,6 @@ class UserTestThread(QThread):
 
                 log.logger.info('待测设备退出产测模式!')
 
-                # 发送打印标签及授权信息
-                if self.AuthTestFlag:
-                    if self.deviceType == "BLE" or self.deviceType == "BLE&4G":
-                        self.printMsg_sinOut.emit(self.nodeId, self.Area, self.deviceIotId, self.PID)
-                    else:
-                        self.printMsg_sinOut.emit(self.IMEI, self.Area, self.deviceIotId, self.PID)
-
                 # 获取结束时间戳
                 self.endStamp = time.time()
                 # self.testInterval = self.endStamp - self.startStamp
@@ -348,8 +338,7 @@ class UserTestThread(QThread):
                             'IMEI:' + self.IMEI + '\r\n' +
                             'ICCID:' + str(self.ICCID) + '\r\n')
 
-                # 发送完整的授权信息
-                self.authInfo_sinOut.emit(text)
+
 
                 filedsName = []
                 # 记录测试结果
@@ -366,22 +355,29 @@ class UserTestThread(QThread):
                     filedsName.append(key)
 
                 try:
-                    self.util.addToRegList(self.regInfoDict, filedsName)
+                    self.util.addToRegList(self.regInfoDict, filedsName,self.deviceType != "BLE")
                 except Exception as e:
                     log.logger.error('[userTest]addToRegList异常，%s' % e)
-                    return
+
                 log.logger.info('**************************************************')
+
+                # 发送打印标签及授权信息
+                if self.AuthTestFlag:
+                    # 发送完整的授权信息
+                    self.authInfo_sinOut.emit(text)
+
+                    if self.deviceType == "BLE" or self.deviceType == "BLE&4G":
+                        self.printMsg_sinOut.emit(self.nodeId, self.Area, self.deviceIotId, self.PID)
+                    else:
+                        self.printMsg_sinOut.emit(self.IMEI, self.Area, self.deviceIotId, self.PID)
 
                 # 清零周期次数变量
                 self.retryCnt = 0
                 # 初始化发送互斥标志位
                 self.sendMutexFlag = True
 
-                #退出产测
-                self.testExit_sinOut.emit()
-                # 等待设备退出产测
-                time.sleep(1)
-
+                # 等待设备退出
+                time.sleep(0.2)
 
         else:
             log.logger.warning('FF01错误应答，未在对应状态！')
@@ -896,7 +892,7 @@ class UserTestThread(QThread):
                         print('AA03', str(self.regInfoDict))
 
                         # 发送完整的授权信息
-                        self.authInfo_sinOut.emit(y.text)
+                        # self.authInfo_sinOut.emit(y.text)
 
                         return True
 
@@ -1190,10 +1186,9 @@ class UserTestThread(QThread):
                     self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('FF01设备通信超时！！！')
-                    # 退出产测
-                    self.testExit_sinOut.emit()
-                    # 等待
-                    time.sleep(1)
+
+                    # 发送进度条信息
+                    time.sleep(0.2)
 
             # 与BaseUartThread线程进行同步，统一都是由串口状态判定
             if not self.Ser.isOpen():

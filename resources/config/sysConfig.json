@@ -5,7 +5,7 @@
         "warning"
     ],
     "current_logger_level": "debug",
-    "tag_print_times": 3,
+    "tag_print_times": 1,
     "device_type": [
         "BLE",
         "BLE&4G",

@@ -243,7 +243,7 @@ class DescriptionCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.QGridLayOut = QGridLayout(self)
+        self.QGridLayOut = QGridLayout()
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.descriptionLabel = BodyLabel('本工具用于云迹物联生产测试使用,详细配置说明请见', self)
 

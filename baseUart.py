@@ -75,7 +75,6 @@ class BaseUartThread(QThread):
                 except serial.SerialException:
                     self.error_sinOut.emit()
 
-
                 dealStr = self.util.asciiB2HexString(recv)
 
                 # print("baseUart.run", dealStr, type(dealStr))
@@ -83,10 +82,11 @@ class BaseUartThread(QThread):
                 self.revData_sinOut.emit(dealStr)
                 # # 清空接受缓冲区
                 # self.Ser.flushInput()
-            # 等待0.1秒
-            time.sleep(0.1)
+
             if not self.Ser.isOpen():
                 print("关闭BaseUartThread线程")
                 self.quit()
-                self.wait()
                 return
+            else:
+                # 等待0.1秒
+                time.sleep(0.1)
