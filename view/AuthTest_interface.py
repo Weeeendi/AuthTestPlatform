@@ -189,10 +189,11 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.CheckBox_FuncTest.setDisabled(bool_value)
         # 打印机-禁止/使能
         self.CheckBox_EnablePrinter.setDisabled(bool_value)
-        self.progressTestBar.setVal(0)
-        self.processTestText.setText('等待开始')
+
         # 开始/停止按钮-状态切换
         if bool_value:
+            self.progressTestBar.setVal(0)
+            self.processTestText.setText('等待开始')
             self.ButtonStartTest.setText("停止")
         else:
             self.ButtonStartTest.setText("开始")
@@ -248,6 +249,17 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             # self.testSend_sinOut.connect(self.serialThread.uartWrite)
             self.LogBoswer.show()
 
+    def stopTest(self):
+        self.testStart = False
+        try:
+            self.ser.close()  # 关闭串口有可能失败，做try-except异常处理
+        except ValueError:
+            showMessage(self, '提示', '关闭串口失败', self)
+            return None
+
+        self.testSetStateChange(False)
+        print('Test stop!')
+
     def startTest(self):
         if self.CheckBox_AuthTest.isChecked() or self.CheckBox_FuncTest.isChecked():
             if not self.testStart:
@@ -277,10 +289,10 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             while not self.ser.isOpen():
                                 pass
 
-                            for i in range(3):
-                                self.ser.write(tmp)
-                                # 等待
-                                time.sleep(0.2)
+                            # 发送复位命令
+                            self.ser.write(tmp)
+                            # 等待
+                            time.sleep(0.2)
 
                             self.initialSerial(115200)
 
@@ -353,6 +365,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         self.testThread.progressBar_sinOut.connect(self.dealProgressBar)
                         # 自定义信号与槽连接，完整授权信息，由UserTestThread线程发送到main主线程
                         self.testThread.authInfo_sinOut.connect(self.dealAuthData)
+
+                        self.testThread.testExit_sinOut.connect(self.stopTest)
 
                         # 启动UserTestThread线程
                         self.testThread.start()

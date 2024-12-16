@@ -52,6 +52,9 @@ class UserTestThread(QThread):
     # 自定义信号，用来发送进度条数据及进度描述
     progressBar_sinOut = pyqtSignal(int, bool, str)
 
+    # 自定义信号，用来发送测试退出
+    testExit_sinOut = pyqtSignal()
+
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
         # 创建BaseUtils实例
@@ -376,6 +379,8 @@ class UserTestThread(QThread):
                 # 初始化发送互斥标志位
                 self.sendMutexFlag = True
 
+                # 产测完成退出
+                self.testExit_sinOut.emit()
                 # 等待设备退出
                 time.sleep(0.2)
 
@@ -1018,10 +1023,10 @@ class UserTestThread(QThread):
 
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "获取设备唯一码")
                 # 等待1000ms
-                time.sleep(1)
+                time.sleep(3)
                 # 超时
 
-                if self.retryCnt == 5:
+                if self.retryCnt == 3:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
