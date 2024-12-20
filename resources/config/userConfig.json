@@ -147,7 +147,7 @@
             "funName": "IMEI_Read",
             "enable": true,
             "dspName": "读取IMEI",
-            "cmd": "AA07",
+            "cmd": "aa07",
             "data": "",
             "rev_dict": "{\"IMEI\": \"\"}",
             "interval(ms)": 1000,

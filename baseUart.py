@@ -62,7 +62,6 @@ class BaseUartThread(QThread):
                 # 获得接受到的字符
                 count = self.Ser.inWaiting()
             except Exception as e:
-
                 self.error_sinOut.emit()
                 print(e)
                 print("uart ser err!")

@@ -327,8 +327,8 @@ class UserTestThread(QThread):
                             'AREA:' + self.Area + '\r\n' +
                             'MAC:' + self.nodeId + '\r\n' +
                             'DSECRET:' + str(self.deviceSecret) + '\r\n' +
-                            'IMEI:' + str(self.IMEI) + '\r\n' +
-                            'ICCID:' + str(self.ICCID) + '\r\n')
+                            'IMEI:' + self.IMEI + '\r\n' +
+                            'ICCID:' + self.ICCID + '\r\n')
                 else:
                     self.regInfoDict['IMEI'] = self.IMEI
                     self.regInfoDict['ICCID'] = self.ICCID
@@ -339,7 +339,7 @@ class UserTestThread(QThread):
                             'HOSTADDR:' + self.hostAddr + '\r\n' +
                             'HOSTPORT:' + str(self.hostPort) + '\r\n' +
                             'IMEI:' + self.IMEI + '\r\n' +
-                            'ICCID:' + str(self.ICCID) + '\r\n')
+                            'ICCID:' + self.ICCID + '\r\n')
 
 
 
@@ -464,6 +464,7 @@ class UserTestThread(QThread):
                     self.listIndex = self.listIndex + 1
                     self.stateMachine = self.stateList[self.listIndex]
                     log.logger.info('设备唯一码查询成功！')
+                    self.retryCnt = 0
 
                     # 发送进度条信息
                     self.CurrentPassItemsNum += 1
@@ -479,7 +480,6 @@ class UserTestThread(QThread):
                 log.logger.error('查询MAC长度异常')
 
             # 初始化发送互斥标志位
-            self.retryCnt = 0
             self.sendMutexFlag = True
 
         else:
@@ -512,11 +512,12 @@ class UserTestThread(QThread):
                     self.CurrentPassItemsNum += 1
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备蜂窝信息正确")
                     log.logger.info('查询设备蜂窝信息正确！')
+                    # 重试次数清零
+                    self.retryCnt = 0
 
                 else:
                     log.logger.info('仅查询设备IMEI和ICCID 为记录')
-                # 重试次数清零
-                self.retryCnt = 0
+
 
             else:
                 if self.deviceType == "4G":
@@ -961,6 +962,12 @@ class UserTestThread(QThread):
             self.stateList.append(testStatus.S_AUTH_QUERY)
 
         if self.FactoryTest:
+            # 增加获取产品信息状态
+            self.stateList.append(testStatus.S_GET_PRODINFO)
+
+            # 增加获取设备唯一码状态
+            self.stateList.append(testStatus.S_GET_DEV_SN)
+
             # 增加测试状态
             self.stateList.append(testStatus.S_TEST)
 
@@ -1015,9 +1022,8 @@ class UserTestThread(QThread):
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == 'BLE&4G':
                         self.userTestSend("AA01", 0)
-                        time.sleep(0.1)
-                        self.userTestSend("AA02", 0)  # 仅为记录 IMEI和ICCID
-
+                        time.sleep(0.2)
+                        self.userTestSend("AA02",0)
                     elif self.deviceType == '4G':
                         self.userTestSend("AA02", 0)
 

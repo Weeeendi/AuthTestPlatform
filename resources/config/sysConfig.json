@@ -16,8 +16,8 @@
         "IMEI",
         "SN"
     ],
-    "current_auth_param": "IMEI",
-    "current_device_type": "4G",
+    "current_auth_param": "MAC",
+    "current_device_type": "BLE&4G",
     "reg_urls": [
         {
             "desc": "公版线上",
