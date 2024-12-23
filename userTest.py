@@ -99,7 +99,7 @@ class UserTestThread(QThread):
         self.TestItemsNum = 0
 
         # 授权命令数量,授权相关命令不通过文件配置 包含:设备产品信息查询，设备唯一标识查询，烧录授权命令，查询授权命令
-        self.AuthItemsNum = 4
+        self.AuthItemsNum = 3
 
         # 当前授权通过命令数量
         self.CurrentPassItemsNum = 0
@@ -194,11 +194,11 @@ class UserTestThread(QThread):
     def testPercentCal(self):
         # 总测试项目包含开始测试命令
         if self.FactoryTest and self.Auth:
-            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 1))
+            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 2))
         elif self.FactoryTest:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 1))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 2))
         else:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 1))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 2))
 
         if ret == 100:
             self.AuthTestFlag = True
@@ -942,15 +942,14 @@ class UserTestThread(QThread):
 
         # 增加'state_reset'状态,进行设备重启
         # self.stateList.append(testStatus.S_RESET)
+        # 增加获取产品信息状态
+        self.stateList.append(testStatus.S_GET_PRODINFO)
 
         if self.Auth:
             # 提示进入授权模式
             log.logger.info('待测设备授权开始！')
             # 打印PID
             log.logger.info("待测设备PID：%s" % self.PID)
-
-            # 增加获取产品信息状态
-            self.stateList.append(testStatus.S_GET_PRODINFO)
 
             # 增加获取设备唯一码状态
             self.stateList.append(testStatus.S_GET_DEV_SN)
@@ -962,11 +961,6 @@ class UserTestThread(QThread):
             self.stateList.append(testStatus.S_AUTH_QUERY)
 
         if self.FactoryTest:
-            # 增加获取产品信息状态
-            self.stateList.append(testStatus.S_GET_PRODINFO)
-
-            # 增加获取设备唯一码状态
-            self.stateList.append(testStatus.S_GET_DEV_SN)
 
             # 增加测试状态
             self.stateList.append(testStatus.S_TEST)
@@ -1021,9 +1015,9 @@ class UserTestThread(QThread):
                     if self.deviceType == 'BLE':
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == 'BLE&4G':
-                        self.userTestSend("AA01", 0)
-                        time.sleep(0.2)
                         self.userTestSend("AA02",0)
+                        time.sleep(0.3)
+                        self.userTestSend("AA01", 0)
                     elif self.deviceType == '4G':
                         self.userTestSend("AA02", 0)
 
