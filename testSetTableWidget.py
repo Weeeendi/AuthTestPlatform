@@ -51,14 +51,13 @@ class myTableModel(TableView):
         self.jsonData = jsonData
 
         if not self.jsonData:
-            return None
+            return
 
         self.header = self.jsonData[0].keys()
 
         df = self.__fillTableByJson()
-        self.TableModel = PandasModel(df,"enable")
+        self.TableModel = PandasModel(df, "enable")
         self.dropRowChangeSin.connect(self.TableModel.droprowRev)
-
 
         self.setDragEnabled(True)  # 允许拖拽
         self.setAcceptDrops(True)  # 允许放置
@@ -114,7 +113,7 @@ class myTableModel(TableView):
             self.setDragEnabled(True)
             self.setAcceptDrops(True)
 
-    def updateData2Json(self) -> dict:
+    def updateData2Json(self) -> list:
         """
         将 QAbstractItemModel 转换为字典格式的 JSON 数据。
         注意：此函数假设模型结构是简单的表格形式，没有分层。
@@ -195,7 +194,7 @@ class myTableModel(TableView):
         self.update()
 
     def dropEvent(self, event):
-        index = self.indexAt(event.pos())
+        # index = self.indexAt(event.pos())
         # row = index.row()
         # mousePos = event.pos()
         # rowMidY = self.rowViewportPosition(row) + self.rowHeight(row) / 2
@@ -224,7 +223,6 @@ class myTableModel(TableView):
             finalPen = QPen(QColor(0, 0, 0), 1, Qt.SolidLine)  # 黑色的实线，宽度为1
             painter.setPen(finalPen)
             painter.drawLine(0, y, self.width(), y)
-
 
     # def updateData(self, jsonObj):
     #     state = jsonObj.get("enable", "")
@@ -255,7 +253,7 @@ class myTableModel(TableView):
         # 确保列宽至少是min_section_size
         min_section_size = 70  # 设置最小列宽
         for section in range(column_count):
-            column_title = headers.model().headerData(section, Qt.Horizontal,Qt.DisplayRole)
+            column_title = headers.model().headerData(section, Qt.Horizontal, Qt.DisplayRole)
             if column_title == "data" or column_title == "rev_dict":
                 headers.setSectionResizeMode(section, QHeaderView.Stretch)
             if column_title == "dspName":
@@ -269,7 +267,6 @@ class myTableModel(TableView):
         # 首次调整列宽以适应内容
         self.resizeColumnsToContents()
 
-
         for section in range(headers.count()):
             name = headers.model().headerData(section, Qt.Horizontal, Qt.DisplayRole)
             if name == 'dspName':
@@ -280,10 +277,13 @@ class myTableModel(TableView):
                 continue
             headers.resizeSection(section, max(headers.sectionSize(section), min_section_size))
 
+
 class PandasModel(QAbstractTableModel):
 
     def __init__(self, data, checkable_column_name=None):
         super(PandasModel, self).__init__()
+        self.filtered_data = None
+        self.editable = None
         self._data = data
         self.checkable_column_name = checkable_column_name  # 设置可勾选列的名称
         self.droprow = -1
@@ -387,7 +387,6 @@ class PandasModel(QAbstractTableModel):
             if self.editable:
                 flags |= Qt.ItemIsEditable  # 允许其他列编辑
         return flags
-
 
     # 如果要支持拖动行
     def supportedDropActions(self):

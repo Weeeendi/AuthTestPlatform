@@ -2,7 +2,7 @@
     "TestItems": [
         {
             "funName": "Flash_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",
@@ -90,11 +90,11 @@
         },
         {
             "funName": "Serial_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "串口测试",
             "cmd": "0009",
             "data": "",
-            "rev_dict": "{\"uart1\":false, \"uart2\":false}",
+            "rev_dict": "{\"uart1\":false}",
             "interval(ms)": 500,
             "process": "ALL",
             "retry": 1
@@ -145,7 +145,7 @@
         },
         {
             "funName": "IMEI_Read",
-            "enable": true,
+            "enable": false,
             "dspName": "读取IMEI",
             "cmd": "aa07",
             "data": "",

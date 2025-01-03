@@ -377,7 +377,7 @@ class UserTestThread(QThread):
                 # 清零周期次数变量
                 self.retryCnt = 0
                 # 初始化发送互斥标志位
-                self.sendMutexFlag = True
+                # self.sendMutexFlag = True
 
                 # 产测完成退出
                 self.testExit_sinOut.emit()
@@ -719,7 +719,8 @@ class UserTestThread(QThread):
                             self.sendMutexFlag = True
                             return
 
-                    self.testIndex += 1
+                    self.testIndex = self.testIndex + 1
+
                     if self.testIndex == self.TestItemsNum:
                         # 测试全部结束
                         self.listIndex += 1
