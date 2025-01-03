@@ -1186,14 +1186,16 @@ class UserTestThread(QThread):
 
                 # 超时
                 self.retryCnt = self.retryCnt + 1
-                if self.retryCnt == 6:
+                if self.retryCnt == 3:
                     self.listIndex = 0
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
                     self.sendMutexFlag = True
                     log.logger.info('FF01设备通信超时！！！')
 
-                    # 发送进度条信息
+                    # 产测完成退出
+                    self.testExit_sinOut.emit()
+                    # 等待设备退出
                     time.sleep(0.2)
 
             # 与BaseUartThread线程进行同步，统一都是由串口状态判定
