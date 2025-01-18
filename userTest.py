@@ -469,6 +469,7 @@ class UserTestThread(QThread):
                     # 发送进度条信息
                     self.CurrentPassItemsNum += 1
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "设备唯一码查询成功")
+                    self.sendMutexFlag = True
 
                 else:
                     log.logger.info('设备MAC查询出错！')
@@ -517,7 +518,6 @@ class UserTestThread(QThread):
 
                 else:
                     log.logger.info('仅查询设备IMEI和ICCID 为记录')
-
 
             else:
                 if self.deviceType == "4G":
@@ -676,7 +676,7 @@ class UserTestThread(QThread):
 
     # 解析用户测试指令
     def cmd_testItem(self, cmd, hexx):
-        strcmd = cmd.hex()
+        strcmd = cmd.hex().upper()  # 转换成大写
         log.logger.debug(f"cmd {strcmd} 接受数据：{hexx}")
 
         # 如果在测试项状态 并且 回复命令等于当前测试命令
@@ -735,6 +735,16 @@ class UserTestThread(QThread):
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "[%s]成功" % name)
 
                 else:
+                    # 记录测试结果
+                    self.testProcessor[index].result = False
+
+                    if rev_dict != {}:
+                        try:
+                            for key in rev_dict.keys():
+                                ret = tmp.get(key, '')
+                                self.testProcessor[index].rev_dict[key] = ret
+                        except Exception:
+                            pass
                     # 设备返回失败
                     log.logger.info('测试[%s]出错！' % name)
 
@@ -1016,7 +1026,7 @@ class UserTestThread(QThread):
                     if self.deviceType == 'BLE':
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == 'BLE&4G':
-                        self.userTestSend("AA02",0)
+                        self.userTestSend("AA02", 0)
                         time.sleep(0.3)
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == '4G':
@@ -1024,10 +1034,9 @@ class UserTestThread(QThread):
 
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "获取设备唯一码")
                 # 等待1000ms
-                time.sleep(3)
+                time.sleep(2)
                 # 超时
-
-                if self.retryCnt == 3:
+                if self.retryCnt == 20:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
@@ -1039,6 +1048,7 @@ class UserTestThread(QThread):
                     time.sleep(0.1)
                 else:
                     self.retryCnt += 1
+
                 self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_LOAD:
