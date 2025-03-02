@@ -1027,7 +1027,7 @@ class UserTestThread(QThread):
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == 'BLE&4G':
                         self.userTestSend("AA02", 0)
-                        time.sleep(0.3)
+                        time.sleep(0.5)
                         self.userTestSend("AA01", 0)
                     elif self.deviceType == '4G':
                         self.userTestSend("AA02", 0)

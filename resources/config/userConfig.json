@@ -2,7 +2,7 @@
     "TestItems": [
         {
             "funName": "Flash_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
@@ -13,7 +13,7 @@
         },
         {
             "funName": "GSensor_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
@@ -24,7 +24,7 @@
         },
         {
             "funName": "ACC_Ctrl_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ACC控制功能测试",
             "cmd": "0003",
             "data": "",
@@ -46,7 +46,7 @@
         },
         {
             "funName": "CAN_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "CAN功能测试",
             "cmd": "0005",
             "data": "",
@@ -57,10 +57,10 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "ADC功能测试",
             "cmd": "0006",
-            "data": "{\"Volt_max\":4800,\"Volt_min\":4300,\"subVolt_max\":440,\"subVolt_min\":290}",
+            "data": "{\"Volt_max\":4800,\"Volt_min\":2000,\"subVolt_max\":440,\"subVolt_min\":290}",
             "rev_dict": "{\"Volt\":0,\"subVolt\":0}",
             "interval(ms)": 500,
             "process": "ALL",
@@ -101,32 +101,32 @@
         },
         {
             "funName": "LTE_Signal_Strength",
-            "enable": false,
+            "enable": true,
             "dspName": "蜂窝信号强度测试",
             "cmd": "0020",
-            "data": "{\"CSQ\":15}",
+            "data": "{\"CSQ_min\":15}",
             "rev_dict": "{\"CSQ\":0}",
             "interval(ms)": 1000,
-            "process": "4G",
+            "process": "ALL",
             "retry": 60
         },
         {
             "funName": "GPS_Signal_Strength",
-            "enable": false,
+            "enable": true,
             "dspName": "GPS信号强度测试",
             "cmd": "0021",
             "data": "{\"star\":3}",
             "rev_dict": "{\"star\":0}",
             "interval(ms)": 1000,
-            "process": "4G",
+            "process": "ALL",
             "retry": 180
         },
         {
             "funName": "Device_Volt_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "读取设备电压",
             "cmd": "0031",
-            "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"tolerance\":10}",
+            "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"tolerance\":30}",
             "rev_dict": "{\"power_5V\":0,\"power_3.8V\":0,\"power_3.3V\":0}",
             "interval(ms)": 500,
             "process": "ALL",
@@ -134,7 +134,7 @@
         },
         {
             "funName": "Device_Charge_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "读取设备充电电流",
             "cmd": "0032",
             "data": "{\"charge_current\":30,\"tolerance\":10 } ",

@@ -8,7 +8,9 @@ a = Analysis(
     datas=[('resources/*.*', 'resources'),
             ('resources/ui/*.*','resources/images'),
             ('resources/config/*.*','resources/config'),
-            ('resources/user/*.*','resources/user')],
+            ('resources/user/*.*','resources/user'),
+            ('changeLogs.txt','.')
+            ],
     hiddenimports=[],
     hookspath=[],
     runtime_hooks=[],
