@@ -1,5 +1,7 @@
 # coding:utf-8
 import json
+import os
+import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt
@@ -13,6 +15,17 @@ from qfluentwidgets import FluentIcon as FIF, LineEdit
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, SpinBox, PillToolButton,
                             CheckBox)
+
+# 导入版本管理模块，避免循环导入
+try:
+    # 确保当前目录在sys.path中
+    current_dir = os.path.abspath('.')
+    if current_dir not in sys.path:
+        sys.path.append(current_dir)
+    from version_manager import get_version_string
+    APP_VERSION = get_version_string()
+except ImportError:
+    APP_VERSION = "V24.1.0.20"  # 默认版本号
 
 
 class SettingInterface(ScrollArea):
@@ -254,7 +267,8 @@ class DescriptionCard(HeaderCardWidget):
             icon=FIF.LINK
         )
 
-        self.versionLabel = BodyLabel('版本号 v231113.1.1.0', self)
+        # 使用APP_VERSION变量更新版本号
+        self.versionLabel = BodyLabel(f'版本号 {APP_VERSION}', self)
         self.helpLabel = BodyLabel('技术支持：云迹物联\r\nCopyright© 2021-2025 All right reverse', self)
 
         self.QGridLayOut.addWidget(self.descriptionLabel, 0, 0, Qt.AlignLeft)

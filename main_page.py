@@ -1,6 +1,7 @@
 # coding:utf-8
 import json
 import sys
+import os
 
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
@@ -16,6 +17,16 @@ from view.AuthTest_interface import AuthTestInterface
 from view.Login_page import Ui_Form
 from view.settingConf_interface import SettingInterface
 
+# 导入版本管理模块
+try:
+    # 确保当前目录在sys.path中
+    current_dir = os.path.abspath('.')
+    if current_dir not in sys.path:
+        sys.path.append(current_dir)
+    from version_manager import get_version_string
+    APP_VERSION = get_version_string()
+except ImportError:
+    APP_VERSION = "V24.1.0.20"  # 默认版本号与version.json保持一致
 
 # from baseLogger import log
 
@@ -159,7 +170,6 @@ class LoginWindow(AcrylicWindow, Ui_Form):
         self.setWindowIcon(QIcon(baseUtils.resource_path("resources\\logo.png")))
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
-        # 隐藏窗口标题栏
         # self.setWindowFlag(Qt.WindowTitleHint, False)
         # self.setFont(QFont('Microsoft YaHei', pointSize=16))
 
@@ -199,7 +209,7 @@ class Window(FluentWindow):
         # self.initWindow()
         self.resize(1000, 700)
         self.setWindowIcon(QIcon(baseUtils.resource_path("resources\\logo.png")))
-        self.version = "v23111.0.0"
+        self.version = APP_VERSION  # 使用从version_manager获取的版本号
         self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
 
         desktop = QApplication.desktop().availableGeometry()
