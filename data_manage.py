@@ -64,8 +64,17 @@ class SysItemEditFactory(QWidget):
             self.authAddrDictComboBox.addItems(urls)
             self.authAddrDictComboBox.setCurrentText(self.current_url)
 
-            # 配置JT808
+            # 配置授权地址账号
+            self.authAccountIDLabel = BodyLabel("用户id:", self)
+            self.authAccountIDLineEdit = LineEdit(self)
+            self.authAccountID = self.sysItemsData.get("current_auth_account", "")
+            self.authAccountIDLineEdit.setText(self.authAccountID)
+            self.authAccountPassWordLabel = BodyLabel("密钥:", self)
+            self.authAccountPassWordLineEdit = LineEdit(self)
+            self.authAccountPassWord = self.sysItemsData.get("current_auth_password", "")
+            self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
+            # 配置JT808
             self.hostAddrLabel = BodyLabel("JT808地址: host", self)
             self.hostAddrLineEdit = LineEdit(self)
             self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
@@ -99,12 +108,23 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.hostPortLabel, 5, 2)
             self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
 
+            self.LayOut.addWidget(self.authAccountIDLabel, 6, 0)
+            self.LayOut.addWidget(self.authAccountIDLineEdit, 6, 1)
+
+            self.LayOut.addWidget(self.authAccountPassWordLabel, 6, 2)
+            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 6, 3)
+
+            # 设置控件宽度
+            self.authAccountPassWordLineEdit.setFixedWidth(300)
+
             # 绑定事件
             self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.authParamComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
             self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
+            self.authAccountIDLineEdit.textChanged.connect(self.write_dict2Json)
+            self.authAccountPassWordLineEdit.textChanged.connect(self.write_dict2Json)
 
             self.LayOut.setSpacing(10)
             self.LayOut.setColumnStretch(1, 1)
@@ -136,6 +156,8 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
             self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
+            self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
+            self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
             if self.deviceTypeComboBox.currentText() == "4G":
                 self.sysItemsData["host"] = self.hostAddrLineEdit.text()
                 self.sysItemsData["port"] = self.hostPortLineEdit.text()

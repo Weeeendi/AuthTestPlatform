@@ -5,7 +5,7 @@ import traceback
 from enum import Enum
 
 import requests
-from PyQt5.QtCore import QThread, QDateTime, Qt, pyqtSignal, QTimer
+from PyQt5.QtCore import QThread, QDateTime, Qt, pyqtSignal
 
 import baseUtils
 from baseLogger import log
@@ -473,16 +473,8 @@ class UserTestThread(QThread):
 
                 else:
                     log.logger.info('设备注册出错！')
-                    # 设置为错误状态
-                    self.listIndex = -1
-                    self.stateMachine = self.stateList[self.listIndex]
-                    
-                    # 发送进度条信息 - 使用固定的进度值，确保显示在当前阶段
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备注册失败")
-
-                    # 清零周期次数变量
-                    self.retryCnt = 0
-                    return
+                    # 发送进度条信息
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备注册出错")
 
 
             else:
@@ -532,9 +524,7 @@ class UserTestThread(QThread):
             else:
                 if self.deviceType == "4G":
                     self.retryCnt = self.retryCnt + 1
-                else:
-                    log.logger.debug('查询设备蜂窝信息失败')
-                    return
+                log.logger.debug('查询设备蜂窝信息失败')
 
             # 初始化发送互斥标志位
             self.sendMutexFlag = True
@@ -880,7 +870,7 @@ class UserTestThread(QThread):
                 # log.logger.debug("设备token获取成功！ token：%s" % self.tokenText)
                 log.logger.debug("设备token获取成功!")
             else:
-                log.logger.error("设备token获取失败! code:%d msg" % tokenRequest['code'] + tokenRequest['msg'])
+                log.logger.error("设备token获取失败! code:%d msg" % tokenRequest['code'] % tokenRequest['msg'])
                 return False
         else:
             log.logger.error("设备token Http失败! status_code:%d" % x.status_code)
@@ -1066,7 +1056,7 @@ class UserTestThread(QThread):
                 else:
                     self.retryCnt += 1
 
-                # self.sendMutexFlag = True
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_LOAD:
                 # 进入授权信息烧录状态
@@ -1126,7 +1116,7 @@ class UserTestThread(QThread):
                 else:
                     self.retryCnt = self.retryCnt + 1
 
-                # self.sendMutexFlag = True
+                self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_QUERY:
                 # 进入授权信息查询状态

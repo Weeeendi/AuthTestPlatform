@@ -36,6 +36,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
+        self.authAccountPassWord = None
+        self.authAccountID = None
         self.Area = None
         self.PID = None
 
@@ -161,6 +163,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 self.AuthParam = sysItemsData.get("current_auth_param", "MAC")
                 self.hostAddr = sysItemsData.get("host", 'tracker.us.navixy.com')
                 self.hostPort = int(sysItemsData.get("port", '47694'))
+                self.authAccountID = sysItemsData.get("current_auth_account", "")
+                self.authAccountPassWord = sysItemsData.get("current_auth_password", "")
                 self.DeviceType = sysItemsData.get("current_device_type", "BLE")
 
     def setProcessBarColor(self, value: int, color: str):
@@ -336,6 +340,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                                                  self.DeviceType,
                                                                  self.CheckBox_FuncTest.isChecked(),
                                                                  self.regUrl,
+                                                                 self.authAccountID,
+                                                                 self.authAccountPassWord,
                                                                  self.hostAddr,
                                                                  self.hostPort)
 
@@ -346,7 +352,10 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                                                  self.AuthParam,
                                                                  self.DeviceType,
                                                                  self.CheckBox_FuncTest.isChecked(),
-                                                                 self.regUrl)
+                                                                 self.regUrl,
+                                                                 self.authAccountID,
+                                                                 self.authAccountPassWord
+                                                                 )
 
                         except Exception as e:
                             self.testStart = False

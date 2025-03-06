@@ -20,6 +20,10 @@
     "current_device_type": "BLE&4G",
     "reg_urls": [
         {
+            "desc": "iReadyGo线上",
+            "url": "https://ireadygo.vehiclink.com"
+        },
+        {
             "desc": "公版线上",
             "url": "http://web.eu.vehiclink.com"
         },
@@ -44,7 +48,9 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(测试注册)http://iot-dev.vehiclink.com",
+    "reg_url": "(iReadyGo线上)https://ireadygo.vehiclink.com",
     "host": "tracker.us.navixy.com",
-    "port": "47694"
+    "port": "47694",
+    "current_auth_account": "dhvnw41mfa ",
+    "current_auth_password": "74a464528d5646e7a67a0597d57ef2bc"
 }
