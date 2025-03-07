@@ -5,6 +5,11 @@ import os
 import json
 import re
 
+# 全局默认版本号定义 - 所有版本号的唯一来源
+# 修改此处即可全局更新默认版本号
+DEFAULT_VERSION = {'major': 25, 'minor': 1, 'patch': 0, 'build': 0}
+DEFAULT_VERSION_STRING = f"V{DEFAULT_VERSION['major']}.{DEFAULT_VERSION['minor']}.{DEFAULT_VERSION['patch']}.{DEFAULT_VERSION['build']}"
+
 # 使用绝对路径
 VERSION_FILE = os.path.join(os.path.abspath('.'), 'version.json')
 
@@ -12,17 +17,23 @@ def get_version():
     """读取当前版本号"""
     if not os.path.exists(VERSION_FILE):
         # 如果版本文件不存在，创建默认版本
-        version = {'major': 25, 'minor': 1, 'patch': 0, 'build': 0}
+        version = DEFAULT_VERSION.copy()
         save_version(version)
         return version
     
     try:
         with open(VERSION_FILE, 'r') as f:
-            return json.load(f)
+            content = f.read().strip()
+            if not content:  # 文件为空
+                print("版本文件为空，使用默认版本")
+                version = DEFAULT_VERSION.copy()
+                save_version(version)
+                return version
+            return json.loads(content)
     except (json.JSONDecodeError, FileNotFoundError) as e:
         print(f"读取版本文件出错：{e}")
         # 返回默认版本
-        version = {'major': 25, 'minor': 1, 'patch': 0, 'build': 0}
+        version = DEFAULT_VERSION.copy()
         save_version(version)
         return version
 

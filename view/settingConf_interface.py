@@ -22,10 +22,12 @@ try:
     current_dir = os.path.abspath('.')
     if current_dir not in sys.path:
         sys.path.append(current_dir)
-    from version_manager import get_version_string
+    from version_manager import get_version_string, DEFAULT_VERSION_STRING
     APP_VERSION = get_version_string()
 except ImportError:
-    APP_VERSION = "V25.1.0.0"  # 固定的默认版本号
+    # 如果导入失败，使用默认版本号
+    from version_manager import DEFAULT_VERSION_STRING
+    APP_VERSION = DEFAULT_VERSION_STRING
 
 
 class SettingInterface(ScrollArea):
