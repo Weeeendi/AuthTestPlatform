@@ -12,7 +12,7 @@ try:
     app_name = f'VProductTest_{version_str}'
 except ImportError:
     # 如果导入失败，使用默认版本号
-    app_name = 'VProductTest_V24.1.0.20'
+    app_name = 'VProductTest_V25.1.0.1'
 
 a = Analysis(
     ['main_page.py'],
