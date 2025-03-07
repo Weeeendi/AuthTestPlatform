@@ -1,18 +1,46 @@
 import os
+import json
 from PyInstaller.utils.hooks import collect_data_files
-# 导入版本管理模块
-import sys
-# 使用绝对路径而不是相对路径
-current_dir = os.path.abspath('.')
-sys.path.append(current_dir)
+
+# 直接从version.json读取版本号
+VERSION_FILE = os.path.join(os.path.abspath('.'), 'version.json')
+
 try:
-    from version_manager import get_version_string
-    # 获取当前版本号
-    version_str = get_version_string()
-    app_name = f'VProductTest_{version_str}'
-except ImportError:
-    # 如果导入失败，使用默认版本号
-    app_name = 'VProductTest_V25.1.0.1'
+    if not os.path.exists(VERSION_FILE):
+        print(f"版本文件不存在：{VERSION_FILE}，将使用默认版本")
+        # 如果文件不存在，尝试从version_manager导入
+        import sys
+        current_dir = os.path.abspath('.')
+        sys.path.append(current_dir)
+        from version_manager import DEFAULT_VERSION_STRING
+        app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+    else:
+        with open(VERSION_FILE, 'r') as f:
+            content = f.read().strip()
+            if not content:  # 文件为空
+                print("版本文件为空，使用默认版本")
+                # 如果文件为空，尝试从version_manager导入
+                import sys
+                current_dir = os.path.abspath('.')
+                sys.path.append(current_dir)
+                from version_manager import DEFAULT_VERSION_STRING
+                app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+            else:
+                version = json.loads(content)
+                version_str = f"V{version['major']}.{version['minor']}.{version['patch']}.{version['build']}"
+                app_name = f'VProductTest_{version_str}'
+except (json.JSONDecodeError, FileNotFoundError) as e:
+    # 如果读取失败，尝试从version_manager导入
+    try:
+        # 使用绝对路径而不是相对路径
+        import sys
+        current_dir = os.path.abspath('.')
+        sys.path.append(current_dir)
+        from version_manager import DEFAULT_VERSION_STRING
+        app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+    except ImportError:
+        # 如果导入失败，使用硬编码的默认版本号
+        app_name = 'VProductTest_V25.1.0.1'
 
 a = Analysis(
     ['main_page.py'],

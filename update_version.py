@@ -16,11 +16,16 @@ current_dir = os.path.abspath('.')
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-from version_manager import get_version, save_version, get_version_string
+from version_manager import get_version, save_version, get_version_string, DEFAULT_VERSION, DEFAULT_VERSION_STRING
 
 def update_version(major=None, minor=None, patch=None, build=None):
     """更新版本号"""
-    version = get_version()
+    # 首先尝试获取当前版本号
+    try:
+        version = get_version()
+    except Exception as e:
+        print(f"获取版本号出错：{e}，将使用默认版本号")
+        version = DEFAULT_VERSION.copy()
     
     # 更新版本号
     if major is not None:
@@ -51,8 +56,8 @@ def update_all_files():
     # 更新main_page.py文件
     update_py_file('main_page.py', version_str)
     
-    # 更新version_manager.py文件
-    update_version_manager_file('version_manager.py', version_str)
+    # # 更新version_manager.py文件中的DEFAULT_VERSION
+    # update_version_manager_file('version_manager.py', version_str)
     
     # 更新view/settingConf_interface.py文件
     update_py_file('view/settingConf_interface.py', version_str)
@@ -140,9 +145,9 @@ def update_version_manager_file(py_file, version_str):
         with open(py_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # 使用正则表达式替换版本号
-        pattern = r"version = \{'major': \d+, 'minor': \d+, 'patch': \d+, 'build': \d+\}"
-        replacement = f"version = {{'major': {version['major']}, 'minor': {version['minor']}, 'patch': {version['patch']}, 'build': {version['build']}}}"
+        # 使用正则表达式替换DEFAULT_VERSION
+        pattern = r"DEFAULT_VERSION = \{'major': \d+, 'minor': \d+, 'patch': \d+, 'build': \d+\}"
+        replacement = f"DEFAULT_VERSION = {{'major': {version['major']}, 'minor': {version['minor']}, 'patch': {version['patch']}, 'build': {version['build']}}}"
         
         new_content = re.sub(pattern, replacement, content)
         
@@ -235,6 +240,7 @@ if __name__ == "__main__":
     parser.add_argument('--patch', type=int, help='补丁号')
     parser.add_argument('--build', type=int, help='构建号')
     parser.add_argument('--increment', choices=['major', 'minor', 'patch', 'build'], help='增加指定部分的版本号')
+    parser.add_argument('--only-json', action='store_true', help='只更新version.json文件，不更新其他文件')
     
     args = parser.parse_args()
     
