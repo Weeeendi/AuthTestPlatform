@@ -23,7 +23,7 @@ try:
     from version_manager import get_version_string
     APP_VERSION = get_version_string()
 except ImportError:
-    APP_VERSION = "V24.1.0.20"  # 默认版本号
+    APP_VERSION = "V25.1.0.0"  # 固定的默认版本号
 
 
 class SettingInterface(ScrollArea):
@@ -403,8 +403,8 @@ class DescriptionCard(HeaderCardWidget):
         self.descriptionLabel = BodyLabel('详细配置说明请见', self)
 
         self.hyperlinkButton = HyperlinkButton(
-            url='https://funhez50ho.feishu.cn/wiki/Ejf2wb8Nji68YTkqdE7cEvAQnId',
-            text='<产测说明文档>',
+            url='https://funhez50ho.feishu.cn/wiki/C0HewWD8oincnbkUcLycSZwanbh?from=from_copylink',
+            text='[产测说明文档]',
             parent=self,
             icon=FIF.LINK
         )

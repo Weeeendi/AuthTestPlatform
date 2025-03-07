@@ -16,7 +16,7 @@ if %ERRORLEVEL% neq 0 (
     goto :end
 )
 
-REM 更新所有文件中的版本号
+REM 只更新version.json文件中的版本号
 echo 更新版本号...
 python update_version.py --increment build
 if %ERRORLEVEL% neq 0 (

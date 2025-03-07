@@ -156,6 +156,75 @@ def update_version_manager_file(py_file, version_str):
         print(f"更新 {py_file} 出错：{e}")
         return False
 
+def update_only_version_json(increment_type=None):
+    """只更新version.json文件，不修改代码中的默认版本号"""
+    version = get_version()
+    
+    # 根据increment_type增加相应部分的版本号
+    if increment_type:
+        if increment_type == 'major':
+            version['major'] += 1
+            version['minor'] = 0
+            version['patch'] = 0
+            version['build'] = 0
+        elif increment_type == 'minor':
+            version['minor'] += 1
+            version['patch'] = 0
+            version['build'] = 0
+        elif increment_type == 'patch':
+            version['patch'] += 1
+            version['build'] = 0
+        elif increment_type == 'build':
+            version['build'] += 1
+    
+    # 保存版本号
+    save_version(version)
+    
+    # 获取版本号字符串
+    version_str = get_version_string()
+    print(f"版本号已更新为：{version_str}")
+    
+    # 只更新spec文件中的版本号，不修改代码中的默认版本号
+    update_spec_file_without_changing_code('main.spec')
+    
+    return version_str
+
+def update_spec_file_without_changing_code(spec_file='main.spec'):
+    """更新spec文件中的版本号，但不修改代码中的默认版本号"""
+    spec_file = os.path.join(os.path.abspath('.'), spec_file)
+    if not os.path.exists(spec_file):
+        print(f"错误：找不到 {spec_file} 文件")
+        return False
+    
+    try:
+        # 获取当前版本号（不增加构建号）
+        version_str = get_version_string()
+        
+        # 读取spec文件内容
+        with open(spec_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 使用正则表达式替换版本号
+        pattern = r"app_name = ['\"]VProductTest_V\d+\.\d+\.\d+\.\d+['\"]"
+        replacement = f"app_name = 'VProductTest_{version_str}'"
+        
+        # 如果找不到app_name变量，尝试查找name参数
+        if not re.search(pattern, content):
+            pattern = r"name='VProductTest_V\d+\.\d+\.\d+\.\d+'"
+            replacement = f"name='VProductTest_{version_str}'"
+        
+        new_content = re.sub(pattern, replacement, content)
+        
+        # 写回spec文件
+        with open(spec_file, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        
+        print(f"已更新spec文件中的版本号为：{version_str}")
+        return True
+    except Exception as e:
+        print(f"更新spec文件出错：{e}")
+        return False
+
 if __name__ == "__main__":
     # 解析命令行参数
     import argparse
@@ -171,28 +240,25 @@ if __name__ == "__main__":
     
     # 如果指定了increment参数，则增加相应部分的版本号
     if args.increment:
+        update_only_version_json(args.increment)
+    elif any([args.major, args.minor, args.patch, args.build]):
+        # 更新版本号
         version = get_version()
-        if args.increment == 'major':
-            version['major'] += 1
-            version['minor'] = 0
-            version['patch'] = 0
-            version['build'] = 0
-        elif args.increment == 'minor':
-            version['minor'] += 1
-            version['patch'] = 0
-            version['build'] = 0
-        elif args.increment == 'patch':
-            version['patch'] += 1
-            version['build'] = 0
-        elif args.increment == 'build':
-            version['build'] += 1
+        if args.major is not None:
+            version['major'] = args.major
+        if args.minor is not None:
+            version['minor'] = args.minor
+        if args.patch is not None:
+            version['patch'] = args.patch
+        if args.build is not None:
+            version['build'] = args.build
         
         save_version(version)
         version_str = get_version_string()
         print(f"版本号已更新为：{version_str}")
+        
+        # 只更新spec文件中的版本号，不修改代码中的默认版本号
+        update_spec_file_without_changing_code('main.spec')
     else:
-        # 更新版本号
-        update_version(args.major, args.minor, args.patch, args.build)
-    
-    # 更新所有文件中的版本号
-    update_all_files() 
+        # 如果没有指定任何参数，则只打印当前版本号
+        print(f"当前版本号：{get_version_string()}") 

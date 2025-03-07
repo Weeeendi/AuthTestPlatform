@@ -23,7 +23,7 @@ try:
     from version_manager import get_version_string
     APP_VERSION = get_version_string()
 except ImportError:
-    APP_VERSION = "V24.1.0.20"  # 默认版本号与version.json保持一致
+    APP_VERSION = "V25.1.0.0"  # 固定的默认版本号
 
 # from baseLogger import log
 
