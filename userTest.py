@@ -461,7 +461,9 @@ class UserTestThread(QThread):
                 log.logger.info('设备唯一码查询成功！')
                 log.logger.info("已查询nodeId:" + self.nodeId)
 
-                if self.dealHttpDeviceAuth(self.nodeId):
+                # 尝试设备注册，并处理可能的错误
+                auth_result = self.dealHttpDeviceAuth(self.nodeId)
+                if auth_result:
                     self.listIndex = self.listIndex + 1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
@@ -856,90 +858,111 @@ class UserTestThread(QThread):
 
     # 云端HTTP设备注册
     def dealHttpDeviceAuth(self, nodeId):
+        try:
+            self.tokenText = ""
+            # 向平台申请接口token
+            # tokenUrl = 'http://iot.vehiclink.com/api/v1/oauth2/clientToken'
+            tokenUrl = self.regUrl + '/api/v1/oauth2/clientToken'
+            tokenPara = {"clientId": self.clientId, "clientSecret": self.clientSecret}
 
-        self.tokenText = ""
-        # 向平台申请接口token
-        # tokenUrl = 'http://iot.vehiclink.com/api/v1/oauth2/clientToken'
-        tokenUrl = self.regUrl + '/api/v1/oauth2/clientToken'
-        tokenPara = {"clientId": self.clientId, "clientSecret": self.clientSecret}
-
-        x = requests.post(tokenUrl, json=tokenPara)
-
-        if x.status_code == 200:
-            # 网络状态码正确
-            tokenRequest = json.loads(x.text)
-            if tokenRequest['code'] == 200:
-                # 内容状态码正确
-                try:
-                    self.tokenText = tokenRequest['data']['token']
-                except Exception as e:
-                    log.logger.error("主程序抛错：")
-                    log.logger.error(e)
-                    log.logger.error("\n" + traceback.format_exc())
-
-                # log.logger.debug("设备token获取成功！ token：%s" % self.tokenText)
-                log.logger.debug("设备token获取成功!")
-            else:
-                log.logger.error("设备token获取失败! code:%d msg" % tokenRequest['code'] + tokenRequest['msg'])
+            try:
+                x = requests.post(tokenUrl, json=tokenPara, timeout=10)  # 添加超时设置
+            except requests.exceptions.RequestException as e:
+                log.logger.error(f"网络请求错误 (获取token): {str(e)}")
                 return False
-        else:
-            log.logger.error("设备token Http失败! status_code:%d" % x.status_code)
-            return False
 
-        if self.tokenText != "":
-            # 如果token获取到了，向平台注册设备
-            # regDeviceUrl = 'http://iot.vehiclink.com/api/v1/device/regDevice'
-            regDeviceUrl = self.regUrl + '/api/v1/device/regDevice'
-            regDevicePara_str = '{"nodeId":"' + nodeId + '","productIotId":"' + self.PID + '"}'
-            regDevicePara = json.loads(regDevicePara_str)
-            # print(regDevicePara, type(regDevicePara))
-            regDeviceHeaders_str = '{"token":"' + self.tokenText + '"}'
-            regDeviceHeaders = json.loads(regDeviceHeaders_str)
-            # print(regDeviceHeaders, type(regDeviceHeaders))
-            y = requests.post(regDeviceUrl, json=regDevicePara, headers=regDeviceHeaders)
-
-            if y.status_code == 200:
+            if x.status_code == 200:
                 # 网络状态码正确
-                regRequest = json.loads(y.text)
-                # print(regRequest)
-                if regRequest['code'] == 200:
+                tokenRequest = json.loads(x.text)
+                if tokenRequest['code'] == 200:
                     # 内容状态码正确
                     try:
-                        self.deviceIotId = regRequest['data']['deviceIotId']
-                        self.deviceSecret = regRequest['data'].get('deviceSecret', "")
-                        tmpPid = regRequest['data']['productIotId']
+                        self.tokenText = tokenRequest['data']['token']
                     except Exception as e:
                         log.logger.error("主程序抛错：")
                         log.logger.error(e)
                         log.logger.error("\n" + traceback.format_exc())
-
-                    if self.PID == tmpPid:
-                        # PID匹配
-                        log.logger.info("云端设备注册成功!")
-                        log.logger.info(y.text)
-                        # log.logger.info("deviceIotId：%s" % self.deviceIotId)
-                        # log.logger.info("deviceSecret：%s" % self.deviceSecret)
-
-                        print('AA03', str(self.regInfoDict))
-
-                        # 发送完整的授权信息
-                        # self.authInfo_sinOut.emit(y.text)
-
-                        return True
-
-                    else:
-                        log.logger.error("设备获取PID错误！ PID：%d" % tmpPid)
-                        return False
-
+                    # log.logger.debug("设备token获取成功！ token：%s" % self.tokenText)
+                    log.logger.debug("设备token获取成功!")
                 else:
-                    log.logger.error("设备注册失败！ code：%d" % regRequest['code'])
+                    error_msg = f"设备token获取失败! code:{tokenRequest['code']} msg:{tokenRequest.get('msg', '')}"
+                    log.logger.error(error_msg)
                     return False
             else:
-                log.logger.error("设备注册Http失败！ status_code：%d" % y.status_code)
+                error_msg = f"设备token Http失败! status_code:{x.status_code}"
+                log.logger.error(error_msg)
                 return False
 
-        else:
-            log.logger.error("设备token为空！")
+            if self.tokenText != "":
+                # 如果token获取到了，向平台注册设备
+                # regDeviceUrl = 'http://iot.vehiclink.com/api/v1/device/regDevice'
+                regDeviceUrl = self.regUrl + '/api/v1/device/regDevice'
+                regDevicePara_str = '{"nodeId":"' + nodeId + '","productIotId":"' + self.PID + '"}'
+                regDevicePara = json.loads(regDevicePara_str)
+                # print(regDevicePara, type(regDevicePara))
+                regDeviceHeaders_str = '{"token":"' + self.tokenText + '"}'
+                regDeviceHeaders = json.loads(regDeviceHeaders_str)
+                # print(regDeviceHeaders, type(regDeviceHeaders))
+                
+                try:
+                    y = requests.post(regDeviceUrl, json=regDevicePara, headers=regDeviceHeaders, timeout=10)  # 添加超时设置
+                except requests.exceptions.RequestException as e:
+                    log.logger.error(f"网络请求错误 (注册设备): {str(e)}")
+                    return False
+
+                if y.status_code == 200:
+                    # 网络状态码正确
+                    regRequest = json.loads(y.text)
+                    # print(regRequest)
+                    if regRequest['code'] == 200:
+                        # 内容状态码正确
+                        try:
+                            self.deviceIotId = regRequest['data']['deviceIotId']
+                            self.deviceSecret = regRequest['data'].get('deviceSecret', "")
+                            tmpPid = regRequest['data']['productIotId']
+                        except Exception as e:
+                            log.logger.error("主程序抛错：")
+                            log.logger.error(e)
+                            log.logger.error("\n" + traceback.format_exc())
+                            return False
+
+                        if self.PID == tmpPid:
+                            # PID匹配
+                            log.logger.info("云端设备注册成功!")
+                            log.logger.info(y.text)
+                            # log.logger.info("deviceIotId：%s" % self.deviceIotId)
+                            # log.logger.info("deviceSecret：%s" % self.deviceSecret)
+
+                            print('AA03', str(self.regInfoDict))
+
+                            # 发送完整的授权信息
+                            # self.authInfo_sinOut.emit(y.text)
+
+                            return True
+
+                        else:
+                            error_msg = f"设备获取PID错误！ PID：{tmpPid}"
+                            log.logger.error(error_msg)
+                            return False
+
+                    else:
+                        error_msg = f"设备注册失败！ code：{regRequest['code']} msg:{regRequest.get('msg', '')}"
+                        log.logger.error(error_msg)
+                        return False
+                else:
+                    error_msg = f"设备注册Http失败！ status_code：{y.status_code}"
+                    log.logger.error(error_msg)
+                    return False
+
+            else:
+                error_msg = "设备token为空！"
+                log.logger.error(error_msg)
+                return False
+                
+        except Exception as e:
+            # 捕获所有异常，确保程序不会崩溃
+            log.logger.error(f"设备注册过程中发生未预期的错误: {str(e)}")
+            log.logger.error(traceback.format_exc())
             return False
 
     def run(self):
