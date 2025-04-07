@@ -2,7 +2,7 @@
     "TestItems": [
         {
             "funName": "Flash_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
@@ -13,7 +13,7 @@
         },
         {
             "funName": "GSensor_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
@@ -24,7 +24,7 @@
         },
         {
             "funName": "ACC_Ctrl_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ACC控制功能测试",
             "cmd": "0003",
             "data": "",
@@ -46,7 +46,7 @@
         },
         {
             "funName": "CAN_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "CAN功能测试",
             "cmd": "0005",
             "data": "",
@@ -57,7 +57,7 @@
         },
         {
             "funName": "ADC_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "ADC功能测试",
             "cmd": "0006",
             "data": "{\"Volt_max\":4800,\"Volt_min\":2000,\"subVolt_max\":440,\"subVolt_min\":290}",
@@ -101,7 +101,7 @@
         },
         {
             "funName": "LTE_Signal_Strength",
-            "enable": true,
+            "enable": false,
             "dspName": "蜂窝信号强度测试",
             "cmd": "0020",
             "data": "{\"CSQ_min\":15}",
@@ -112,7 +112,7 @@
         },
         {
             "funName": "GPS_Signal_Strength",
-            "enable": true,
+            "enable": false,
             "dspName": "GPS信号强度测试",
             "cmd": "0021",
             "data": "{\"star\":3}",
@@ -123,7 +123,7 @@
         },
         {
             "funName": "Device_Volt_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "读取设备电压",
             "cmd": "0031",
             "data": "{\"power_5V\":500,\"power_3.8V\":380,\"power_3.3V\":330,\"tolerance\":30}",
@@ -134,7 +134,7 @@
         },
         {
             "funName": "Device_Charge_Test",
-            "enable": true,
+            "enable": false,
             "dspName": "读取设备充电电流",
             "cmd": "0032",
             "data": "{\"charge_current\":30,\"tolerance\":10 } ",
@@ -150,6 +150,17 @@
             "cmd": "AA07",
             "data": "",
             "rev_dict": "{\"IMEI\": \"\"}",
+            "interval(ms)": 1000,
+            "process": "ALL",
+            "retry": 5
+        },
+        {
+            "funName": "ICCID_Read",
+            "enable": true,
+            "dspName": "读取ICCID",
+            "cmd": "AA08",
+            "data": "",
+            "rev_dict": "{\"ICCID\": \"\"}",
             "interval(ms)": 1000,
             "process": "ALL",
             "retry": 5
