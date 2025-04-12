@@ -595,7 +595,8 @@ class UserTestThread(QThread):
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
 
-            if tmp.get('deviceIotId', '') == self.deviceIotId and tmp.get('deviceSecret', '') == self.deviceSecret:
+            if (self.deviceType == 'BLE' and tmp.get('deviceIotId', '') == self.deviceIotId) or \
+               (self.deviceType != 'BLE' and tmp.get('deviceIotId', '') == self.deviceIotId and tmp.get('deviceSecret', '') == self.deviceSecret):
                 # 查询设备烧录授权信息正确
                 self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]

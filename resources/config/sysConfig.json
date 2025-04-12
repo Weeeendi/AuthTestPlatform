@@ -17,7 +17,7 @@
         "SN"
     ],
     "current_auth_param": "MAC",
-    "current_device_type": "BLE&4G",
+    "current_device_type": "BLE",
     "reg_urls": [
         {
             "desc": "iReadyGo线上",
@@ -48,7 +48,7 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(iReadyGo线上)https://ireadygo.vehiclink.com",
+    "reg_url": "(测试注册)http://iot-dev.vehiclink.com",
     "host": "tracker.us.navixy.com",
     "port": "47694",
     "current_auth_account": "dhvnw41mfa",

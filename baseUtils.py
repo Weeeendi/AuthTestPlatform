@@ -135,8 +135,7 @@ class BaseUtils:
             return str(bBytes, encoding="utf8")
         except UnicodeDecodeError as e:
             print(str(e))
-
-        return str(bBytes, encoding="utf8")
+            return None
 
     @staticmethod
     def resource_path(relative_path):
