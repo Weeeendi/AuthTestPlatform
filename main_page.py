@@ -195,8 +195,8 @@ class Window(FluentWindow):
         # self.initWindow()
         self.resize(1000, 700)
         self.setWindowIcon(QIcon("resources/logo.png"))
-        self.version = "v23111.0.0"
-        self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
+        self.version = "v250420.0.0"
+        self.setWindowTitle('云迹物联离线检测工具_' + self.version)
 
         desktop = QApplication.desktop().availableGeometry()
         w, h = desktop.width(), desktop.height()

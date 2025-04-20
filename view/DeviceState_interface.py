@@ -18,7 +18,8 @@ from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resources.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
 
-CONN_OVERTIME = 5 * 10
+# 设备连接超时时间（秒）
+CONN_OVERTIME = 3
 
 DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
 ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]
@@ -43,13 +44,13 @@ class deviceOnline:
         self.SubBMSOnline = SubBMS
 
     def clearAll(self):
-        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
+        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline', 'SubBMSOnline']
         for attr in attrs:
             if hasattr(self, attr):  # 确保对象有这个属性
                 setattr(self, attr, 0)
 
     def decrementAll(self):
-        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline']
+        attrs = ['dashBoardOnline', 'controllerOnline', 'BMSOnline', 'IotOnline', 'SubBMSOnline']
         for attr in attrs:
             if hasattr(self, attr):  # 确保对象有这个属性
                 current_value = getattr(self, attr)
@@ -57,6 +58,8 @@ class deviceOnline:
                     setattr(self, attr, current_value - 1)
                 # else:
                 #     print(f"Cannot decrement {attr}: not an integer")
+            else:
+                print(f"Object {attr} not found")
 
 
 def showMessage(title, content, parent=None):
@@ -240,49 +243,73 @@ class DeviceStateTask(QThread):
         self.overtimeCnt = 0
         text = "Serial is not Connection"
         color = "#e6e6e6"
-        #         # self.LightTrigger.emit(self.color, self.text)
+        # 首次连接标志
+        firstConnection = True
+        # 添加递减计时器
+        last_decrement_time = time.time()
+        # 递减间隔(秒)
+        decrement_interval = 1.0
 
         while self.running:
 
             if self.serialOnline:
-                if (self.overTimeConn.IotOnline > 0 and self.page == 3) or \
-                        (self.overTimeConn.BMSOnline > 0 and self.page == 2) or \
-                        (self.overTimeConn.controllerOnline > 0 and self.page == 1) or \
-                        (self.overTimeConn.dashBoardOnline > 0 and self.page == 0):
+                # 判断当前页面对应的设备是否在线
+                current_device_online = False
+                if (self.page == 0 and self.overTimeConn.dashBoardOnline > 0) or \
+                   (self.page == 1 and self.overTimeConn.controllerOnline > 0) or \
+                   (self.page == 2 and self.overTimeConn.BMSOnline > 0) or \
+                   (self.page == 3 and self.overTimeConn.IotOnline > 0) or \
+                   (self.page == 4 and self.overTimeConn.SubBMSOnline > 0):
+                    current_device_online = True
+                    # 一旦设备在线，首次连接状态结束
+                    firstConnection = False
+                    
+                if current_device_online:
+                    # 设备在线
                     color = "#1afa29"
                     text = "Device is connection"
                     self.ChkConnFlag = False
-                    self.LightTrigger.emit(self.color, self.text)
-
-                elif self.ChkConnFlag:
-                    self.overtimeCnt += 1
-
-                    # if exitFlag:
-                    # self.DpProcess(41,"string","{\"soft_ver\":\"1.0.0\",\"hard_ver\":\"1.0.0\",\"sn\":\"1233445857\"}")
-                    # self.DpProcess(22,"value","50")
-                    # break
-
-                    text = "Waiting for device connection " + (self.overtimeCnt % 7) * "."
-                    color = "#f4ea2a"
-                    time.sleep(0.1)
-
-                    if self.overtimeCnt >= 30:
-                        self.ChkConnFlag = False
+                    self.overtimeCnt = 0
+                else:
+                    # 设备不在线
+                    if firstConnection and self.ChkConnFlag:
+                        # 只有首次连接时显示等待状态
+                        self.overtimeCnt += 1
+                        text = "Waiting for device connection " + (self.overtimeCnt % 7) * "."
+                        color = "#f4ea2a"
+                        
+                        if self.overtimeCnt >= 1000:
+                            # 首次连接超时后也结束首次连接状态
+                            firstConnection = False
+                            self.ChkConnFlag = False
+                            color = "#d81e06"
+                            text = "Device connection overtime"
+                    else:
+                        # 非首次连接直接显示超时
                         color = "#d81e06"
                         text = "Device connection overtime"
             else:
                 color = "#e6e6e6"
                 text = "Serial is not Connection"
                 self.overTimeConn.clearAll()
+                self.overtimeCnt = 0
+                # 串口断开时重置首次连接标志
+                firstConnection = True
 
             if text != self.text or color != self.color:
                 self.text = text
                 self.color = color
                 self.LightTrigger.emit(self.color, self.text)
 
-            # self.overTimeConn.decrementAll()
+            # 使用时间控制递减频率
+            current_time = time.time()
+            if (current_time - last_decrement_time) >= decrement_interval:
+                # 递减所有设备的计数器，使设备能够自动检测离线状态
+                self.overTimeConn.decrementAll()
+                last_decrement_time = current_time
 
-            time.sleep(0.01)
+            time.sleep(0.1)
+
 
     def stop(self):
         self.running = False

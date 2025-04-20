@@ -784,7 +784,7 @@ class DeviceStateChkThread(QThread):
                 if self.checkAllDp and self.sendMutexFlag:
                     self.checkAllDp = False
                     self.sendMutexFlag = False
-                    self.send_query_dp()
+                    # self.send_query_dp()
 
                 # 等待100ms
                 time.sleep(0.1)

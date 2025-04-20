@@ -62,7 +62,6 @@ class BaseUartThread(QThread):
                 # 获得接受到的字符
                 count = self.Ser.inWaiting()
             except Exception as e:
-
                 self.error_sinOut.emit()
                 print(e)
                 print("uart ser err!")
@@ -72,17 +71,22 @@ class BaseUartThread(QThread):
                 # 读串口数据
                 try:
                     recv = self.Ser.read(count)
-                except serial.SerialException:
+                    dealStr = self.util.asciiB2HexString(recv)
+                    # 发送接收到的数据
+                    self.revData_sinOut.emit(dealStr)
+                except serial.SerialException as e:
                     self.error_sinOut.emit()
+                    log.logger.error(f"串口读取错误: {e}")
+                    continue
+                except TypeError as e:
+                    self.error_sinOut.emit()
+                    log.logger.error(f"类型错误: {e}")
+                    continue
+                except Exception as e:
+                    self.error_sinOut.emit()
+                    log.logger.error(f"未知错误: {e}")
+                    continue
 
-
-                dealStr = self.util.asciiB2HexString(recv)
-
-                # print("baseUart.run", dealStr, type(dealStr))
-                # 发送接收到的数据
-                self.revData_sinOut.emit(dealStr)
-                # # 清空接受缓冲区
-                # self.Ser.flushInput()
             # 等待0.1秒
             time.sleep(0.1)
             if not self.Ser.isOpen():
