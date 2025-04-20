@@ -7,6 +7,7 @@ from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QSizePolicy
 
 from baseLogger import log
+import baseUtils
 from qfluentwidgets import TableView, TableItemDelegate, MessageBox
 
 
@@ -215,7 +216,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = QMainWindow()
     try:
-        with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
+        with open(baseUtils.BaseUtils.resource_path("resources/config/dataPointCfg.json"), 'r', encoding='utf-8', errors='ignore') as file:
             jsondata = json.load(file)
         # 创建表格模型
         ex = myTableModel(jsondata["BMS_Dp_Data"])

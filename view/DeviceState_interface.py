@@ -17,6 +17,7 @@ from deviceStateChk import DeviceStateChkThread, OTAState
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resources.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
+from baseUtils import BaseUtils
 
 # 设备连接超时时间（秒）
 CONN_OVERTIME = 3
@@ -168,8 +169,14 @@ class DeviceStateTask(QThread):
             except Exception as e:
                 log.logger.error(e)
 
-        with open('resources/config/bitmapTranslation.json', 'r', encoding='utf-8', errors='ignore') as file:
-            self.errDict = json.loads(file.read())
+        try:
+            # 使用resource_path获取正确的资源路径
+            with open(BaseUtils.resource_path('resources/config/bitmapTranslation.json'), 'r', encoding='utf-8', errors='ignore') as file:
+                self.errDict = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"错误：无法加载位图翻译文件 - {e}")
+            MessageBox("错误", f"无法加载位图翻译文件!\n请确保resources/config/bitmapTranslation.json文件存在\n\n错误详情: {e}", self).exec_()
+            self.errDict = {}
 
     def onPageChange(self, page):
         self.page = page
@@ -786,8 +793,14 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         print("刷新串口")
 
     def InitDataPointList(self):
-        with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
-            self.DpDict = json.loads(file.read())
+        try:
+            # 使用resource_path获取正确的资源路径
+            with open(BaseUtils.resource_path('resources/config/dataPointCfg.json'), 'r', encoding='utf-8', errors='ignore') as file:
+                self.DpDict = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"错误：无法加载数据点配置文件 - {e}")
+            MessageBox("错误", f"无法加载数据点配置文件!\n请确保resources/config/dataPointCfg.json文件存在\n\n错误详情: {e}", self).exec_()
+            self.DpDict = {}
 
     def onChangeOTAState(self, percent: int, state: OTAState, OTADescription: str):
 

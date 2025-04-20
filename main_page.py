@@ -3,6 +3,7 @@ import json
 import sys
 import os
 
+import baseUtils
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication
@@ -42,10 +43,12 @@ def save_credentials(username, password, enable_remember):
 
     # 将数据写入文件（或者数据库中）
     try:
-        with open('resources/user/credentials.json', 'w') as file:
+        with open(baseUtils.BaseUtils.resource_path('resources/user/credentials.json'), 'w') as file:
             json.dump(credentials, file)
     except FileNotFoundError:
-        with open('resources/user/credentials.json', 'x') as file:
+        # 创建目录，确保父目录存在
+        os.makedirs(os.path.dirname(baseUtils.BaseUtils.resource_path('resources/user/credentials.json')), exist_ok=True)
+        with open(baseUtils.BaseUtils.resource_path('resources/user/credentials.json'), 'x') as file:
             json.dump(credentials, file)
 
 
@@ -63,7 +66,10 @@ class LoginWindow(AcrylicWindow, Ui_Form):
         self.setTitleBar(SplitTitleBar(self))
         self.titleBar.raise_()
 
+        # 修正图像路径问题
         self.label.setScaledContents(False)
+        self.label_2.setPixmap(QPixmap(baseUtils.BaseUtils.resource_path("resources/logo.png")))
+        
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
         # self.setWindowIcon(QIcon("resources/logo.png"))
@@ -101,9 +107,8 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     #     return sha256.hexdigest()
 
     def read_credentials(self):
-
         try:
-            with open('resources/user/credentials.json', 'r') as file:
+            with open(baseUtils.BaseUtils.resource_path('resources/user/credentials.json'), 'r') as file:
                 stored_credentials = json.load(file)
         except FileNotFoundError:
             print("没有存储的用户信息")
@@ -121,7 +126,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def check_credentials(self, username, password):
         # 读取存储的数据
-        with open('resources/user/credentials.json', 'r') as file:
+        with open(baseUtils.BaseUtils.resource_path('resources/user/credentials.json'), 'r') as file:
             stored_credentials = json.load(file)
 
         # 获取存储的用户名和密码
@@ -159,13 +164,13 @@ class LoginWindow(AcrylicWindow, Ui_Form):
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        pixmap = QPixmap("resources/background.jpg").scaled(
+        pixmap = QPixmap(baseUtils.BaseUtils.resource_path("resources/background.jpg")).scaled(
             self.label.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self.label.setPixmap(pixmap)
 
     def initWindow(self):
         self.resize(1000, 650)
-        self.setWindowIcon(QIcon("resources/logo.png"))
+        self.setWindowIcon(QIcon(baseUtils.BaseUtils.resource_path("resources/logo.png")))
         # self.version = "v23111.0.0"
         # self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
         # self.setWindowFlag(Qt.WindowTitleHint, False)
@@ -206,7 +211,7 @@ class Window(FluentWindow):
         self.close_cnt = 1;
         # self.initWindow()
         self.resize(1000, 700)
-        self.setWindowIcon(QIcon("resources/logo.png"))
+        self.setWindowIcon(QIcon(baseUtils.BaseUtils.resource_path("resources/logo.png")))
         self.version = APP_VERSION  # 使用从version_manager获取的版本号
         self.setWindowTitle('云迹物联离线检测工具_' + self.version)
         # 使用从version_manager获取的版本号
@@ -257,7 +262,7 @@ class Window(FluentWindow):
 
         self.navigationInterface.addWidget(
             routeKey='avatar',
-            widget=NavigationAvatarWidget('Account', QPixmap('resources/logo.png'), self),
+            widget=NavigationAvatarWidget('Account', QPixmap(baseUtils.BaseUtils.resource_path('resources/logo.png')), self),
             onClick=self.account_set,
             position=NavigationItemPosition.BOTTOM
         )
@@ -277,9 +282,7 @@ class Window(FluentWindow):
 
     def initWindow(self):
         self.resize(980, 900)
-        self.setWindowIcon(QIcon("resources/logo.png"))
-        self.version = "v23111.0.0"
-        self.setWindowTitle('云迹物联授权及产测工具_' + self.version)
+        self.setWindowIcon(QIcon(baseUtils.BaseUtils.resource_path("resources/logo.png")))
         # self.setFont(QFont('Microsoft YaHei', pointSize=16))
 
         QApplication.processEvents()

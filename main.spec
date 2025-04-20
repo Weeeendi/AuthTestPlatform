@@ -40,16 +40,16 @@ except (json.JSONDecodeError, FileNotFoundError) as e:
         app_name = f'VDetectTooLOffline_{DEFAULT_VERSION_STRING}'
     except ImportError:
         # 如果导入失败，使用硬编码的默认版本号
-        app_name = 'VDetectTooLOffline_V25.1.0.1'
+        app_name = 'VDetectTooLOffline_V25.1.0.2'
 
 a = Analysis(
     ['main_page.py'],
     pathex=['D:/workspace/python/Fluent/PyQt-Fluent-Widgets'],
     binaries=[],
-    datas=[('resources/*.*', 'resources'),
-            ('resources/ui/*.*','resources/images'),
-            ('resources/config/*.*','resources/config'),
-            ('resources/user/*.*','resources/user'),
+    datas=[('resources', 'resources'),
+            ('resources/config', 'resources/config'),
+            ('resources/user', 'resources/user'),
+            ('resources/ui', 'resources/ui'),
             ('changeLogs.txt','.')
             ],
     hiddenimports=[],
