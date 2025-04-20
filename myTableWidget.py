@@ -7,7 +7,7 @@ from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QSizePolicy
 
 from baseLogger import log
-from qfluentwidgets import TableView, TableItemDelegate
+from qfluentwidgets import TableView, TableItemDelegate, MessageBox
 
 
 class CustomTableItemDelegate(TableItemDelegate):
@@ -214,10 +214,21 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     window = QMainWindow()
-    with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
-        jsondata = json.load(file)
-
-    ex = myTableModel(jsondata["BMS_Dp_Data"])
+    try:
+        with open('resources/config/dataPointCfg.json', 'r', encoding='utf-8', errors='ignore') as file:
+            jsondata = json.load(file)
+        # 创建表格模型
+        ex = myTableModel(jsondata["BMS_Dp_Data"])
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"错误：无法加载数据点配置文件 - {e}")
+        MessageBox("错误", f"无法加载数据点配置文件!\n请确保resources/config/dataPointCfg.json文件存在\n\n错误详情: {e}", None).exec_()
+        # 创建一个空的表格模型
+        ex = myTableModel([])
+    except KeyError as e:
+        print(f"错误：数据点配置文件格式不正确 - 缺少BMS_Dp_Data键 - {e}")
+        MessageBox("错误", f"数据点配置文件格式不正确!\n缺少必要的数据结构\n\n错误详情: 缺少{e}键", None).exec_()
+        # 创建一个空的表格模型
+        ex = myTableModel([])
 
     ex.updateData(41, "string", "{version:1.0.0}")
     ex.updateData(29, "string", 40)

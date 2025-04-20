@@ -73,13 +73,13 @@ def update_spec_file_without_increment(spec_file='main.spec'):
             content = f.read()
         
         # 使用正则表达式替换版本号
-        pattern = r"app_name = ['\"]VProductTest_V\d+\.\d+\.\d+\.\d+['\"]"
-        replacement = f"app_name = 'VProductTest_{version_str}'"
+        pattern = r"app_name = ['\"]VDetectTooLOffline_V\d+\.\d+\.\d+\.\d+['\"]"
+        replacement = f"app_name = 'VDetectTooLOffline_{version_str}'"
         
         # 如果找不到app_name变量，尝试查找name参数
         if not re.search(pattern, content):
-            pattern = r"name='VProductTest_V\d+\.\d+\.\d+\.\d+'"
-            replacement = f"name='VProductTest_{version_str}'"
+            pattern = r"name='VDetectTooLOffline_V\d+\.\d+\.\d+\.\d+'"
+            replacement = f"name='VDetectTooLOffline_{version_str}'"
         
         new_content = re.sub(pattern, replacement, content)
         

@@ -13,7 +13,7 @@ try:
         current_dir = os.path.abspath('.')
         sys.path.append(current_dir)
         from version_manager import DEFAULT_VERSION_STRING
-        app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+        app_name = f'VDetectTooLOffline_{DEFAULT_VERSION_STRING}'
     else:
         with open(VERSION_FILE, 'r') as f:
             content = f.read().strip()
@@ -24,11 +24,11 @@ try:
                 current_dir = os.path.abspath('.')
                 sys.path.append(current_dir)
                 from version_manager import DEFAULT_VERSION_STRING
-                app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+                app_name = f'VDetectTooLOffline_{DEFAULT_VERSION_STRING}'
             else:
                 version = json.loads(content)
                 version_str = f"V{version['major']}.{version['minor']}.{version['patch']}.{version['build']}"
-                app_name = f'VProductTest_{version_str}'
+                app_name = f'VDetectTooLOffline_{version_str}'
 except (json.JSONDecodeError, FileNotFoundError) as e:
     # 如果读取失败，尝试从version_manager导入
     try:
@@ -37,10 +37,10 @@ except (json.JSONDecodeError, FileNotFoundError) as e:
         current_dir = os.path.abspath('.')
         sys.path.append(current_dir)
         from version_manager import DEFAULT_VERSION_STRING
-        app_name = f'VProductTest_{DEFAULT_VERSION_STRING}'
+        app_name = f'VDetectTooLOffline_{DEFAULT_VERSION_STRING}'
     except ImportError:
         # 如果导入失败，使用硬编码的默认版本号
-        app_name = 'VProductTest_V25.1.0.1'
+        app_name = 'VDetectTooLOffline_V25.1.0.1'
 
 a = Analysis(
     ['main_page.py'],
