@@ -150,9 +150,7 @@ class BaseUtils:
 
     # 将生成的授权信息记录到regList列表
     @staticmethod
-    def addToRegList(regInfo, fieldnames,type):
-
-        # repFlag = False
+    def addToRegList(regInfo, fieldnames, type):
         # 获取当前时间
         current_time = datetime.now().date()
         # 格式化日期戳
@@ -165,46 +163,58 @@ class BaseUtils:
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
+        # 标记文件是否存在
+        file_exists = os.path.exists(RecordFilePath)
+        
         try:
-            # 尝试读文件
-            # 使用with来处理上下文，可以在读/写完成后自动关闭文件
-            with open(RecordFilePath, 'r', newline='', encoding='utf-8-sig') as csvfile:
-                reader = csv.DictReader(csvfile)
-
-            # 写文件
-            with open(RecordFilePath, 'a', newline='', encoding='utf-8-sig') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-                writer.writerow(regInfo)
-
-            print('记录成功！')
-
+            if file_exists:
+                # 先读取现有数据
+                data = pd.read_csv(RecordFilePath, encoding=encoding)
+                
+                # 将新记录添加为DataFrame
+                new_row = pd.DataFrame([regInfo])
+                
+                # 合并现有数据和新记录
+                data = pd.concat([data, new_row], ignore_index=True)
+                
+                # 根据类型去重
+                if type:
+                    data.drop_duplicates(subset=['IMEI'], keep='last', inplace=True)
+                else:
+                    data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
+                
+                # 保存更新后的数据
+                data.to_csv(RecordFilePath, index=False, encoding='utf-8-sig')
+                print('记录成功！')
+            else:
+                # 文件不存在，创建新文件
+                with open(RecordFilePath, 'w', newline='', encoding='utf-8-sig') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    # 填写表格头
+                    writer.writeheader()
+                    writer.writerow(regInfo)
+                print('没有发现regList,重新生成regList！')
+                
         except PermissionError:
             print('文件正被其他进程占用！请关闭后重试')
             return
-
-        except FileNotFoundError:
-            print('没有发现regList,重新生成regList！')
-
-            with open(RecordFilePath, 'a', newline='', encoding='utf-8-sig') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-                # 重新生成的表格需要填写表格头
-                writer.writeheader()
-                writer.writerow(regInfo)
-
         except UnicodeDecodeError:
             # 自动检测文件编码
             with open(RecordFilePath, 'rb') as f:
                 result = chardet.detect(f.read())
                 encoding = result['encoding']
-
-        # 读取CSV文件
-        data = pd.read_csv(RecordFilePath, encoding=encoding)
-
-        if type:
-            data.drop_duplicates(subset=['IMEI'], keep='last', inplace=True)
-        else:
-            data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
-        # 保留最后一次出现的重复项（即具有"RESULT"为"PASS"的行）
-        data.to_csv(RecordFilePath, index=False, encoding='utf-8-sig')
+            
+            # 重新读取并处理
+            data = pd.read_csv(RecordFilePath, encoding=encoding)
+            # 添加新行
+            new_row = pd.DataFrame([regInfo])
+            data = pd.concat([data, new_row], ignore_index=True)
+            
+            # 根据类型去重
+            if type:
+                data.drop_duplicates(subset=['IMEI'], keep='last', inplace=True)
+            else:
+                data.drop_duplicates(subset=['DID'], keep='last', inplace=True)
+                
+            # 保存更新后的数据
+            data.to_csv(RecordFilePath, index=False, encoding='utf-8-sig')
