@@ -17,19 +17,24 @@
         "SN"
     ],
     "current_auth_param": "MAC",
-    "current_device_type": "BLE",
+    "current_device_type": "BLE&4G",
+    "burning_pid": false,
     "reg_urls": [
         {
             "desc": "iReadyGo线上",
             "url": "https://ireadygo.vehiclink.com"
         },
         {
-            "desc": "公版线上",
-            "url": "http://web.eu.vehiclink.com"
+            "desc": "iReadyGO测试",
+            "url": "http://ireadygo-iot-dev.vehiclink.com"
         },
         {
-            "desc": "测试注册",
+            "desc": "私有化测试注册",
             "url": "http://iot-dev.vehiclink.com"
+        },
+        {
+            "desc": "英洛华线上",
+            "url": "https://management.innuovohealthapp.com"
         },
         {
             "desc": "欧飞线上",
@@ -48,7 +53,7 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(测试注册)http://iot-dev.vehiclink.com",
+    "reg_url": "(iReadyGo线上)https://ireadygo.vehiclink.com",
     "host": "tracker.us.navixy.com",
     "port": "47694",
     "current_auth_account": "dhvnw41mfa",

@@ -166,6 +166,7 @@ class sysSettingCard(HeaderCardWidget):
         ComboBox_edits = self.findChildren(ComboBox)
         SpinBox_edits = self.findChildren(SpinBox)
         LineEdit_edits = self.findChildren(LineEdit)
+        CheckBox_edits = self.findChildren(CheckBox)
 
         for le in ComboBox_edits:
             le.setDisabled(True)
@@ -173,12 +174,14 @@ class sysSettingCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in LineEdit_edits:
             le.setDisabled(True)
-
+        for le in CheckBox_edits:
+            le.setDisabled(True)
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
         ComboBox_edits = self.findChildren(ComboBox)
         SpinBox_edits = self.findChildren(SpinBox)
         LineEdit_edits = self.findChildren(LineEdit)
+        CheckBox_edits = self.findChildren(CheckBox)
         # 设置所有控件状态
         if isChecked:
             for le in ComboBox_edits:
@@ -187,6 +190,8 @@ class sysSettingCard(HeaderCardWidget):
                 le.setDisabled(False)
             for le in LineEdit_edits:
                 le.setDisabled(False)
+            for le in CheckBox_edits:
+                le.setDisabled(False)
 
         else:
             for le in ComboBox_edits:
@@ -194,6 +199,8 @@ class sysSettingCard(HeaderCardWidget):
             for le in SpinBox_edits:
                 le.setDisabled(True)
             for le in LineEdit_edits:
+                le.setDisabled(True)
+            for le in CheckBox_edits:
                 le.setDisabled(True)
             # save data
             createSaveInfoBar(self)

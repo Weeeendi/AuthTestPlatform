@@ -64,6 +64,14 @@ class SysItemEditFactory(QWidget):
             self.authAddrDictComboBox.addItems(urls)
             self.authAddrDictComboBox.setCurrentText(self.current_url)
 
+            self.burningPIDLabel = BodyLabel("烧写PID:", self)
+            self.burningPIDCheckBox = CheckBox(self)
+            self.burningPID = self.sysItemsData.get("burning_pid", False)
+            if self.burningPID:
+                self.burningPIDCheckBox.setChecked(True)
+            else:
+                self.burningPIDCheckBox.setChecked(False)
+
             # 配置授权地址账号
             self.authAccountIDLabel = BodyLabel("用户id:", self)
             self.authAccountIDLineEdit = LineEdit(self)
@@ -75,7 +83,7 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
             # 配置JT808
-            self.hostAddrLabel = BodyLabel("JT808地址: host", self)
+            self.hostAddrLabel = BodyLabel("host", self)
             self.hostAddrLineEdit = LineEdit(self)
             self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
 
@@ -95,6 +103,9 @@ class SysItemEditFactory(QWidget):
 
             self.LayOut.addWidget(self.authAddrDictLabel, 3, 0)
             self.LayOut.addWidget(self.authAddrDictComboBox, 3, 1)
+
+            self.LayOut.addWidget(self.burningPIDLabel, 3, 2)
+            self.LayOut.addWidget(self.burningPIDCheckBox, 3, 3)
 
             self.LayOut.addWidget(self.deviceTypeLabel, 4, 0)
             self.LayOut.addWidget(self.deviceTypeComboBox, 4, 1)
@@ -125,6 +136,7 @@ class SysItemEditFactory(QWidget):
             self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.authAccountIDLineEdit.textChanged.connect(self.write_dict2Json)
             self.authAccountPassWordLineEdit.textChanged.connect(self.write_dict2Json)
+            self.burningPIDCheckBox.stateChanged.connect(self.write_dict2Json)
 
             self.LayOut.setSpacing(10)
             self.LayOut.setColumnStretch(1, 1)
@@ -137,7 +149,7 @@ class SysItemEditFactory(QWidget):
             print("sysItemsData is not a dictionary.")
 
     def chk_device_type(self):
-        if self.deviceTypeComboBox.currentText() == "4G":
+        if self.deviceTypeComboBox.currentText() != "BLE":
             self.hostAddrLabel.show()
             self.hostAddrLineEdit.show()
             self.hostPortLabel.show()
@@ -158,7 +170,8 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
-            if self.deviceTypeComboBox.currentText() == "4G":
+            self.sysItemsData["burning_pid"] = self.burningPIDCheckBox.isChecked()
+            if self.deviceTypeComboBox.currentText() != "BLE":
                 self.sysItemsData["host"] = self.hostAddrLineEdit.text()
                 self.sysItemsData["port"] = self.hostPortLineEdit.text()
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
