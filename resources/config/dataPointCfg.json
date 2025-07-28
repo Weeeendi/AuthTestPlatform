@@ -37,6 +37,10 @@
       "property":{"maxlen":4,"type":"value","unit":"W","scale":1,"step":1}
     },
     {
+      "code":"aver_speed","id": 68,"msg":"data","defaultValue":"--","desc":"","name":"车辆平均速度",
+      "property":{"maxlen":4,"type":"value","unit":"km/h","scale":0,"step":1}
+    },
+    {
       "code":"top_speed","id": 67,"msg":"data","defaultValue":"--","desc":"","name":"车辆最高速度",
       "property":{"maxlen":4,"type":"value","unit":"km/h","scale":1,"step":1}
     },
@@ -57,19 +61,19 @@
       "property":{"maxlen":4,"type":"value","unit":"km","scale":0,"step":1}
     },
     {
-      "code":"calorie_once", "id": 19,"msg":"data","defaultValue":"--","desc":"","name":"单次骑行卡路里",
+      "code":"calorie_once", "id": 86,"msg":"data","defaultValue":"--","desc":"","name":"单次骑行卡路里",
       "property":{"maxlen":4,"type":"value","unit":"kcal","scale":0,"step":1}
     },
     {
-      "code":"auto_gear_control", "id": 19,"msg":"data","defaultValue":"--","desc":"","name":"自动挡控制状态",
+      "code":"auto_gear_control", "id": 89,"msg":"data","defaultValue":"--","desc":"","name":"自动挡控制状态",
       "property":{"maxlen":1,"type":"bool"}
     },
     {
-      "code":"moment_coefficient_percent", "id": 19,"msg":"data","defaultValue":"--","desc":"","name":"各档位力矩比例系数百分比",
+      "code":"moment_coefficient_percent", "id": 80,"msg":"data","defaultValue":"--","desc":"","name":"各档位力矩比例系数百分比",
       "property":{"maxlen":255,"type":"raw"}
     },
     {
-      "code":"bus_current_limit_percent", "id": 19,"msg":"data","defaultValue":"--","desc":"","name":"各档位母线电流限流百分比",
+      "code":"bus_current_limit_percent", "id": 81,"msg":"data","defaultValue":"--","desc":"","name":"各档位母线电流限流百分比",
       "property":{"maxlen":255,"type":"raw"}
     }
   ],
@@ -79,16 +83,16 @@
       "property":{"maxlen":255,"type":"string"}
     },
     {
+      "code":"push_button","id":9,"msg":"data","defaultValue":"--","desc":"","name":"助力推行",
+      "property":{"maxlen":1,"type":"bool"}
+    },
+    {
       "code":"dashboard_fault","id":31,"msg":"data","defaultValue":"--","desc":"","name":"仪表故障信息",
       "property":{"label":["handlebar_fault","cruise_function_fault"],"maxlen":2,"type":"bitmap"}
     },
     {
       "code":"level","id":4,"msg":"data","defaultValue":"--","desc":"","name":"档位",
-      "property":{"maxlen":1,"type":"enum","enum_desc":"off,level1,level2,level3,level4"}
-    },
-    {
-      "code":"level_mode","id":3,"msg":"data","defaultValue":"--","desc":"","name":"档位模式",
-      "property":{"maxlen":1,"type":"enum","enum_desc":"eco,normal,sport"}
+      "property":{"maxlen":1,"type":"enum","enum_desc":"off,1,2,3,4,5,6,7,8,9"}
     },
     {
       "code":"headlight_switch","id":14,"msg":"data","defaultValue":"--","desc":"","name":"大灯开关",
@@ -103,8 +107,8 @@
       "property":{"maxlen":4,"type":"value","scale":0,"step":1}
     },
     {
-      "code":"sleep_time", "id": 19,"msg":"data","defaultValue":"--","desc":"","name":"休眠时长",
-      "property":{"maxlen":4,"type":"value","unit":"s","scale":0,"step":1}
+      "code":"sleep_time", "id": 61,"msg":"data","defaultValue":"--","desc":"","name":"休眠时长",
+      "property":{"maxlen":4,"type":"value","unit":"min","scale":0,"step":1}
     }
   ],
   "BMS_Dp_Data": [
@@ -124,9 +128,14 @@
       "property":{"maxlen":1,"type":"enum","enum_desc":"uncharged,charging,full"}
     },
     {
-      "code":"battery_info","id":21,"msg":"data","defaultValue":"--","desc":"","name":"电池故障信息",
+      "code":"charge_remain_time","id":77,"msg":"data","defaultValue":"--","desc":"","name":"剩余充电时长",
+      "property":{"maxlen":4,"type":"value","unit":"min","scale":0,"step":1}
+    },
+    {
+      "code":"battery_info","id":21,"msg":"data","defaultValue":"--","desc":"","name":"电池综合信息",
       "property":{"maxlen":255,"type":"string"}
     }
+
   ],
   "IoT_Dp_Data": [
     {

@@ -54,6 +54,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.ser = serial.Serial(timeout=0.5)
 
         # 组件状态初始化
+        self.PID = None  # Initialize PID attribute
         self.InitModuleConfig()
 
     # 组件初始化设置
