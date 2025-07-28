@@ -18,44 +18,58 @@
     ],
     "current_auth_param": "MAC",
     "current_device_type": "BLE&4G",
-    "burning_pid": false,
+    "burning_pid": true,
     "reg_urls": [
         {
             "desc": "iReadyGo线上",
-            "url": "https://ireadygo.vehiclink.com"
+            "url": "https://ireadygo.vehiclink.com",
+            "host": "ireadygo-iot.vehiclink.com",
+            "port": "1883"
         },
         {
             "desc": "iReadyGO测试",
-            "url": "http://ireadygo-iot-dev.vehiclink.com"
+            "url": "http://ireadygo-iot-dev.vehiclink.com",
+            "host": "mqtt.dev.vehiclink.com",
+            "port": "1883"
         },
         {
             "desc": "私有化测试注册",
-            "url": "http://iot-dev.vehiclink.com"
+            "url": "http://iot-dev.vehiclink.com",
+            "host": "mqtt.dev.vehiclink.com",
+            "port": "1882"
         },
         {
             "desc": "英洛华线上",
-            "url": "https://management.innuovohealthapp.com"
+            "url": "https://management.innuovohealthapp.com",
+            "host": "device.innuovohealthapp.com",
+            "port": "1883"
         },
         {
             "desc": "欧飞线上",
-            "url": "https://management.vecocraft.com"
+            "url": "https://management.vecocraft.com",
+            "host": "veconnect.vecocraft.com",
+            "port": "1882"
         },
         {
             "desc": "泛舟线上",
-            "url": "https://management.deruizebike.de"
+            "url": "https://management.deruizebike.de",
+            "host": "device.deruizebike.de",
+            "port": "1883"
         },
         {
             "desc": "ANANDA线上",
-            "url": "https://eu.ananda-drive.com"
+            "url": "https://eu.ananda-drive.com",
+            "host": "us.ananda-drive.com",
+            "port": "1883"
         },
         {
             "desc": "斯维驰线上",
-            "url": "https://acc.sweetrich.net"
+            "url": "https://acc.sweetrich.net",
+            "host": "abc.sweetrich.net",
+            "port": "1883"
         }
     ],
-    "reg_url": "(iReadyGo线上)https://ireadygo.vehiclink.com",
-    "host": "tracker.us.navixy.com",
-    "port": "47694",
+    "reg_url": "https://ireadygo.vehiclink.com",
     "current_auth_account": "dhvnw41mfa",
     "current_auth_password": "74a464528d5646e7a67a0597d57ef2bc"
 }

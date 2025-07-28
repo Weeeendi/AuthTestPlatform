@@ -19,8 +19,10 @@ class testStatus(Enum):
     S_GET_DEV_SN = 3  # 获取设备唯一标识信息
     S_AUTH_LOAD = 4  # 烧录授权
     S_AUTH_QUERY = 5  # 查询授权
-    S_TEST = 6  # 测试
-    S_END = 7  # 结束测试
+    S_SERVERS_LOAD = 6  # 烧录服务器
+    S_SERVERS_QUERY = 7  # 查询服务器
+    S_TEST = 8  # 测试
+    S_END = 9  # 结束测试
 
 
 # 测试模型
@@ -105,10 +107,11 @@ class UserTestThread(QThread):
         self.TestItemsNum = 0
 
         # 授权命令数量,授权相关命令不通过文件配置 包含:设备产品信息查询，设备唯一标识查询，烧录授权命令，查询授权命令
+        self.AuthItemsNum = 3
         if self.enablePidBurning:
-            self.AuthItemsNum = 4
-        else:
-            self.AuthItemsNum = 3
+            self.AuthItemsNum += 1
+        if self.hostAddr != '' and self.hostPort != '':
+            self.AuthItemsNum += 2
 
         # 当前授权通过命令数量
         self.CurrentPassItemsNum = 0
@@ -208,7 +211,7 @@ class UserTestThread(QThread):
         elif self.FactoryTest:
             ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 2))
         else:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 1))
+            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 2))
 
         if ret == 100:
             self.AuthTestFlag = True
@@ -246,10 +249,7 @@ class UserTestThread(QThread):
 
             if authtmp.get('ret', False):
                 # 进入产测模式成功
-                if self.enablePidBurning:
-                    self.listIndex = self.listIndex + 1
-                else:
-                    self.listIndex = self.listIndex + 2
+                self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
                 log.logger.info('待测设备已接入!')
 
@@ -331,18 +331,18 @@ class UserTestThread(QThread):
                     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
                             'AREA:' + self.Area + '\r\n' +
                             'MAC:' + self.nodeId + '\r\n')
-                elif self.deviceType == "BLE&4G":
-                    self.regInfoDict['MAC'] = self.nodeId
-                    self.regInfoDict['DSECRET'] = self.deviceSecret
-                    self.regInfoDict['IMEI'] = self.IMEI
-                    self.regInfoDict['ICCID'] = self.ICCID
-                    text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
-                            'AREA:' + self.Area + '\r\n' +
-                            'MAC:' + self.nodeId + '\r\n' +
-                            'DSECRET:' + str(self.deviceSecret) + '\r\n' +
-                            'IMEI:' + self.IMEI + '\r\n' +
-                            'ICCID:' + self.ICCID + '\r\n')
-                else:
+                elif self.deviceType == "BLE&4G" or self.deviceType == "4G":
+                #     self.regInfoDict['MAC'] = self.nodeId
+                #     self.regInfoDict['DSECRET'] = self.deviceSecret
+                #     self.regInfoDict['IMEI'] = self.IMEI
+                #     self.regInfoDict['ICCID'] = self.ICCID
+                #     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
+                #             'AREA:' + self.Area + '\r\n' +
+                #             'MAC:' + self.nodeId + '\r\n' +
+                #             'DSECRET:' + str(self.deviceSecret) + '\r\n' +
+                #             'IMEI:' + self.IMEI + '\r\n' +
+                #             'ICCID:' + self.ICCID + '\r\n')
+                # else:
                     self.regInfoDict['IMEI'] = self.IMEI
                     self.regInfoDict['ICCID'] = self.ICCID
                     self.regInfoDict['HOST'] = self.hostAddr
@@ -720,6 +720,8 @@ class UserTestThread(QThread):
                 self.retryCnt = 0
             else:
                 log.logger.info('设置产品信息失败！')
+
+            self.sendMutexFlag = True
         else:
             log.logger.warning('AA09错误应答，未在对应状态！')
                 
@@ -1051,6 +1053,13 @@ class UserTestThread(QThread):
             # 增加授权查询状态
             self.stateList.append(testStatus.S_AUTH_QUERY)
 
+            if self.hostAddr and self.hostPort:
+                # 增加授权查询状态
+                self.stateList.append(testStatus.S_SERVERS_LOAD)
+
+                # 增加授权查询状态
+                self.stateList.append(testStatus.S_SERVERS_QUERY)
+
         if self.FactoryTest:
             # 增加测试状态
             self.stateList.append(testStatus.S_TEST)
@@ -1079,7 +1088,17 @@ class UserTestThread(QThread):
                 # 进入设置产品信息状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
-                    self.userTestSend("AA09", 0)
+                    try:
+                        prodInf_str = ('{"productId":"' + self.PID + '"}')
+
+                        prodInf_bytes = codecs.encode(prodInf_str)
+                        prodInf = ''.join(["%02X" % x for x in prodInf_bytes])
+                        prodInfLen = len(prodInf_str)
+
+                        self.userTestSend("AA09", prodInfLen, prodInf)
+                    except Exception as e:
+                        log.logger.error('[userTest]设置产品信息json异常，%s' % e)
+
                     self.progressBar_sinOut.emit(self.testPercentCal(), True, "设置产品信息中")
                 # 等待500ms
                 time.sleep(0.5)
@@ -1152,41 +1171,19 @@ class UserTestThread(QThread):
                 # 进入授权信息烧录状态
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
+                    try:
+                        if self.deviceType == 'BLE':
+                            authInf_str = '{"deviceIotId":"' + self.deviceIotId + '"}'
+                        elif self.deviceType == 'BLE&4G' or self.deviceType == '4G':
+                            authInf_str = '{"deviceIotId":"' + self.deviceIotId + '","deviceSecret":"' + self.deviceSecret + '"}'
 
-                    if self.deviceType == '4G':
+                        authInf_bytes = codecs.encode(authInf_str)
+                        authInf = ''.join(["%02X" % x for x in authInf_bytes])
+                        authInfLen = len(authInf_str)
 
-                        # 获取现在的时间
-                        curTime = QDateTime.currentDateTime()
-                        # 格式化时间为 yyMMddhhmmss
-                        self.deviceIotId = curTime.toString('yyMMddhhmmss')
-
-                        try:
-                            authInf_str = ('{"deviceIotId":"' + self.deviceIotId + '","HostAddr":"' +
-                                           self.hostAddr + '","HostPort": ' + str(self.hostPort) + '}')
-
-                            authInf_bytes = codecs.encode(authInf_str)
-                            authInf = ''.join(["%02X" % x for x in authInf_bytes])
-                            authInfLen = len(authInf_str)
-
-                            self.userTestSend("AA05", authInfLen, authInf)
-                        except:
-                            log.logger.error('AA05授权数据解析错误！')
-
-                    if self.deviceType == 'BLE' or self.deviceType == 'BLE&4G':
-
-                        try:
-                            if self.deviceType == 'BLE':
-                                authInf_str = '{"deviceIotId":"' + self.deviceIotId + '"}'
-                            elif self.deviceType == 'BLE&4G':
-                                authInf_str = '{"deviceIotId":"' + self.deviceIotId + '","deviceSecret":"' + self.deviceSecret + '"}'
-
-                            authInf_bytes = codecs.encode(authInf_str)
-                            authInf = ''.join(["%02X" % x for x in authInf_bytes])
-                            authInfLen = len(authInf_str)
-
-                            self.userTestSend("AA03", authInfLen, authInf)
-                        except:
-                            log.logger.error('AA03授权数据解析错误！')
+                        self.userTestSend("AA03", authInfLen, authInf)
+                    except:
+                        log.logger.error('AA03授权数据解析错误！')
 
                 # 等待500ms
                 time.sleep(0.5)
@@ -1196,10 +1193,10 @@ class UserTestThread(QThread):
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
-                    log.logger.info('设备烧录通信超时！！！')
+                    log.logger.info('设备烧录授权通信超时！！！')
 
                     # 发送进度条信息
-                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备烧录通信超时")
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备烧录授权通信超时")
 
                     # 等待
                     time.sleep(0.1)
@@ -1239,6 +1236,63 @@ class UserTestThread(QThread):
 
                 self.sendMutexFlag = True
 
+            elif self.stateMachine == testStatus.S_SERVERS_LOAD:
+                if self.sendMutexFlag:
+                    self.sendMutexFlag = False
+                    try:
+                        authInf_str = ('{"HostAddr":"' + self.hostAddr + '","HostPort": ' + str(self.hostPort) + '}')
+
+                        authInf_bytes = codecs.encode(authInf_str)
+                        authInf = ''.join(["%02X" % x for x in authInf_bytes])
+                        authInfLen = len(authInf_str)
+
+                        self.userTestSend("AA05", authInfLen, authInf)
+                    except:
+                        log.logger.error('AA05授权数据解析错误！')
+
+                # 等待命令对应延迟
+                time.sleep(0.5)
+                if self.retryCnt == 3:
+                    self.listIndex = -1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    self.retryCnt = 0
+                    log.logger.info('设备烧录服务器配置通信超时！！！')
+
+                    # 发送进度条信息
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "设备烧录服务器配置通信超时")
+
+                    # 等待
+                    time.sleep(0.1)
+                else:
+                    self.retryCnt = self.retryCnt + 1
+
+                self.sendMutexFlag = True
+
+            elif self.stateMachine == testStatus.S_SERVERS_QUERY:
+                # 进入授权信息查询状态
+                if self.sendMutexFlag:
+                    self.sendMutexFlag = False
+                    self.userTestSend("AA06", 0)
+                    self.progressBar_sinOut.emit(self.testPercentCal(), True, "查询设备服务器配置信息")
+
+                # 等待500ms
+                time.sleep(0.5)
+
+                # 超时
+                if self.retryCnt == 10:
+                    self.listIndex = -1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    self.retryCnt = 0
+                    log.logger.info('查询设备授权信息通信超时！！！')
+                    # 发送进度条信息
+                    self.progressBar_sinOut.emit(self.testPercentCal(), False, "查询设备服务器配置信息通信超时")
+
+                    # 等待
+                    time.sleep(0.1)
+                else:
+                    self.retryCnt = self.retryCnt + 1
+                self.sendMutexFlag = True
+
             elif self.stateMachine == testStatus.S_TEST:
                 # 进入测试项下发
 
@@ -1265,7 +1319,6 @@ class UserTestThread(QThread):
                 time.sleep(inv / 1000.0)
 
                 # 超时
-
                 if self.retryCnt == retry:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]

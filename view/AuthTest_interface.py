@@ -331,7 +331,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                     ###############################################################################
                     # 创建UserTestThread线程实例
                     try:
-                        if self.DeviceType != '4G':
+                        if self.DeviceType != 'BLE':
                             self.testThread = UserTestThread(self.ser, self.PID,
                                                              self.CheckBox_AuthTest.isChecked(),
                                                              self.Area,

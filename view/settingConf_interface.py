@@ -176,6 +176,7 @@ class sysSettingCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in CheckBox_edits:
             le.setDisabled(True)
+
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
         ComboBox_edits = self.findChildren(ComboBox)

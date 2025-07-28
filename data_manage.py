@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 
 from PyQt5.QtCore import Qt
@@ -82,14 +83,16 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWord = self.sysItemsData.get("current_auth_password", "")
             self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
-            # 配置JT808
+            # 配置服务器地址
             self.hostAddrLabel = BodyLabel("host", self)
             self.hostAddrLineEdit = LineEdit(self)
-            self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
+            # self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
+            # self.hostAddrLineEdit.setDisabled(True)
 
             self.hostPortLabel = BodyLabel("port", self)
             self.hostPortLineEdit = LineEdit(self)
-            self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
+            # self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
+            # self.hostPortLineEdit.setDisabled(True)
 
 
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
@@ -132,6 +135,8 @@ class SysItemEditFactory(QWidget):
             self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.authParamComboBox.currentTextChanged.connect(self.write_dict2Json)
+
+
             self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
             self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
             self.authAccountIDLineEdit.textChanged.connect(self.write_dict2Json)
@@ -144,9 +149,26 @@ class SysItemEditFactory(QWidget):
 
             self.chk_device_type()
             self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
-
+            self.update_host()
+            self.authParamComboBox.currentTextChanged.connect(self.update_host)
         else:
             print("sysItemsData is not a dictionary.")
+
+    def update_host(self):
+        print("update_host")
+        for authAddr in self.authAddrDict:
+            url = authAddr.get("url", "")
+            if url == self.current_url:
+                desc = authAddr.get("desc", "")
+                host = authAddr.get("host", "")
+                port = authAddr.get("port", "")
+                combo_item = f'({desc}){url}'
+                self.hostAddrLineEdit.setText(host)
+                self.hostPortLineEdit.setText(port)
+                self.authAddrDictComboBox.setCurrentText(combo_item)
+                return
+            else:
+                continue
 
     def chk_device_type(self):
         if self.deviceTypeComboBox.currentText() != "BLE":
@@ -167,13 +189,17 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
             self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
-            self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
+            # 使用正则表达式匹配以 http 开头的 URL
+            url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+            match = re.search(url_pattern, self.authAddrDictComboBox.currentText())
+            self.current_url = match.group()
+            self.sysItemsData["reg_url"] = self.current_url
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
             self.sysItemsData["burning_pid"] = self.burningPIDCheckBox.isChecked()
-            if self.deviceTypeComboBox.currentText() != "BLE":
-                self.sysItemsData["host"] = self.hostAddrLineEdit.text()
-                self.sysItemsData["port"] = self.hostPortLineEdit.text()
+            # if self.deviceTypeComboBox.currentText() != "BLE":
+            #     self.sysItemsData["host"] = self.hostAddrLineEdit.text()
+            #     self.sysItemsData["port"] = self.hostPortLineEdit.text()
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
