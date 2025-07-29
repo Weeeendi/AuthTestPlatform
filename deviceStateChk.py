@@ -450,8 +450,6 @@ class DeviceStateChkThread(QThread):
 
         else:
             log.logger.debug('错误应答，未在对应状态！current state is %s', self.stateMachine)
-            if self.stateMachine != MachineState.OTAStart and self.stateMachine != MachineState.OTABlockSend:
-                self.stateMachine = MachineState.DpDisplay
 
     def cmd_SerialDisconn(self, hexx):
         """
@@ -634,8 +632,7 @@ class DeviceStateChkThread(QThread):
 
         else:
             log.logger.debug('错误应答，未在对应状态！')
-            if self.stateMachine != MachineState.OTAStart and self.stateMachine != MachineState.OTABlockSend:
-                self.stateMachine = MachineState.DpDisplay
+
 
     def onStartOTA(self, path, devType):
         protocolDeviceType = -1

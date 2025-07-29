@@ -12,15 +12,15 @@ from serial.serialutil import SerialException
 
 from baseLogger import log
 from baseUart import BaseUartThread
+from baseUtils import BaseUtils
 from cmdSendInterface import DP_ListTable
 from deviceStateChk import DeviceStateChkThread, OTAState
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resources.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
-from baseUtils import BaseUtils
 
 # 设备连接超时时间（秒）
-CONN_OVERTIME = 3
+CONN_OVERTIME = 4
 
 DevList = ["BMS_Dp_Data", "IoT_Dp_Data", "Controller_Dp_Data", "Dashboard_Dp_Data", "SubBMS_Dp_Data"]
 ErrCodeList = ["controller_fault", "dashboard_fault", "bms_fault", "sub_bms_fault", "iot_fault"]

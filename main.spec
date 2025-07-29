@@ -49,8 +49,7 @@ a = Analysis(
     datas=[('resources', 'resources'),
             ('resources/config', 'resources/config'),
             ('resources/user', 'resources/user'),
-            ('resources/ui', 'resources/ui'),
-            ('changeLogs.txt','.')
+            ('resources/ui', 'resources/ui')
             ],
     hiddenimports=[],
     hookspath=[],
