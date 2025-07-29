@@ -1,12 +1,10 @@
 import json
 import re
-import sys
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout
+from PyQt5.QtWidgets import QWidget, QGridLayout
 
 import baseUtils
-from qfluentwidgets import CheckBox, setThemeColor, ComboBox, SpinBox, BodyLabel, LineEdit
+from qfluentwidgets import CheckBox, ComboBox, SpinBox, BodyLabel, LineEdit
 
 
 class SysItemEditFactory(QWidget):
@@ -87,12 +85,12 @@ class SysItemEditFactory(QWidget):
             self.hostAddrLabel = BodyLabel("host", self)
             self.hostAddrLineEdit = LineEdit(self)
             # self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
-            # self.hostAddrLineEdit.setDisabled(True)
+            self.hostAddrLineEdit.setFocusPolicy(False)
 
             self.hostPortLabel = BodyLabel("port", self)
             self.hostPortLineEdit = LineEdit(self)
             # self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
-            # self.hostPortLineEdit.setDisabled(True)
+            self.hostPortLineEdit.setFocusPolicy(False)
 
 
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
@@ -110,17 +108,17 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.burningPIDLabel, 3, 2)
             self.LayOut.addWidget(self.burningPIDCheckBox, 3, 3)
 
-            self.LayOut.addWidget(self.deviceTypeLabel, 4, 0)
-            self.LayOut.addWidget(self.deviceTypeComboBox, 4, 1)
+            self.LayOut.addWidget(self.hostAddrLabel, 4, 0)
+            self.LayOut.addWidget(self.hostAddrLineEdit, 4, 1)
 
-            self.LayOut.addWidget(self.authParamLabel, 4, 2)
-            self.LayOut.addWidget(self.authParamComboBox, 4, 3)
+            self.LayOut.addWidget(self.hostPortLabel, 4, 2)
+            self.LayOut.addWidget(self.hostPortLineEdit, 4, 3)
 
-            self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
-            self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
+            self.LayOut.addWidget(self.deviceTypeLabel, 5, 0)
+            self.LayOut.addWidget(self.deviceTypeComboBox, 5, 1)
 
-            self.LayOut.addWidget(self.hostPortLabel, 5, 2)
-            self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
+            self.LayOut.addWidget(self.authParamLabel, 5, 2)
+            self.LayOut.addWidget(self.authParamComboBox, 5, 3)
 
             self.LayOut.addWidget(self.authAccountIDLabel, 6, 0)
             self.LayOut.addWidget(self.authAccountIDLineEdit, 6, 1)
@@ -143,6 +141,7 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWordLineEdit.textChanged.connect(self.write_dict2Json)
             self.burningPIDCheckBox.stateChanged.connect(self.write_dict2Json)
 
+
             self.LayOut.setSpacing(10)
             self.LayOut.setColumnStretch(1, 1)
             self.LayOut.setRowStretch(3, 1)
@@ -150,7 +149,7 @@ class SysItemEditFactory(QWidget):
             self.chk_device_type()
             self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
             self.update_host()
-            self.authParamComboBox.currentTextChanged.connect(self.update_host)
+
         else:
             print("sysItemsData is not a dictionary.")
 
@@ -193,111 +192,17 @@ class SysItemEditFactory(QWidget):
             url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
             match = re.search(url_pattern, self.authAddrDictComboBox.currentText())
             self.current_url = match.group()
+            self.update_host()
             self.sysItemsData["reg_url"] = self.current_url
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
             self.sysItemsData["burning_pid"] = self.burningPIDCheckBox.isChecked()
-            # if self.deviceTypeComboBox.currentText() != "BLE":
-            #     self.sysItemsData["host"] = self.hostAddrLineEdit.text()
-            #     self.sysItemsData["port"] = self.hostPortLineEdit.text()
+            if self.deviceTypeComboBox.currentText() != "BLE":
+                self.sysItemsData["host"] = self.hostAddrLineEdit.text()
+                self.sysItemsData["port"] = self.hostPortLineEdit.text()
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
         else:
             print("sysItemsData is not a dictionary.")
 
-
-class TestItemEditFactory(QWidget):
-    def __init__(self, File, parent=None):
-        super().__init__(parent)
-        self.File = File
-        self.GridRowCount = 0
-        self.GridColCount = 0
-        self.LayOut = QGridLayout()
-        self.LayOut.setColumnStretch(1, 1)
-
-        with open(self.File, 'r', encoding='utf-8', errors='ignore') as file:
-            self.testItemsData = json.loads(file.read())
-
-        # 确保testItemsData是一个字典
-        if isinstance(self.testItemsData, dict):
-            testItemsList = self.testItemsData.get("TestItems", [])
-            for item in testItemsList:
-                name = item.get("dspName", "")
-                state = item.get("enable", False)
-                if name != '':
-                    self.create_component_enable(name, state)
-        else:
-            print("testItemsData is not a dictionary.")
-        self.LayOut.setRowStretch(self.GridRowCount, 1)
-        self.setLayout(self.LayOut)
-
-    def write_dict2Json(self):
-        # 确保testItemsData是一个字典
-        if isinstance(self.testItemsData, dict):
-            testItemsList = self.testItemsData.get("TestItems", [])
-            for item in testItemsList:
-                name = item.get("dspName", "")
-                if name != '' and self.check_component_enable(name):
-                    item.update({"enable": True})
-                else:
-                    item.update({"enable": False})
-        else:
-            print("testItemsData is not a dictionary.")
-
-        with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
-            # 将数据以JSON格式写入文件，确保中文不被转义
-            json.dump(self.testItemsData, file, ensure_ascii=False, indent=4)
-
-    def create_component_enable(self, objName, state: bool):
-        try:
-            setattr(self, objName + "CheckBox", CheckBox(objName, self))
-            getattr(self, objName + "CheckBox").setChecked(state)
-            getattr(self, objName + "CheckBox").setMinimumWidth(200)
-            getattr(self, objName + "CheckBox").stateChanged.connect(self.write_dict2Json)
-            self.LayOut.addWidget(getattr(self, objName + "CheckBox"), self.GridRowCount, self.GridColCount,
-                                  Qt.AlignLeft | Qt.AlignTop)
-            if self.GridColCount == 1:
-                self.GridRowCount += 1
-                self.GridColCount = 0
-            else:
-                self.GridColCount += 1
-
-        except Exception:
-            pass
-
-    def check_component_enable(self, objName) -> bool:
-        try:
-            state = getattr(self, objName + "CheckBox").isChecked()
-            return state
-        except Exception:
-            return None
-
-    # def resizeEvent(self, event):
-    #     # 获取当前窗口尺寸
-    #     width, height = self.width(), self.height()
-    #     print(f"标签的大小: {width, height}")
-    #     # 设置窗口的最小宽度和高度
-    #     minWidth, minHeight = 380, 300
-    #     # 确保窗口大小不小于最小尺寸
-    #     if width < minWidth or height < minHeight:
-    #         self.resize(max(width, minWidth), max(height, minHeight))
-    #         self.setMinimumSize(380, 300)
-    #     event.accept()  # 确保事件被接受和处理
-
-
-if __name__ == '__main__':
-    # 创建Qt对象
-    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    app = QApplication(sys.argv)
-    # file = 'resources/config/userConfig.json'
-    # setting_interface = TestItemEditFactory(file)
-    setting_interface = SysItemEditFactory()
-    setThemeColor("#000000")
-    setting_interface.setWindowTitle("功能选择窗口测试")
-
-    setting_interface.show()
-
-    sys.exit(app.exec())
