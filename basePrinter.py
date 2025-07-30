@@ -56,11 +56,11 @@ class BaseBarTender:  # 创建打印机类方便在上位机主程序中调用
                     if substring.Name == key:
                         self.btFormat.SubStrings.SetSubString(key, value)
 
-    # def __del__(self):
-    #     #关闭引擎，释放资源
-    #     if self.btEngine.IsAlive:
-    #         self.btEngine.Stop()
-    #         self.btEngine.Dispose()
+    def __del__(self):
+        #关闭引擎，释放资源
+        if self.btEngine.IsAlive:
+            self.btEngine.Stop()
+            self.btEngine.Dispose()
 
 
 class BasePrinterThread(QThread):
