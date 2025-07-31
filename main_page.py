@@ -1,7 +1,7 @@
 # coding:utf-8
 import json
-import sys
 import os
+import sys
 
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
@@ -27,6 +27,7 @@ try:
     APP_VERSION = get_version_string()
 except ImportError:
     # 如果导入失败，使用默认版本号
+    print("导入版本管理模块失败，使用默认版本号")
     from version_manager import DEFAULT_VERSION_STRING
     APP_VERSION = DEFAULT_VERSION_STRING
 

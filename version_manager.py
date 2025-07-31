@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 import json
+import os
 import re
 
 # 全局默认版本号定义 - 所有版本号的唯一来源
 # 修改此处即可全局更新默认版本号
-DEFAULT_VERSION = {'major': 25, 'minor': 1, 'patch': 0, 'build': 0}
+DEFAULT_VERSION = {'major': 25, 'minor': 1, 'patch': 0, 'build': 4}
 DEFAULT_VERSION_STRING = f"V{DEFAULT_VERSION['major']}.{DEFAULT_VERSION['minor']}.{DEFAULT_VERSION['patch']}.{DEFAULT_VERSION['build']}"
 
 # 使用绝对路径
