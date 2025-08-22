@@ -331,18 +331,18 @@ class UserTestThread(QThread):
                     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
                             'AREA:' + self.Area + '\r\n' +
                             'MAC:' + self.nodeId + '\r\n')
-                elif self.deviceType == "BLE&4G" or self.deviceType == "4G":
-                #     self.regInfoDict['MAC'] = self.nodeId
-                #     self.regInfoDict['DSECRET'] = self.deviceSecret
-                #     self.regInfoDict['IMEI'] = self.IMEI
-                #     self.regInfoDict['ICCID'] = self.ICCID
-                #     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
-                #             'AREA:' + self.Area + '\r\n' +
-                #             'MAC:' + self.nodeId + '\r\n' +
-                #             'DSECRET:' + str(self.deviceSecret) + '\r\n' +
-                #             'IMEI:' + self.IMEI + '\r\n' +
-                #             'ICCID:' + self.ICCID + '\r\n')
-                # else:
+                elif self.deviceType == "BLE&4G":
+                    self.regInfoDict['MAC'] = self.nodeId
+                    self.regInfoDict['DSECRET'] = self.deviceSecret
+                    self.regInfoDict['HOST'] = self.hostAddr
+                    self.regInfoDict['PORT'] = self.hostPort
+                    text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
+                            'AREA:' + self.Area + '\r\n' +
+                            'MAC:' + self.nodeId + '\r\n' +
+                            'DSECRET:' + str(self.deviceSecret) + '\r\n' +
+                            'HOSTADDR:' + self.hostAddr + '\r\n' +
+                            'HOSTPORT:' + str(self.hostPort) + '\r\n')
+                elif self.deviceType == "4G":
                     self.regInfoDict['IMEI'] = self.IMEI
                     self.regInfoDict['ICCID'] = self.ICCID
                     self.regInfoDict['HOST'] = self.hostAddr
@@ -350,10 +350,9 @@ class UserTestThread(QThread):
                     text = ('regInfo:\r\n' + 'IoTID:' + self.deviceIotId + '\r\n' +
                             'AREA:' + self.Area + '\r\n' +
                             'HOSTADDR:' + self.hostAddr + '\r\n' +
-                            'HOSTPORT:' + str(self.hostPort) + '\r\n')
-                # +
-                #             'IMEI:' + self.IMEI + '\r\n' +
-                #             'ICCID:' + self.ICCID + '\r\n'
+                            'HOSTPORT:' + str(self.hostPort) + '\r\n'+
+                            'IMEI:' + self.IMEI + '\r\n' +
+                            'ICCID:' + self.ICCID + '\r\n')
 
                 filedsName = []
                 # 记录测试结果
@@ -413,6 +412,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if tmp.get('productId', '') != self.PID:
                 # 查询设备产品信息不成功，请重试
@@ -466,6 +466,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if len(tmp.get('MAC', '')) == 12:
                 self.nodeId = tmp.get('MAC')
@@ -523,6 +524,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if len(tmp.get('iccid', '')) > 0 and len(tmp.get('IMEI', '')) > 0:
 
@@ -570,6 +572,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if tmp.get('ret', False):
                 # 授权信息烧录成功
@@ -605,6 +608,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if (self.deviceType == 'BLE' and tmp.get('deviceIotId', '') == self.deviceIotId) or \
                (self.deviceType != 'BLE' and tmp.get('deviceIotId', '') == self.deviceIotId and tmp.get('deviceSecret', '') == self.deviceSecret):
@@ -678,6 +682,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             if (tmp.get('hostAddr', '') == self.hostAddr and
                     tmp.get('hostPort', "") == self.hostPort):
@@ -708,6 +713,8 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
+
             if tmp.get('ret', False):
                 self.listIndex = self.listIndex + 1
                 self.stateMachine = self.stateList[self.listIndex]
@@ -742,6 +749,7 @@ class UserTestThread(QThread):
                 tmp = json.loads(tmp_str)
             except Exception as e:
                 log.logger.error('[userTest]返回结果json异常，%s' % e)
+                return
 
             name = self.testProcessor[self.testIndex].dspName
             rev_dict = self.testProcessor[self.testIndex].rev_dict
@@ -1237,7 +1245,7 @@ class UserTestThread(QThread):
                 if self.sendMutexFlag:
                     self.sendMutexFlag = False
                     try:
-                        authInf_str = ('{"HostAddr":"' + self.hostAddr + '","HostPort": ' + str(self.hostPort) + '}')
+                        authInf_str = ('{"hostAddr":"' + self.hostAddr + '","hostPort": ' + str(self.hostPort) + '}')
 
                         authInf_bytes = codecs.encode(authInf_str)
                         authInf = ''.join(["%02X" % x for x in authInf_bytes])

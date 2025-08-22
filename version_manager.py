@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 import json
+import os
 import re
+
+import baseUtils
 
 # 全局默认版本号定义 - 所有版本号的唯一来源
 # 修改此处即可全局更新默认版本号
@@ -11,7 +13,7 @@ DEFAULT_VERSION = {'major': 25, 'minor': 1, 'patch': 0, 'build': 0}
 DEFAULT_VERSION_STRING = f"V{DEFAULT_VERSION['major']}.{DEFAULT_VERSION['minor']}.{DEFAULT_VERSION['patch']}.{DEFAULT_VERSION['build']}"
 
 # 使用绝对路径
-VERSION_FILE = os.path.join(os.path.abspath('.'), 'version.json')
+VERSION_FILE = baseUtils.resource_path('resources\\version\\version.json')
 
 def get_version():
     """读取当前版本号"""
@@ -102,13 +104,13 @@ def update_spec_file_without_changing_code(spec_file='main.spec'):
             content = f.read()
         
         # 使用正则表达式替换版本号
-        pattern = r"app_name = ['\"]VProductTest_V\d+\.\d+\.\d+\.\d+['\"]"
-        replacement = f"app_name = 'VProductTest_{version_str}'"
+        pattern = r"app_name = ['\"]VProductTestPro_\d+\.\d+\.\d+\.\d+['\"]"
+        replacement = f"app_name = 'VProductTestPro_{version_str}'"
         
         # 如果找不到app_name变量，尝试查找name参数
         if not re.search(pattern, content):
-            pattern = r"name='VProductTest_V\d+\.\d+\.\d+\.\d+'"
-            replacement = f"name='VProductTest_{version_str}'"
+            pattern = r"name='VProductTestPro_V\d+\.\d+\.\d+\.\d+'"
+            replacement = f"name='VProductTestPro_{version_str}'"
         
         new_content = re.sub(pattern, replacement, content)
         

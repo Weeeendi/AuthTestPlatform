@@ -145,7 +145,7 @@
         },
         {
             "funName": "IMEI_Read",
-            "enable": true,
+            "enable": false,
             "dspName": "读取IMEI",
             "cmd": "AA07",
             "data": "",
@@ -156,7 +156,7 @@
         },
         {
             "funName": "ICCID_Read",
-            "enable": true,
+            "enable": false,
             "dspName": "读取ICCID",
             "cmd": "AA08",
             "data": "",

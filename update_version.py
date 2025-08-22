@@ -7,16 +7,16 @@
 """
 
 import os
-import sys
-import json
 import re
+import sys
 
 # 确保当前目录在sys.path中
 current_dir = os.path.abspath('.')
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-from version_manager import get_version, save_version, get_version_string, DEFAULT_VERSION, DEFAULT_VERSION_STRING
+from version_manager import get_version, save_version, get_version_string, DEFAULT_VERSION
+
 
 def update_version(major=None, minor=None, patch=None, build=None):
     """更新版本号"""
@@ -35,7 +35,7 @@ def update_version(major=None, minor=None, patch=None, build=None):
     if patch is not None:
         version['patch'] = patch
     if build is not None:
-        version['build'] = build
+        version['build'] = build+1
     
     # 保存版本号
     save_version(version)
@@ -210,13 +210,13 @@ def update_spec_file_without_changing_code(spec_file='main.spec'):
             content = f.read()
         
         # 使用正则表达式替换版本号
-        pattern = r"app_name = ['\"]VProductTest_V\d+\.\d+\.\d+\.\d+['\"]"
-        replacement = f"app_name = 'VProductTest_{version_str}'"
+        pattern = r"app_name = ['\"]VProductTestPro_\d+\.\d+\.\d+\.\d+['\"]"
+        replacement = f"app_name = 'VProductTestPro_{version_str}'"
         
         # 如果找不到app_name变量，尝试查找name参数
         if not re.search(pattern, content):
-            pattern = r"name='VProductTest_V\d+\.\d+\.\d+\.\d+'"
-            replacement = f"name='VProductTest_{version_str}'"
+            pattern = r"name='VProductTestPro_\d+\.\d+\.\d+\.\d+'"
+            replacement = f"name='VProductTestPro_{version_str}'"
         
         new_content = re.sub(pattern, replacement, content)
         
