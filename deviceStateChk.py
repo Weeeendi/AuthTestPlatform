@@ -84,6 +84,8 @@ class OTA_PCB:
         self.OTAState = OTAState.GoOn
         self.blockLock = True
         self.otaExit = False
+        # 累计已发送的文件数据字节数（不含协议/索引开销）
+        self.totalSentSize = 0
 
     def onOVER(self):
         self.FilePath = ''
@@ -92,15 +94,19 @@ class OTA_PCB:
         self.FileSize = 0
         self.crc32File = 0
         self.blockLock = True
+        self.totalSentSize = 0
 
     def otaPercentCal(self):
         try:
-            otaPercent = float(self.BlockCnt * self.BlockSize + self.CurrentPackageSize) * 100 / float(
-                self.FileSize)
+            # 使用累计的真实文件载荷字节数，确保单调不减
+            sendDataLen = min(self.totalSentSize, self.FileSize)
+            otaPercent = float(sendDataLen) * 100 / float(self.FileSize) if self.FileSize else 0.0
+            log.logger.debug("ota percent cal: %d / %d = %f %%", sendDataLen, self.FileSize, otaPercent)
         except ZeroDivisionError:
-            otaPercent = 1
+            otaPercent = 0
 
-        return int(otaPercent)
+        # 取整并限制上限为100
+        return int(otaPercent) if otaPercent < 100 else 100
 
 
 class DataPointRev:
@@ -229,7 +235,7 @@ class DeviceStateChkThread(QThread):
         dataValue = data[4:]
 
         DpRev = DataPointRev(dpid, dataType, dataValue)
-        log.logger.debug("Rev Dp Data: %s" % data.hex())
+        # log.logger.debug("Rev Dp Data: %s" % data.hex())
         self.DS_dPRevSignal_sinOut.emit(DpRev)
         return True
 
@@ -251,7 +257,7 @@ class DeviceStateChkThread(QThread):
 
         # print("check uart", data, len(data))
         # log.logger.debug("userTest.processReadBuffer %s ",% self.readBuf.hex())
-        log.logger.debug("Rev Dp Data: %s" % data.hex())
+        # log.logger.debug("Rev Dp Data: %s" % data.hex())
         # print("userTest.processReadBuffer", "readBuf", self.readBuf)
 
         result = True
@@ -263,7 +269,7 @@ class DeviceStateChkThread(QThread):
 
             if headIdx < 0:
                 # 没有找到更多的起始标志，退出循环
-                log.logger.debug("check uart parse not find head")
+                # log.logger.debug("check uart parse not find head")
                 break
 
             # 当索引值大于等于总体数据长度，需要再等多一些字节数据
@@ -309,7 +315,7 @@ class DeviceStateChkThread(QThread):
                 result = False
                 break
             else:
-                log.logger.debug("check uart data checksum success!")
+                # log.logger.debug("check uart data checksum success!")
 
                 # 执行相应指令
                 if cmd in self.cmdProcessor:
@@ -402,7 +408,7 @@ class DeviceStateChkThread(QThread):
 
 
         else:
-            log.logger.debug('错误应答，未在对应状态！,current state is %s' % self.stateMachine)
+            log.logger.debug('【DongleInfo】错误应答，未在对应状态！,current state is %s' % self.stateMachine)
 
     def cmd_dataPointSend(self, hexx):
         """
@@ -429,7 +435,7 @@ class DeviceStateChkThread(QThread):
             self.sendMutexFlag = True
 
         else:
-            log.logger.debug('错误应答，未在对应状态！,current state is %s' % self.stateMachine)
+            log.logger.debug('数据下发错误应答，未在对应状态！,current state is %s' % self.stateMachine)
 
     def cmd_chkDataPoint(self, hexx):
         """
@@ -449,7 +455,7 @@ class DeviceStateChkThread(QThread):
                 log.logger.error("数据长度异常")
 
         else:
-            log.logger.debug('错误应答，未在对应状态！current state is %s', self.stateMachine)
+            log.logger.debug('查询数据点错误应答，未在对应状态！current state is %s', self.stateMachine)
 
     def cmd_SerialDisconn(self, hexx):
         """
@@ -563,8 +569,10 @@ class DeviceStateChkThread(QThread):
                     log.logger.debug("数据总crc校验失败")
                     self.UpdateProcessState('数据总crc校验失败', OTAState.Fail)
                 elif hexx[1] == 0x04:
-                    log.logger.debug("设备回复超时")
-                    self.UpdateProcessState('设备回复超时', OTAState.Fail)
+                    # log.logger.debug("设备回复超时")
+                    # self.UpdateProcessState('设备回复超时', OTAState.Fail)
+                    log.logger.debug("OTA 已退出")
+                    self.PCB.otaExit = True
                 elif hexx[1] == 0x05:
                     log.logger.debug("设备类型出错")
                     self.UpdateProcessState('设备类型出错', OTAState.Fail)
@@ -631,7 +639,7 @@ class DeviceStateChkThread(QThread):
                     break
 
         else:
-            log.logger.debug('错误应答，未在对应状态！')
+            log.logger.debug('数据点更新错误应答，未在对应状态！')
 
 
     def onStartOTA(self, path, devType):
@@ -695,7 +703,8 @@ class DeviceStateChkThread(QThread):
             percent = 100
 
         if state == OTAState.Success:
-            self.doStopOTA(MachineState.Waiting)
+            # 已收到退出成功应答后，回到DP展示态，避免立即重新握手导致状态混乱
+            self.doStopOTA(MachineState.DpDisplay)
             percent = 100
 
         self.DS_progressBar_sinOut.emit(percent, state, str)
@@ -891,11 +900,15 @@ class DeviceStateChkThread(QThread):
                             self.DS_Send(self.sn, 0, "0010", '0201', PkgIdxByte + chunk[offset:offset + 512])
                             offset = offset + 512
                             pkgCurrCnt += 1
+                            # 累计真实文件数据长度（不计入1字节包索引）
+                            self.PCB.totalSentSize += 512
                         else:
                             pkgCntBytes = (pkg_last + 1).to_bytes(2, byteorder='big', signed=False).hex()
                             self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
                             offset = offset + pkg_last
                             self.PCB.PkgCnt = 0
+                            # 最后一包累加实际剩余字节
+                            self.PCB.totalSentSize += pkg_last
                         time.sleep(0.1)  # 根据实际情况调整
 
                         if PkgIdx == 255:

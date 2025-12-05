@@ -158,6 +158,11 @@ class DeviceStateTask(QThread):
         self.initErrDict()
 
         self.running = True
+        # OTA 过程中，不做在线状态判断/递减
+        self.otaInProgress = False
+
+    def setOtaInProgress(self, in_progress: bool):
+        self.otaInProgress = bool(in_progress)
 
     def initErrDict(self):
         for Dev in DevList:
@@ -259,7 +264,15 @@ class DeviceStateTask(QThread):
 
         while self.running:
 
-            if self.serialOnline:
+            # OTA 进行中：固定显示“Updating…”绿色提示，并暂停在线判断/递减
+            if self.otaInProgress:
+                color = "#1afa29"
+                text = "Updating..."
+                # 在 OTA 期间避免首次连接/超时计数干扰
+                self.ChkConnFlag = False
+                self.overtimeCnt = 0
+
+            elif self.serialOnline:
                 # 判断当前页面对应的设备是否在线
                 current_device_online = False
                 if (self.page == 0 and self.overTimeConn.dashBoardOnline > 0) or \
@@ -308,9 +321,9 @@ class DeviceStateTask(QThread):
                 self.color = color
                 self.LightTrigger.emit(self.color, self.text)
 
-            # 使用时间控制递减频率
+            # 使用时间控制递减频率（OTA 过程中不递减）
             current_time = time.time()
-            if (current_time - last_decrement_time) >= decrement_interval:
+            if (not self.otaInProgress) and ((current_time - last_decrement_time) >= decrement_interval):
                 # 递减所有设备的计数器，使设备能够自动检测离线状态
                 self.overTimeConn.decrementAll()
                 last_decrement_time = current_time
@@ -806,15 +819,30 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         log.logger.debug("当前状态：%d %s", state, OTADescription)
 
-        if state == OTAState.GoOn or state == OTAState.UserExit or state == OTAState.TransDataComplete:
+        if state == OTAState.GoOn or state == OTAState.TransDataComplete:
             color = themeColor()
             self.OTAstate = OTAState.GoOn
+            # OTA 进行中，通知在线判定暂停
+            try:
+                self.task.setOtaInProgress(True)
+            except Exception:
+                pass
         elif state == OTAState.Success:
             color = themeColor()
             self.OTAstate = OTAState.Success
+            # OTA 结束，恢复在线判定
+            try:
+                self.task.setOtaInProgress(False)
+            except Exception:
+                pass
         else:
             color = "red"
             self.OTAstate = OTAState.Fail
+            # 失败也结束 OTA 流程
+            try:
+                self.task.setOtaInProgress(False)
+            except Exception:
+                pass
 
         page = self.tabWidget.currentIndex()
 
