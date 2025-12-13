@@ -163,11 +163,18 @@ class UserTestThread(QThread):
                 print(f"初始化失败: {e}")
                 self = None
                 raise  # 重新抛出异常，这样调用者就可以捕获并处理它
+            # 工厂测试场景下，若未配置任何测试项，立即抛错给上层
+            if not self.testProcessor:
+                raise ValueError("FactoryTest 启用但未发现任何测试项，请检查 resources\\config\\userConfig.json 中的 TestItems 配置")
         print("创建UserTestThread线程")
 
     # 从json 子结构创建测试项
     def _init_obj_json(self, jsondate):
         TestItems = jsondate.get("TestItems", [])
+        # 入参保护：要求 TestItems 必须为列表
+        if not isinstance(TestItems, list):
+            log.logger.error("userConfig.json 中 TestItems 非列表类型，忽略该配置")
+            TestItems = []
         for item in TestItems:
             funcName = item.get("funName", "")
             name = item.get("dspName", "")
@@ -738,6 +745,12 @@ class UserTestThread(QThread):
         strcmd = cmd.hex().upper()  # 转换成大写
         log.logger.debug(f"cmd {strcmd} 接受数据：{hexx}")
 
+        # 入参保护：当前测试索引越界直接返回
+        if self.testIndex >= len(self.testProcessor):
+            log.logger.warning("测试索引越界：testIndex=%s, TestItemsNum=%s", self.testIndex, self.TestItemsNum)
+            self.sendMutexFlag = True
+            return
+
         # 如果在测试项状态 并且 回复命令等于当前测试命令
         if self.stateMachine == testStatus.S_TEST and strcmd == self.testProcessor[self.testIndex].cmd:
 
@@ -1300,6 +1313,12 @@ class UserTestThread(QThread):
 
             elif self.stateMachine == testStatus.S_TEST:
                 # 进入测试项下发
+                # 入参保护：无测试项或索引越界时，进入下一状态并结束测试阶段
+                if self.testIndex >= len(self.testProcessor):
+                    self.listIndex += 1
+                    self.stateMachine = self.stateList[self.listIndex]
+                    self.retryCnt = 0
+                    continue
 
                 cmd = self.testProcessor[self.testIndex].cmd
                 data = self.testProcessor[self.testIndex].data
@@ -1318,7 +1337,7 @@ class UserTestThread(QThread):
                         self.userTestSend(cmd, tmpLen, tmp)
 
                     except Exception as e:
-                        log.logger.error('%s授权数据解析错误！%s' % cmd % str(e))
+                        log.logger.error('%s 授权数据解析错误！%s' % (cmd, str(e)))
 
                 # 等待命令对应延迟
                 time.sleep(inv / 1000.0)

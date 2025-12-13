@@ -84,7 +84,7 @@ def errorNotice(self, notice_comm):
         isClosable=False,
         position=InfoBarPosition.BOTTOM_RIGHT,
         duration=2000,  # won't disappear automatically
-        parent=self
+        parent=self.parent().parent()
     )
 
 
@@ -98,7 +98,7 @@ def successNotice(self, notice_comm):
         position=InfoBarPosition.TOP,
         # position='Custom',   # NOTE: use custom info bar manager
         duration=2000,
-        parent=self
+        parent=self.parent().parent()
     )
 
 
@@ -112,6 +112,9 @@ def createSaveInfoBar(self):
         duration=2000,
         parent=self.parent().parent()
     )
+
+
+
 
 
 class setSelectCard(HeaderCardWidget):
@@ -252,10 +255,26 @@ class setDetailCard(HeaderCardWidget):
         if isChecked:
             self.detailInfo.forbidEdit(False)
         else:
+            # 退出编辑前进行校验：至少有一项勾选(enable=True)
+            updated_items = self.detailInfo.updateData2Json() if self.detailInfo else []
+            enabled_count = 0
+            try:
+                enabled_count = sum(1 for it in updated_items if isinstance(it, dict) and it.get('enable', False))
+            except Exception:
+                enabled_count = 0
+
+            if enabled_count <= 0:
+                # 不满足条件，保留编辑态并提示错误，不写入文件
+                errorNotice(self, '请至少勾选一条测试项后再保存')
+                # 保持编辑模式
+                self.expandButton.setChecked(True)
+                self.detailInfo.forbidEdit(False)
+                return
+
+            # 校验通过，保存并退出编辑
             self.detailInfo.forbidEdit(True)
             with open(self.file, 'w', encoding='utf-8', errors='ignore') as file:
-                # 将数据以JSON格式写入文件，确保中文不被转义
-                self.testItemsData["TestItems"] = self.detailInfo.updateData2Json()
+                self.testItemsData["TestItems"] = updated_items
                 json.dump(self.testItemsData, file, ensure_ascii=False, indent=4)
 
             createSaveInfoBar(self)
