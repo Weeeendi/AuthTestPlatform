@@ -63,6 +63,7 @@ class UserTestThread(QThread):
                  hostAddr='', hostPort='', enablePidBurning=False):
         super(UserTestThread, self).__init__()
         # 创建BaseUtils实例
+        self.AuthItemsNum = 0
         self.util = baseUtils.BaseUtils()
         self.AuthTestFlag = False
         # 接受主函数传递的参数
@@ -105,13 +106,6 @@ class UserTestThread(QThread):
         self.testIndex = 0
         # 测试命令数量,从文件中进行读取
         self.TestItemsNum = 0
-
-        # 授权命令数量,授权相关命令不通过文件配置 包含:设备产品信息查询，设备唯一标识查询，烧录授权命令，查询授权命令
-        self.AuthItemsNum = 3
-        if self.enablePidBurning:
-            self.AuthItemsNum += 1
-        if self.hostAddr != '' and self.hostPort != '':
-            self.AuthItemsNum += 2
 
         # 当前授权通过命令数量
         self.CurrentPassItemsNum = 0
@@ -214,11 +208,11 @@ class UserTestThread(QThread):
     def testPercentCal(self):
         # 总测试项目包含开始测试命令
         if self.FactoryTest and self.Auth:
-            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum + 2))
+            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum))
         elif self.FactoryTest:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.TestItemsNum + 2))
+            ret = int(self.CurrentPassItemsNum * 100 / self.TestItemsNum)
         else:
-            ret = int(self.CurrentPassItemsNum * 100 / (self.AuthItemsNum + 2))
+            ret = int(self.CurrentPassItemsNum * 100 / self.AuthItemsNum)
 
         if ret == 100:
             self.AuthTestFlag = True
@@ -1080,6 +1074,8 @@ class UserTestThread(QThread):
 
                 # 增加授权查询状态
                 self.stateList.append(testStatus.S_SERVERS_QUERY)
+
+            self.AuthItemsNum = len(self.stateList)
 
         if self.FactoryTest:
             # 增加测试状态

@@ -52,6 +52,7 @@ class SysItemEditFactory(QWidget):
 
             # 配置授权地址
             urls = []
+            self.desc = self.sysItemsData.get("desc","")
             self.current_url = self.sysItemsData.get("reg_url", "")
             self.authAddrDict = self.sysItemsData.get("reg_urls", "")
             for authAddr in self.authAddrDict:
@@ -156,9 +157,10 @@ class SysItemEditFactory(QWidget):
     def update_host(self):
         print("update_host")
         for authAddr in self.authAddrDict:
-            url = authAddr.get("url", "")
-            if url == self.current_url:
-                desc = authAddr.get("desc", "")
+            desc = authAddr.get("desc", "")
+            if desc == self.desc:
+                url = authAddr.get("url","")
+                # desc = authAddr.get("desc", "")
                 host = authAddr.get("host", "")
                 port = authAddr.get("port", "")
                 combo_item = f'({desc}){url}'
@@ -190,9 +192,18 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
             # 使用正则表达式匹配以 http 开头的 URL
             url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-            match = re.search(url_pattern, self.authAddrDictComboBox.currentText())
+            url_string = self.authAddrDictComboBox.currentText()
+
+            desc_pattern = r'*\(*\)'
+
+            match = re.search(url_pattern, url_string)
+            if not match:
+                print("not match any legal http string")
+                return
             self.current_url = match.group()
+            self.desc = url_string[1:match.start()-1]
             self.update_host()
+            self.sysItemsData["desc"] = self.desc
             self.sysItemsData["reg_url"] = self.current_url
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
