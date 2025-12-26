@@ -16,6 +16,7 @@ from qfluentwidgets import NavigationItemPosition, FluentTranslator, setThemeCol
 from view.AuthTest_interface import AuthTestInterface
 from view.Login_page import Ui_Form
 from view.settingConf_interface import SettingInterface
+from view.Firmware_interface import FirmwareInterface
 
 # 导入版本管理模块
 try:
@@ -222,6 +223,7 @@ class Window(FluentWindow):
         # 创建子界面
         self.settingInterface = SettingInterface(self)
         self.homeInterface = AuthTestInterface(self)
+        self.firmwareInterface = FirmwareInterface(self)
         # self.recordInterface = ChartRecordInterface(self)
         # self.deviceInterface = DeviceStateInterface(self)
         # self.albumInterface = Widget('Album Interface', self)
@@ -251,6 +253,7 @@ class Window(FluentWindow):
 
     def initNavigation(self):
         self.addSubInterface(self.homeInterface, FIF.HOME, 'Authorization&Test')
+        self.addSubInterface(self.firmwareInterface, FIF.DOWNLOAD, 'Firmware')
 
         # self.addSubInterface(self.recordInterface, FIF.SEARCH, 'Record')
         # self.addSubInterface(self.deviceInterface, FIF.DEVELOPER_TOOLS, "Device detection")
