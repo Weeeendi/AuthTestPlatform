@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QWidget, QVBoxLayout, QGr
 import baseUtils
 import data_manage
 import testSetTableWidget
-from qfluentwidgets import FluentIcon as FIF, LineEdit
+from qfluentwidgets import FluentIcon as FIF, LineEdit, SwitchButton
 from qfluentwidgets import (HeaderCardWidget, ScrollArea, BodyLabel, InfoBar, InfoBarPosition, ComboBox,
                             HyperlinkButton, SpinBox, PillToolButton,
                             CheckBox)
@@ -95,7 +95,7 @@ def successNotice(self, notice_comm):
         content=notice_comm,
         orient=Qt.Horizontal,
         isClosable=False,
-        position=InfoBarPosition.TOP,
+        position=InfoBarPosition.BOTTOM_RIGHT,
         # position='Custom',   # NOTE: use custom info bar manager
         duration=2000,
         parent=self.parent().parent()
@@ -167,6 +167,7 @@ class sysSettingCard(HeaderCardWidget):
         SpinBox_edits = self.findChildren(SpinBox)
         LineEdit_edits = self.findChildren(LineEdit)
         CheckBox_edits = self.findChildren(CheckBox)
+        SwitchButton_edits = self.findChildren(SwitchButton)
 
         for le in ComboBox_edits:
             le.setDisabled(True)
@@ -176,6 +177,8 @@ class sysSettingCard(HeaderCardWidget):
             le.setDisabled(True)
         for le in CheckBox_edits:
             le.setDisabled(True)
+        for le in SwitchButton_edits:
+            le.setDisabled(True)
 
     def setComponentState(self, isChecked: bool):
         # 获取所有的控件  
@@ -183,6 +186,7 @@ class sysSettingCard(HeaderCardWidget):
         SpinBox_edits = self.findChildren(SpinBox)
         LineEdit_edits = self.findChildren(LineEdit)
         CheckBox_edits = self.findChildren(CheckBox)
+        SwitchButton_edits = self.findChildren(SwitchButton)
         # 设置所有控件状态
         if isChecked:
             for le in ComboBox_edits:
@@ -193,6 +197,8 @@ class sysSettingCard(HeaderCardWidget):
                 le.setDisabled(False)
             for le in CheckBox_edits:
                 le.setDisabled(False)
+            for le in SwitchButton_edits:
+                le.setDisabled(False)
 
         else:
             for le in ComboBox_edits:
@@ -202,6 +208,8 @@ class sysSettingCard(HeaderCardWidget):
             for le in LineEdit_edits:
                 le.setDisabled(True)
             for le in CheckBox_edits:
+                le.setDisabled(True)
+            for le in SwitchButton_edits:
                 le.setDisabled(True)
             # save data
             createSaveInfoBar(self)

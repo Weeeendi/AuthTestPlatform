@@ -4,7 +4,7 @@ import re
 from PyQt5.QtWidgets import QWidget, QGridLayout
 
 import baseUtils
-from qfluentwidgets import CheckBox, ComboBox, SpinBox, BodyLabel, LineEdit
+from qfluentwidgets import CheckBox, ComboBox, SpinBox, BodyLabel, LineEdit, SwitchButton
 
 
 class SysItemEditFactory(QWidget):
@@ -82,6 +82,10 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWord = self.sysItemsData.get("current_auth_password", "")
             self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
+
+            self.authHostSwitchLabel = BodyLabel("使用手动输入授权地址")
+            self.authHostSwitch = SwitchButton(self)
+
             # 配置服务器地址
             self.hostAddrLabel = BodyLabel("host", self)
             self.hostAddrLineEdit = LineEdit(self)
@@ -109,23 +113,26 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.burningPIDLabel, 3, 2)
             self.LayOut.addWidget(self.burningPIDCheckBox, 3, 3)
 
-            self.LayOut.addWidget(self.hostAddrLabel, 4, 0)
-            self.LayOut.addWidget(self.hostAddrLineEdit, 4, 1)
+            self.LayOut.addWidget(self.authHostSwitchLabel, 4, 0)
+            self.LayOut.addWidget(self.authHostSwitch, 4, 1)
 
-            self.LayOut.addWidget(self.hostPortLabel, 4, 2)
-            self.LayOut.addWidget(self.hostPortLineEdit, 4, 3)
+            self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
+            self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
 
-            self.LayOut.addWidget(self.deviceTypeLabel, 5, 0)
-            self.LayOut.addWidget(self.deviceTypeComboBox, 5, 1)
+            self.LayOut.addWidget(self.hostPortLabel, 5, 2)
+            self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
 
-            self.LayOut.addWidget(self.authParamLabel, 5, 2)
-            self.LayOut.addWidget(self.authParamComboBox, 5, 3)
+            self.LayOut.addWidget(self.deviceTypeLabel, 6, 0)
+            self.LayOut.addWidget(self.deviceTypeComboBox, 6, 1)
 
-            self.LayOut.addWidget(self.authAccountIDLabel, 6, 0)
-            self.LayOut.addWidget(self.authAccountIDLineEdit, 6, 1)
+            self.LayOut.addWidget(self.authParamLabel, 6, 2)
+            self.LayOut.addWidget(self.authParamComboBox, 6, 3)
 
-            self.LayOut.addWidget(self.authAccountPassWordLabel, 6, 2)
-            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 6, 3)
+            self.LayOut.addWidget(self.authAccountIDLabel, 7, 0)
+            self.LayOut.addWidget(self.authAccountIDLineEdit, 7, 1)
+
+            self.LayOut.addWidget(self.authAccountPassWordLabel, 7, 2)
+            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 7, 3)
 
             # 设置控件宽度
             self.authAccountPassWordLineEdit.setFixedWidth(300)
@@ -148,6 +155,7 @@ class SysItemEditFactory(QWidget):
             self.LayOut.setRowStretch(3, 1)
 
             self.chk_device_type()
+            self.hide_host_line()
             self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
             self.update_host()
 
@@ -170,6 +178,7 @@ class SysItemEditFactory(QWidget):
                 return
             else:
                 continue
+
 
     def chk_device_type(self):
         if self.deviceTypeComboBox.currentText() != "BLE":

@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSize, QByteArray, QDataStream, QIODevice, QMimeData, QVariant, \
     QModelIndex, QPoint, pyqtSignal
-from PyQt5.QtGui import QFontMetrics, QColor, QPainter, QPen
+from PyQt5.QtGui import QBrush, QFontMetrics, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QMainWindow, QHeaderView, QSizePolicy, \
     QAbstractItemView
 
@@ -283,7 +283,7 @@ class PandasModel(QAbstractTableModel):
     def __init__(self, data, checkable_column_name=None):
         super(PandasModel, self).__init__()
         self.filtered_data = None
-        self.editable = None
+        self.editable = True
         self._data = data
         self.checkable_column_name = checkable_column_name  # 设置可勾选列的名称
         self.droprow = -1
@@ -317,6 +317,14 @@ class PandasModel(QAbstractTableModel):
             if index.column() == checkable_column_index:
                 # 返回复选框的状态
                 return Qt.Checked if self._data.iat[index.row(), checkable_column_index] else Qt.Unchecked
+
+        elif role in (Qt.TextColorRole, Qt.ForegroundRole):
+            if not self.editable:
+                return QBrush(QColor(160, 160, 160))
+
+        elif role == Qt.BackgroundRole:
+            if not self.editable:
+                return QColor(0, 0, 0, 12)
 
         elif role == Qt.DisplayRole or role == Qt.EditRole:
             # 对于非复选框列，正常显示数据
@@ -371,6 +379,10 @@ class PandasModel(QAbstractTableModel):
 
     def setCheckBoxEditable(self, editable):
         self.editable = editable
+        if self.rowCount() > 0 and self.columnCount() > 0:
+            topLeft = self.index(0, 0)
+            bottomRight = self.index(self.rowCount() - 1, self.columnCount() - 1)
+            self.dataChanged.emit(topLeft, bottomRight)
 
     def flags(self, index):
         flags = super().flags(index)
@@ -382,7 +394,7 @@ class PandasModel(QAbstractTableModel):
                 flags |= Qt.ItemIsUserCheckable  # 允许复选框交互
                 flags &= ~Qt.ItemIsEditable  # 移除编辑标志
             else:
-                flags &= ~(Qt.ItemIsUserCheckable | Qt.ItemIsEditable)  # 禁止复选框交互和编辑
+                flags &= ~(Qt.ItemIsUserCheckable | Qt.ItemIsEditable | Qt.ItemIsEnabled)  # 禁止复选框交互和编辑，并置灰显示
         else:
             if self.editable:
                 flags |= Qt.ItemIsEditable  # 允许其他列编辑
