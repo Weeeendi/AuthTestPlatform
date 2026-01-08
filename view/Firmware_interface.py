@@ -197,14 +197,14 @@ class FirmwareInterface(ScrollArea):
         self.pidEdit.setPlaceholderText('例如：YJ0000aj1d')
         self.pidEdit.setFixedWidth(200)
         #Test value
-        self.pidEdit.setText('YJ0000aj1d')
+        # self.pidEdit.setText('YJ0000aj1d')
 
         self.hwLabel = BodyLabel('硬件版本号', row)
         self.hwEdit = LineEdit(row)
         self.hwEdit.setPlaceholderText('例如：VBox-TC01-R-1.0')
         self.hwEdit.setFixedWidth(200)
         #Test value
-        self.hwEdit.setText('VBox-TC01-R-1.0')
+        # self.hwEdit.setText('VBox-TC01-R-1.0')
 
         self.queryBtn = PrimaryPushButton('查询固件信息', row)
         self.queryBtn.clicked.connect(self._on_query_clicked)

@@ -60,7 +60,7 @@ class UserTestThread(QThread):
     testExit_sinOut = pyqtSignal()
 
     def __init__(self, Ser, PID, Auth, Area, AuthParam, DevType, FactoryTest, regUrl, clientId, clientSecret,
-                 hostAddr='', hostPort='', enablePidBurning=False):
+                  enablePidBurning=False, enableHostBurning=False,hostAddr='', hostPort=''):
         super(UserTestThread, self).__init__()
         # 创建BaseUtils实例
         self.AuthItemsNum = 0
@@ -72,6 +72,7 @@ class UserTestThread(QThread):
         self.hostAddr = hostAddr
         self.hostPort = hostPort
         self.enablePidBurning = enablePidBurning
+        self.enableHostBurning = enableHostBurning
         self.Auth = Auth
         self.Area = Area
         self.AuthParam = AuthParam
@@ -210,7 +211,7 @@ class UserTestThread(QThread):
         if self.FactoryTest and self.Auth:
             ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + self.AuthItemsNum))
         elif self.FactoryTest:
-            ret = int(self.CurrentPassItemsNum * 100 / self.TestItemsNum)
+            ret = int((self.CurrentPassItemsNum * 100) / (self.TestItemsNum + 1))
         else:
             ret = int(self.CurrentPassItemsNum * 100 / self.AuthItemsNum)
 
@@ -1049,11 +1050,11 @@ class UserTestThread(QThread):
         # self.stateList.append(testStatus.S_RESET)
         # 增加获取产品信息状态
 
-        if self.enablePidBurning:
-            self.stateList.append(testStatus.S_SET_PRODINFO)
-        self.stateList.append(testStatus.S_GET_PRODINFO)
-
         if self.Auth:
+
+            if self.enablePidBurning:
+                self.stateList.append(testStatus.S_SET_PRODINFO)
+            self.stateList.append(testStatus.S_GET_PRODINFO)
             # 提示进入授权模式
             log.logger.info('待测设备授权开始！')
             # 打印PID
@@ -1068,11 +1069,11 @@ class UserTestThread(QThread):
             # 增加授权查询状态
             self.stateList.append(testStatus.S_AUTH_QUERY)
 
-            if self.hostAddr and self.hostPort:
-                # 增加授权查询状态
+            if self.enableHostBurning:
+                # 增加Host烧录状态
                 self.stateList.append(testStatus.S_SERVERS_LOAD)
 
-                # 增加授权查询状态
+                # 增加Host查询状态
                 self.stateList.append(testStatus.S_SERVERS_QUERY)
 
             self.AuthItemsNum = len(self.stateList)

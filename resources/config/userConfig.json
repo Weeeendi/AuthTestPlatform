@@ -145,25 +145,25 @@
         },
         {
             "funName": "IMEI_Read",
-            "enable": false,
+            "enable": true,
             "dspName": "读取IMEI",
             "cmd": "AA07",
             "data": "",
             "rev_dict": "{\"IMEI\": \"\"}",
             "interval(ms)": 1000,
             "process": "ALL",
-            "retry": 5
+            "retry": 10
         },
         {
             "funName": "ICCID_Read",
-            "enable": false,
+            "enable": true,
             "dspName": "读取ICCID",
             "cmd": "AA08",
             "data": "",
             "rev_dict": "{\"ICCID\": \"\"}",
             "interval(ms)": 1000,
             "process": "ALL",
-            "retry": 5
+            "retry": 10
         }
     ]
 }

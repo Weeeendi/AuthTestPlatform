@@ -247,6 +247,11 @@ class Window(FluentWindow):
         self.timer.stop()
 
     def show_win_slot(self):
+        try:
+            # Each login session starts with empty device info
+            self.settingInterface.clearDeviceInfoRuntime()
+        except Exception:
+            pass
         self.raise_()
         self.show()
         # self.initNavigation()
@@ -277,6 +282,11 @@ class Window(FluentWindow):
         msgbox.cancelButton.setText("取消")
 
         if msgbox.exec():
+            try:
+                # Requirement: clear device info after logout
+                self.settingInterface.clearDeviceInfoRuntime()
+            except Exception:
+                pass
             self.close()
             self.login_goback_signal.emit()
 

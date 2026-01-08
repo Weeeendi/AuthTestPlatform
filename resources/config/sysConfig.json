@@ -5,7 +5,7 @@
         "warning"
     ],
     "current_logger_level": "debug",
-    "tag_print_times": 1,
+    "tag_print_times": 2,
     "device_type": [
         "BLE",
         "BLE&4G",
@@ -18,67 +18,46 @@
     ],
     "current_auth_param": "MAC",
     "current_device_type": "BLE&4G",
-    "burning_pid": true,
     "reg_urls": [
         {
             "desc": "iReadyGo线上",
-            "url": "https://ireadygo.vehiclink.com",
-            "host": "ireadygo-iot.vehiclink.com",
-            "port": "1883"
+            "url": "https://ireadygo.vehiclink.com"
         },
         {
             "desc": "iReadyGO测试",
-            "url": "http://ireadygo-iot-dev.vehiclink.com",
-            "host": "mqtt.dev.vehiclink.com",
-            "port": "1884"
+            "url": "http://ireadygo-iot-dev.vehiclink.com"
         },
         {
             "desc": "私有化测试注册",
-            "url": "http://iot-dev.vehiclink.com",
-            "host": "mqtt.dev.vehiclink.com",
-            "port": "1882"
+            "url": "http://iot-dev.vehiclink.com"
         },
         {
             "desc": "飞神线上",
-            "url": "https://ireadygo.vehiclink.com",
-            "host": "iot.troxusmobility.com",
-            "port": "1883"
+            "url": "https://ireadygo.vehiclink.com"
         },
         {
             "desc": "英洛华线上",
-            "url": "https://management.innuovohealthapp.com",
-            "host": "device.innuovohealthapp.com",
-            "port": "1883"
+            "url": "https://management.innuovohealthapp.com"
         },
         {
             "desc": "欧飞线上",
-            "url": "https://management.vecocraft.com",
-            "host": "veconnect.vecocraft.com",
-            "port": "1882"
+            "url": "https://management.vecocraft.com"
         },
         {
             "desc": "泛舟线上",
-            "url": "https://management.deruizebike.de",
-            "host": "device.deruizebike.de",
-            "port": "1883"
+            "url": "https://management.deruizebike.de"
         },
         {
             "desc": "ANANDA线上",
-            "url": "https://eu.ananda-drive.com",
-            "host": "us.ananda-drive.com",
-            "port": "1883"
+            "url": "https://eu.ananda-drive.com"
         },
         {
             "desc": "斯维驰线上",
-            "url": "https://acc.sweetrich.net",
-            "host": "abc.sweetrich.net",
-            "port": "1883"
+            "url": "https://acc.sweetrich.net"
         }
     ],
     "desc": "iReadyGO测试",
     "reg_url": "http://ireadygo-iot-dev.vehiclink.com",
     "current_auth_account": "dhvnw41mfa",
-    "current_auth_password": "74a464528d5646e7a67a0597d57ef2bc",
-    "host": "mqtt.dev.vehiclink.com",
-    "port": "1884"
+    "current_auth_password": "74a464528d5646e7a67a0597d57ef2bc"
 }

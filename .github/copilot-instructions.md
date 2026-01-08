@@ -10,6 +10,16 @@ This repo is a Windows-focused PyQt5 app for IoT device authorization and factor
 - Factory flow: Long-running test worker [userTest.py](../../userTest.py) drives commands over UART, calls cloud registration via `requests`, updates UI via signals, and exports CSV via [baseUtils.addToRegList()](../../baseUtils.py).
 - Printing: Windows-only BarTender integration via `pythonnet`/`clr` in [basePrinter.py](../../basePrinter.py), using [resources/yunJi_tag.btw](../../resources/yunJi_tag.btw).
 
+## Repo Layout & Key Paths
+- UI library (vendor, embedded): [qfluentwidgets/](../../qfluentwidgets/) — do not modify unless necessary.
+- App views: [view/](../../view/) — `AuthTest_interface.py`, `settingConf_interface.py`.
+- Core runtime: [main_page.py](../../main_page.py), [userTest.py](../../userTest.py), [baseUart.py](../../baseUart.py), [baseUtils.py](../../baseUtils.py).
+- Configuration: [resources/config/](../../resources/config) — `sysConfig.json`, `userConfig.json`.
+- Printing assets: [resources/yunJi_tag.btw](../../resources/yunJi_tag.btw).
+- Packaging: [main.spec](../../main.spec), [build.py](../../build.py), [update_version.py](../../update_version.py), [build.bat](../../build.bat).
+- Designer plugins: [plugins/](../../plugins/) — Qt Designer widgets integration used by [tools/designer.py](../../tools/designer.py).
+- Logs & output: [Logs/](../../Logs/) (GBK), [output/](../../output/) (CSV exports).
+
 ## Dev Workflows
 - Run (dev):
   ```bash
@@ -41,6 +51,8 @@ This repo is a Windows-focused PyQt5 app for IoT device authorization and factor
 - UART framing: helpers in [baseUtils.py](../../baseUtils.py): `byteToHexString()`, `HexStringToByte()`, `uchar_checksum()`; send path composes frame then emits `uartWrite_sinOut` (see `userTestSend()` in [userTest.py](../../userTest.py#L167-L183)).
 - UI integration: Add pages via `addSubInterface()` on `FluentWindow` (see `initNavigation()` in [main_page.py](../../main_page.py#L176-L209)). Use QFluentWidgets InfoBar/Flyout for user feedback.
 - Printing: instantiate `BasePrinterThread` once, call `change_PrintCnt()` and `insertMsg()`; only when printer checkbox is enabled (see [AuthTest_interface.py](../../view/AuthTest_interface.py#L120-L147) and printing hookup around start).
+- Qt Designer plugins: runtime-agnostic designer support lives under [plugins/](../../plugins/) (e.g., [plugin_base.py](../../plugins/plugin_base.py), `*_plugin.py` files) and is loaded by [tools/designer.py](../../tools/designer.py). These are not app runtime extension points.
+- Vendor library: [qfluentwidgets/](../../qfluentwidgets/) is vendored; prefer upstream usage patterns and avoid local modifications.
 
 ## External Integrations
 - Cloud registration: `requests` within [userTest.py](../../userTest.py) using `regUrl`, `clientId/clientSecret` from `sysConfig.json`. Device type and region influence command set and flow.
@@ -52,9 +64,11 @@ This repo is a Windows-focused PyQt5 app for IoT device authorization and factor
 - Don’t block UI thread; use signals to drive UI (InfoBars, progress, logs).
 - Logs are GBK-encoded; mind Unicode when tailing.
 - When adding settings, wire both the editor (in `data_manage.SysItemEditFactory`) and the consumer (e.g., `AuthTest_interface.updateSetting`).
+- Printing is Windows-only and depends on BarTender via `pythonnet`/`clr`; ensure assets are loaded via `resource_path()`.
 
 ## Quick Examples
 - Add a new page: create a `QWidget` and call `self.addSubInterface(widget, FIF.X, 'Title', position)` in `initNavigation()`.
 - Add a test step: append to `resources/config/userConfig.json` with a new item; set `process` to `ALL` or `4G`; verify it appears in Settings → Test Details and runs in `UserTestThread`.
+- Use Qt Designer with Fluent widgets: run [tools/designer.py](../../tools/designer.py) to launch designer with plugins from [plugins/](../../plugins/).
 
 > If anything above is unclear (e.g., main.spec expectations, BarTender DLL placement, or BLE/4G test matrix), tell us and we’ll refine this guide.

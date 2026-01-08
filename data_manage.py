@@ -2,9 +2,18 @@ import json
 import re
 
 from PyQt5.QtWidgets import QWidget, QGridLayout
+from PyQt5.QtCore import Qt, pyqtSignal
 
 import baseUtils
-from qfluentwidgets import CheckBox, ComboBox, SpinBox, BodyLabel, LineEdit, SwitchButton
+from qfluentwidgets import (
+    CheckBox,
+    ComboBox,
+    SpinBox,
+    BodyLabel,
+    LineEdit,
+    SwitchButton,
+    PrimaryPushButton,
+)
 
 
 class SysItemEditFactory(QWidget):
@@ -47,12 +56,11 @@ class SysItemEditFactory(QWidget):
             self.labelPrintCount = self.sysItemsData.get("tag_print_times", 3)
             self.labelPrintCountLabel = BodyLabel("标签打印次数:", self)
             self.labelPrintCountSpinBox = SpinBox(self)
-
             self.labelPrintCountSpinBox.setValue(self.labelPrintCount)
 
             # 配置授权地址
             urls = []
-            self.desc = self.sysItemsData.get("desc","")
+            self.desc = self.sysItemsData.get("desc", "")
             self.current_url = self.sysItemsData.get("reg_url", "")
             self.authAddrDict = self.sysItemsData.get("reg_urls", "")
             for authAddr in self.authAddrDict:
@@ -64,14 +72,6 @@ class SysItemEditFactory(QWidget):
             self.authAddrDictComboBox.addItems(urls)
             self.authAddrDictComboBox.setCurrentText(self.current_url)
 
-            self.burningPIDLabel = BodyLabel("烧写PID:", self)
-            self.burningPIDCheckBox = CheckBox(self)
-            self.burningPID = self.sysItemsData.get("burning_pid", False)
-            if self.burningPID:
-                self.burningPIDCheckBox.setChecked(True)
-            else:
-                self.burningPIDCheckBox.setChecked(False)
-
             # 配置授权地址账号
             self.authAccountIDLabel = BodyLabel("用户id:", self)
             self.authAccountIDLineEdit = LineEdit(self)
@@ -82,27 +82,11 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWord = self.sysItemsData.get("current_auth_password", "")
             self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
-
-            self.authHostSwitchLabel = BodyLabel("使用手动输入授权地址")
-            self.authHostSwitch = SwitchButton(self)
-
-            # 配置服务器地址
-            self.hostAddrLabel = BodyLabel("host", self)
-            self.hostAddrLineEdit = LineEdit(self)
-            # self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
-            self.hostAddrLineEdit.setFocusPolicy(False)
-
-            self.hostPortLabel = BodyLabel("port", self)
-            self.hostPortLineEdit = LineEdit(self)
-            # self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
-            self.hostPortLineEdit.setFocusPolicy(False)
-
-
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
             self.LayOut.addWidget(self.logLevelComboBox, 0, 1)
 
-            # self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
-            # self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
+            self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
+            self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
 
             self.LayOut.addWidget(self.labelPrintCountLabel, 2, 0)
             self.LayOut.addWidget(self.labelPrintCountSpinBox, 2, 1)
@@ -110,53 +94,22 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.authAddrDictLabel, 3, 0)
             self.LayOut.addWidget(self.authAddrDictComboBox, 3, 1)
 
-            self.LayOut.addWidget(self.burningPIDLabel, 3, 2)
-            self.LayOut.addWidget(self.burningPIDCheckBox, 3, 3)
+            self.LayOut.addWidget(self.authParamLabel, 4, 0)
+            self.LayOut.addWidget(self.authParamComboBox, 4, 1)
 
-            self.LayOut.addWidget(self.authHostSwitchLabel, 4, 0)
-            self.LayOut.addWidget(self.authHostSwitch, 4, 1)
+            self.LayOut.addWidget(self.authAccountIDLabel, 5, 0)
+            self.LayOut.addWidget(self.authAccountIDLineEdit, 5, 1)
 
-            self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
-            self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
-
-            self.LayOut.addWidget(self.hostPortLabel, 5, 2)
-            self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
-
-            self.LayOut.addWidget(self.deviceTypeLabel, 6, 0)
-            self.LayOut.addWidget(self.deviceTypeComboBox, 6, 1)
-
-            self.LayOut.addWidget(self.authParamLabel, 6, 2)
-            self.LayOut.addWidget(self.authParamComboBox, 6, 3)
-
-            self.LayOut.addWidget(self.authAccountIDLabel, 7, 0)
-            self.LayOut.addWidget(self.authAccountIDLineEdit, 7, 1)
-
-            self.LayOut.addWidget(self.authAccountPassWordLabel, 7, 2)
-            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 7, 3)
+            self.LayOut.addWidget(self.authAccountPassWordLabel, 5, 2)
+            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 5, 3)
 
             # 设置控件宽度
             self.authAccountPassWordLineEdit.setFixedWidth(300)
-
-            # 绑定事件
-            self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.authParamComboBox.currentTextChanged.connect(self.write_dict2Json)
-
-
-            self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
-            self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.authAccountIDLineEdit.textChanged.connect(self.write_dict2Json)
-            self.authAccountPassWordLineEdit.textChanged.connect(self.write_dict2Json)
-            self.burningPIDCheckBox.stateChanged.connect(self.write_dict2Json)
-
 
             self.LayOut.setSpacing(10)
             self.LayOut.setColumnStretch(1, 1)
             self.LayOut.setRowStretch(3, 1)
 
-            self.chk_device_type()
-            self.hide_host_line()
-            self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
             self.update_host()
 
         else:
@@ -167,30 +120,50 @@ class SysItemEditFactory(QWidget):
         for authAddr in self.authAddrDict:
             desc = authAddr.get("desc", "")
             if desc == self.desc:
-                url = authAddr.get("url","")
-                # desc = authAddr.get("desc", "")
-                host = authAddr.get("host", "")
-                port = authAddr.get("port", "")
+                url = authAddr.get("url", "")
                 combo_item = f'({desc}){url}'
-                self.hostAddrLineEdit.setText(host)
-                self.hostPortLineEdit.setText(port)
                 self.authAddrDictComboBox.setCurrentText(combo_item)
                 return
             else:
                 continue
 
+    def _update_sys_items_from_widgets(self):
+        if not isinstance(self.sysItemsData, dict):
+            self.sysItemsData = {}
 
-    def chk_device_type(self):
-        if self.deviceTypeComboBox.currentText() != "BLE":
-            self.hostAddrLabel.show()
-            self.hostAddrLineEdit.show()
-            self.hostPortLabel.show()
-            self.hostPortLineEdit.show()
-        else:
-            self.hostAddrLabel.hide()
-            self.hostAddrLineEdit.hide()
-            self.hostPortLabel.hide()
-            self.hostPortLineEdit.hide()
+        self.sysItemsData["current_logger_level"] = self.logLevelComboBox.currentText()
+        self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
+        self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
+        self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
+
+        url_string = self.authAddrDictComboBox.currentText()
+        url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        match = re.search(url_pattern, url_string or '')
+        if match:
+            self.current_url = match.group()
+            self.desc = url_string[1:match.start() - 1]
+            self.sysItemsData["desc"] = self.desc
+            self.sysItemsData["reg_url"] = self.current_url
+
+        self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
+        self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
+        # NOTE: burning_pid is now managed via runtime device info (DeviceInfoSettingCard)
+
+    def save_configs(self):
+        """Persist current system settings from the UI widgets to the JSON config file.
+
+        This is the preferred high-level save entry point for system settings. It
+        first calls :meth:`_update_sys_items_from_widgets` to synchronize
+        ``self.sysItemsData`` with the current widget state and then writes the
+        resulting dictionary to ``self.File``.
+
+        The older :meth:`write_dict2Json` method performs similar work but
+        duplicates the update logic inline and is kept for legacy / existing
+        call sites. New code should call :meth:`save_configs` instead.
+        """
+        self._update_sys_items_from_widgets()
+        with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
+            json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
     def write_dict2Json(self):
         # 确保sysItemsData是一个字典
@@ -216,10 +189,7 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["reg_url"] = self.current_url
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
-            self.sysItemsData["burning_pid"] = self.burningPIDCheckBox.isChecked()
-            if self.deviceTypeComboBox.currentText() != "BLE":
-                self.sysItemsData["host"] = self.hostAddrLineEdit.text()
-                self.sysItemsData["port"] = self.hostPortLineEdit.text()
+            # NOTE: burning_pid is now managed via runtime device info (DeviceInfoSettingCard)
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
