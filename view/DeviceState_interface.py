@@ -543,31 +543,44 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         if filePath:
             fileName = QFileInfo(filePath).filePath()
             fileNameWidget.setText(fileName)
+            self.updateStartOtaButtonState()
         else:
             return None
 
-    def light_callback(self, color, text):
-        if color == "#1afa29":
-            state = False
-        else:
-            state = True
+    def updateStartOtaButtonState(self):
+        currentPage = self.tabWidget.currentIndex()
+        if currentPage >= self.tabPages:
+            return
 
+        if currentPage == 0:
+            startButton = self.ButtonStartOTA
+            paramCheckbox = self.CheckBox_Param
+            firmCheckbox = self.CheckBox_Firmware
+        else:
+            startButton = getattr(self, f"ButtonStartOTA_{currentPage + 1}")
+            paramCheckbox = getattr(self, f"CheckBox_Param_{currentPage + 1}")
+            firmCheckbox = getattr(self, f"CheckBox_Firmware_{currentPage + 1}")
+
+        if startButton.text() == "Stop":
+            startButton.setDisabled(False)
+            return
+
+        hasUpdateSelection = bool(paramCheckbox.isChecked() or firmCheckbox.isChecked())
+        startButton.setDisabled(not (self.serialOnline == 1 and hasUpdateSelection))
+
+    def light_callback(self, color, text):
         if self.page == 0:
-            self.ButtonStartOTA.setDisabled(state)
             self.connStateIcon.setCustomBackgroundColor(QColor(color), QColor(color))
             self.connStateLabel.setText(text)
             self.connStateIcon.setFixedSize(16, 16)
             self.connStateIcon.setIconSize(QSize(16, 16))
         else:
-            try:
-                getattr(self, f"ButtonStartOTA_{self.page + 1}").setDisabled(state)
-            except AttributeError:
-                pass
-
             getattr(self, f"connStateIcon_{self.page + 1}").setCustomBackgroundColor(QColor(color), QColor(color))
             getattr(self, f"connStateIcon_{self.page + 1}").setFixedSize(16, 16)
             getattr(self, f"connStateIcon_{self.page + 1}").setIconSize(QSize(16, 16))
             getattr(self, f"connStateLabel_{self.page + 1}").setText(text)
+
+        self.updateStartOtaButtonState()
 
     def onPageChange(self):
         page = self.tabWidget.currentIndex()
@@ -583,10 +596,13 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         try:
             if self.task.running:
                 self.task.pageChangeSignal.emit(self.page)
+                self.updateStartOtaButtonState()
                 return
         except Exception as e:
             log.logger.error(e)
             pass
+
+        self.updateStartOtaButtonState()
 
     def serialDisconnect(self):
         try:
@@ -598,6 +614,7 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         self.testSetStateChange(False)
         self.UpdateStop()
         self.ButtonStartOTA_Dongle.setDisabled(True)
+        self.updateStartOtaButtonState()
         # self.showFlyout("提示","串口已断开",self)
 
         if hasattr(self, 'serialThread') and self.serialThread.isRunning():
@@ -689,6 +706,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
             self.testSetStateChange(True)
 
+            self.updateStartOtaButtonState()
+
         else:
             try:
                 self.ser.close()
@@ -699,6 +718,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             self.testSetStateChange(False)
 
             self.ButtonStartOTA_Dongle.setDisabled(True)
+
+            self.updateStartOtaButtonState()
 
             if hasattr(self, 'serialThread') and self.serialThread.isRunning():
                 self.serialThread.quit()  # 假设quit方法可以停止线程
@@ -846,8 +867,14 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         page = self.tabWidget.currentIndex()
 
+        if state == OTAState.GoOn and OTADescription == "升级中":
+            percentInt = int(max(0, min(100, percent)))
+            otaText = f"{OTADescription} {percentInt}%" if OTADescription else ""
+        else:
+            otaText = OTADescription
+
         if page == self.tabPages:
-            self.OTAStateLabel_Dongle.setText(OTADescription)
+            self.OTAStateLabel_Dongle.setText(otaText)
             self.OTAStateLabel_Dongle.setTextColor(QColor(color), QColor(color))
             self.UpdateProgressBar_Dongle.setValue(percent)
             if self.OTAstate == OTAState.Success or self.OTAstate == OTAState.Fail:
@@ -857,14 +884,14 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.UpdateStop()
 
             if self.page == 0:
-                self.OTAStateLabel.setText(OTADescription)
+                self.OTAStateLabel.setText(otaText)
                 self.OTAStateLabel.setTextColor(QColor(color), QColor(color))
                 self.UpdateProgressBar.setValue(percent)
                 # self.UpdateProgressBar.setCustomBackgroundColor(QColor(color), QColor(color))
 
             else:
                 try:
-                    getattr(self, f"OTAStateLabel_{self.page + 1}").setText(OTADescription)
+                    getattr(self, f"OTAStateLabel_{self.page + 1}").setText(otaText)
                     getattr(self, f"OTAStateLabel_{self.page + 1}").setTextColor(QColor(color), QColor(color))
                     getattr(self, f"UpdateProgressBar_{self.page + 1}").setValue(percent)
                     # getattr(self, f"UpdateProgressBar_{self.page + 1}").setCustomBackgroundColor(QColor(color),QColor(color))
@@ -912,6 +939,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
         handle_widget(paramLayOut, paramCheckbox)
         handle_widget(firmLayOut, firmCheckbox)
 
+        self.updateStartOtaButtonState()
+
     def UpdateStop(self):
         if self.page == 0:
             self.ButtonStartOTA.setText("Software Update")
@@ -922,10 +951,16 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
             getattr(self, f"ButtonStartOTA_{self.page + 1}").setText("Software Update")
             self.tabWidget.tabBar().setDisabled(False)
 
+        self.updateStartOtaButtonState()
+
     def onUpdateButton(self):
         """
         點擊開始升級按鈕
         """
+        if self.serialOnline != 1:
+            self.showFlyout("提醒", "请先连接串口", self.ButtonConnectSerial)
+            return
+
         if self.page == 0:
             if self.ButtonStartOTA.text() == "Stop":
                 self.ButtonStartOTA.setText("Software Update")
@@ -983,6 +1018,8 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
                 self.updateSignal_Out.emit(path, self.page)
                 getattr(self, f"ButtonStartOTA_{self.page + 1}").setText("Stop")
                 self.tabWidget.tabBar().setDisabled(True)
+
+        self.updateStartOtaButtonState()
 
     def setShadowEffect(self, card: QWidget):
         shadowEffect = QGraphicsDropShadowEffect(self)

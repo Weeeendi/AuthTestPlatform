@@ -147,6 +147,10 @@ class DeviceStateChkThread(QThread):
         # 定义发送互斥量
         self.sendMutexFlag = True
 
+        self.otaBlockRetryMax = 3
+        self.otaBlockRetryCnt = 0
+        self.otaNeedResendBlock = False
+
         # 创建sn和 acksn
         self.sn = 0
         self.acksn = 0
@@ -513,6 +517,14 @@ class DeviceStateChkThread(QThread):
                 elif hexx[0] == 0xA1:
                     self.UpdateProcessState('包数据长度异常', OTAState.Fail)
                 else:
+                    log.logger.error(
+                        "OTAHead未知错误: code=0x%02X, len=%d, state=%s, blockCnt=%d, payload=%s",
+                        int(hexx[0]),
+                        len(hexx),
+                        str(self.stateMachine),
+                        getattr(self.PCB, 'BlockCnt', -1),
+                        hexx.hex()
+                    )
                     self.UpdateProcessState('未知错误', OTAState.Fail)
 
             else:
@@ -534,10 +546,23 @@ class DeviceStateChkThread(QThread):
                 elif hexx[0] == 0xA0:
                     self.UpdateProcessState('包数异常', OTAState.Fail)
                 elif hexx[0] == 0xA1:
-                    self.UpdateProcessState('实际接收到的数据长度与包头中数据长度不符合', OTAState.Fail)
+                    log.logger.error("实际接收到的数据长度与包头中数据长度不符合")
+                    self.otaNeedResendBlock = True
+                    self.PCB.blockLock = False
+                    # self.UpdateProcessState('实际接收到的数据长度与包头中数据长度不符合', OTAState.Fail)
                 elif hexx[0] == 0xA2:
-                    self.UpdateProcessState('包校验异常', OTAState.Fail)
+                    log.logger.error("包校验异常")
+                    self.otaNeedResendBlock = True
+                    self.PCB.blockLock = False
                 else:
+                    log.logger.error(
+                        "OTATail未知错误: code=0x%02X, len=%d, state=%s, blockCnt=%d, payload=%s",
+                        int(hexx[0]),
+                        len(hexx),
+                        str(self.stateMachine),
+                        getattr(self.PCB, 'BlockCnt', -1),
+                        hexx.hex()
+                    )
                     self.UpdateProcessState('未知错误', OTAState.Fail)
 
             else:
@@ -660,6 +685,8 @@ class DeviceStateChkThread(QThread):
 
         # 初始化发送互斥标志位
         self.sendMutexFlag = True
+        # 重置超时计数，避免继承上一状态的cycleCnt导致进入OTA后立刻触发超时失败
+        self.cycleCnt = 0
         self.UpdateProcessState('等待升级', OTAState.GoOn, 0)
         # 进入 OTA 状态
 
@@ -864,86 +891,104 @@ class DeviceStateChkThread(QThread):
             with open(self.PCB.FilePath, 'rb') as file:
                 while chunk := file.read(self.PCB.BlockSize):
 
-                    # 发送数据块头
-                    BlockLen = len(chunk)
-                    crc16Cal = calc_crc16_modbus(chunk)
-                    self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
+                    self.otaBlockRetryCnt = 0
+                    while True:
+                        baseSentSize = self.PCB.totalSentSize
+                        self.otaNeedResendBlock = False
 
-                    # 等待10s
-                    while self.PCB.blockLock:
-                        time.sleep(0.1)  # 根据实际情况调整
-                        if self.cycleCnt >= 100:
-                            self.PCB.OTAState = OTAState.OverTime
-                            break
-                        self.cycleCnt += 1
-                        if self.exiting:
-                            break
+                        # 发送数据块头
+                        BlockLen = len(chunk)
+                        crc16Cal = calc_crc16_modbus(chunk)
+                        self.sendBlockHead(BlockLen, self.PCB.BlockCnt)
+
+                        # 等待10s
+                        while self.PCB.blockLock:
+                            time.sleep(0.1)  # 根据实际情况调整
+                            if self.cycleCnt >= 100:
+                                self.PCB.OTAState = OTAState.OverTime
+                                break
+                            self.cycleCnt += 1
+                            if self.exiting:
+                                break
+                            if not self.otaStateChk():
+                                break
+
                         if not self.otaStateChk():
-                            break
+                            return
+                        self.cycleCnt = 0
 
-                    if not self.otaStateChk():
+                        BlockLen = len(chunk)
+                        pkgCnt = int(BlockLen / 512)
+                        pkg_last = BlockLen % 512
+                        pkgCurrCnt = 0
+                        offset = 0
+
+                        if BlockLen < 4096:
+                            log.logger.debug("最后一包数据，长度为%d", BlockLen)
+
+                        # 发送数据块
+                        while offset < BlockLen:
+                            PkgIdxByte = PkgIdx.to_bytes(1, byteorder='big', signed=False)
+                            if pkgCnt > pkgCurrCnt:
+                                self.DS_Send(self.sn, 0, "0010", '0201', PkgIdxByte + chunk[offset:offset + 512])
+                                offset = offset + 512
+                                pkgCurrCnt += 1
+                                self.PCB.totalSentSize += 512
+                            else:
+                                pkgCntBytes = (pkg_last + 1).to_bytes(2, byteorder='big', signed=False).hex()
+                                self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
+                                offset = offset + pkg_last
+                                self.PCB.PkgCnt = 0
+                                self.PCB.totalSentSize += pkg_last
+
+                            time.sleep(0.1)  # 根据实际情况调整
+
+                            if PkgIdx == 255:
+                                PkgIdx = 1
+                            else:
+                                PkgIdx += 1
+
+                            self.PCB.CurrentPackageSize = offset
+                            if not self.otaStateChk():
+                                return
+                            else:
+                                self.UpdateProcessState('升级中', OTAState.GoOn, self.PCB.otaPercentCal())
+
+                        # 发送块尾
+                        self.sendBlockTail(self.PCB.BlockCnt, crc16Cal)
+
+                        # 等待10s
+                        while self.PCB.blockLock:
+                            time.sleep(0.1)  # 根据实际情况调整
+                            if self.cycleCnt >= 100:
+                                self.PCB.OTAState = OTAState.OverTime
+                                break
+                            self.cycleCnt += 1
+                            if self.exiting:
+                                break
+                            if not self.otaStateChk():
+                                break
+
+                        if not self.otaStateChk():
+                            return
+                        self.cycleCnt = 0
+
+                        if self.otaNeedResendBlock:
+                            self.otaBlockRetryCnt += 1
+                            self.PCB.totalSentSize = baseSentSize
+                            self.PCB.CurrentPackageSize = 0
+
+                            if self.otaBlockRetryCnt > self.otaBlockRetryMax:
+                                self.UpdateProcessState('包校验异常重发超限', OTAState.Fail)
+                                return
+
+                            log.logger.error("包校验异常，重发块: %d/%d, blockCnt=%d", self.otaBlockRetryCnt, self.otaBlockRetryMax, self.PCB.BlockCnt)
+                            continue
+
+                        # 块发送成功，进入下一块
+                        if self.PCB.CurrentPackageSize == self.PCB.BlockSize:
+                            self.PCB.BlockCnt = self.PCB.BlockCnt + 1
                         break
-                    self.cycleCnt = 0
-
-                    BlockLen = len(chunk)
-                    pkgCnt = int(BlockLen / 512)
-                    pkg_last = BlockLen % 512
-                    pkgCurrCnt = 0
-
-                    if BlockLen < 4096:
-                        log.logger.debug("最后一包数据，长度为%d", BlockLen)
-
-                    # 发送数据块
-                    while offset < BlockLen:
-                        PkgIdxByte = PkgIdx.to_bytes(1, byteorder='big', signed=False)
-                        if pkgCnt > pkgCurrCnt:
-                            self.DS_Send(self.sn, 0, "0010", '0201', PkgIdxByte + chunk[offset:offset + 512])
-                            offset = offset + 512
-                            pkgCurrCnt += 1
-                            # 累计真实文件数据长度（不计入1字节包索引）
-                            self.PCB.totalSentSize += 512
-                        else:
-                            pkgCntBytes = (pkg_last + 1).to_bytes(2, byteorder='big', signed=False).hex()
-                            self.DS_Send(self.sn, 0, "0010", pkgCntBytes, PkgIdxByte + chunk[offset:offset + pkg_last])
-                            offset = offset + pkg_last
-                            self.PCB.PkgCnt = 0
-                            # 最后一包累加实际剩余字节
-                            self.PCB.totalSentSize += pkg_last
-                        time.sleep(0.1)  # 根据实际情况调整
-
-                        if PkgIdx == 255:
-                            PkgIdx = 1
-                        else:
-                            PkgIdx += 1
-
-                        self.PCB.CurrentPackageSize = offset
-                        if not self.otaStateChk():
-                            break
-                        else:
-                            self.UpdateProcessState('升级中', OTAState.GoOn, self.PCB.otaPercentCal())
-
-                    # 发送块尾
-                    self.sendBlockTail(self.PCB.BlockCnt, crc16Cal)
-                    if self.PCB.CurrentPackageSize == self.PCB.BlockSize:
-                        self.PCB.BlockCnt = self.PCB.BlockCnt + 1
-                    offset = 0
-
-                    # 等待10s
-                    while self.PCB.blockLock:
-                        time.sleep(0.1)  # 根据实际情况调整
-                        if self.cycleCnt >= 100:
-                            self.PCB.OTAState = OTAState.OverTime
-                            break
-                        self.cycleCnt += 1
-                        if self.exiting:
-                            break
-                        if not self.otaStateChk():
-                            break
-
-                    if not self.otaStateChk():
-                        break
-
-                    self.cycleCnt = 0
                     # if BlockLen < 4096:
                     #     log.logger.debug("升级完成")
                     # 判断是否完成
