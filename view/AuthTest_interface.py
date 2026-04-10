@@ -141,17 +141,20 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             pass
 
         log.logger.info("打印机初始化中，请稍等...")
+        self.CheckBox_EnablePrinter.setChecked(False)
+        self.CheckBox_EnablePrinter.setEnabled(False)
+        self.printerThread = None
         # 如果使能，创建打印机线程
         try:
             self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
             # 启动BasePrinterThread线程
             self.printerThread.start()
         except Exception as e:
-            self.testStart = False
-            self.testSetStateChange(False)
-            self.ser.close()
-            showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
-            return None
+            log.logger.warning("打印机线程创建失败，将禁用打印功能：%s", str(e))
+            self.printerThread = None
+
+        if self.printerThread is not None and getattr(self.printerThread, 'available', False):
+            self.CheckBox_EnablePrinter.setEnabled(True)
 
     def updateSetting(self):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
@@ -173,7 +176,8 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             # 确保sysItemsData是一个字典
             if isinstance(sysItemsData, dict):
                 self.printerCnt = sysItemsData.get("tag_print_times", 1)
-                self.printerThread.change_PrintCnt(self.printerCnt)
+                if self.printerThread is not None:
+                    self.printerThread.change_PrintCnt(self.printerCnt)
 
                 # 使用正则表达式匹配以 http 开头的 URL
                 url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -272,8 +276,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             self.serialThread.wait()
             self.testThread.quit()
             self.testThread.wait()
-            self.printerThread.quit()
-            self.printerThread.wait()
+            if self.printerThread is not None:
+                self.printerThread.quit()
+                self.printerThread.wait()
 
     def enableLogPrint(self):
         try:  # 如果之前已建立连接，先断开，防止重复连接
@@ -446,12 +451,13 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                     ###############################################################################
                     # 判断打印机是否使能
                     if self.CheckBox_EnablePrinter.isChecked():
-                        try:  # 如果之前已建立连接，先断开，防止重复连接
-                            self.testThread.printMsg_sinOut.disconnect()
-                        except:
-                            pass
-                        # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
-                        self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
+                        if self.printerThread is not None and getattr(self.printerThread, 'available', False):
+                            try:  # 如果之前已建立连接，先断开，防止重复连接
+                                self.testThread.printMsg_sinOut.disconnect()
+                            except:
+                                pass
+                            # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
+                            self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
 
                     ###############################################################################
                 else:

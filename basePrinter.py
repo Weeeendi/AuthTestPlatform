@@ -1,6 +1,9 @@
 import time
 
-import clr  # 通过这个模块来调用C#的dll库
+try:
+    import clr  # 通过这个模块来调用C#的dll库
+except Exception:
+    clr = None
 from PyQt5.QtCore import QThread
 
 import baseUtils
@@ -9,16 +12,25 @@ from baseLogger import log
 # 创建BaseUtils实例
 util = baseUtils.BaseUtils()
 
-#加载dll库
-clr.AddReference(util.resource_path("resources/Seagull.BarTender.Print.dll"))
-from Seagull.BarTender.Print import Engine, Printers
+_BARTENDER_AVAILABLE = False
+Engine = None
+Printers = None
+try:
+    if clr is not None:
+        clr.AddReference(util.resource_path("resources/Seagull.BarTender.Print.dll"))
+        from Seagull.BarTender.Print import Engine, Printers
+        _BARTENDER_AVAILABLE = True
+except Exception as e:
+    log.logger.warning("BarTender 打印组件不可用，将跳过打印功能：%s", str(e))
 
 
 # 可能会出现“Import "Seagull.BarTender.Print" could not be resolved”这个波浪线错误，这里不用管
 
 class BaseBarTender:  # 创建打印机类方便在上位机主程序中调用
     def __init__(self, filePath):
-        # 启用引擎
+        if not _BARTENDER_AVAILABLE:
+            raise RuntimeError("BarTender 打印组件不可用")
+
         self.btEngine = Engine(True)
         self.filePath = filePath
         # self.printerName = ''
@@ -56,11 +68,11 @@ class BaseBarTender:  # 创建打印机类方便在上位机主程序中调用
                     if substring.Name == key:
                         self.btFormat.SubStrings.SetSubString(key, value)
 
-    # def __del__(self):
-    #     #关闭引擎，释放资源
-    #     if self.btEngine.IsAlive:
-    #         self.btEngine.Stop()
-    #         self.btEngine.Dispose()
+    def __del__(self):
+        #关闭引擎，释放资源
+        if self.btEngine.IsAlive:
+            self.btEngine.Stop()
+            self.btEngine.Dispose()
 
 
 class BasePrinterThread(QThread):
@@ -71,6 +83,7 @@ class BasePrinterThread(QThread):
         # 接受主函数传递的参数
         self.Ser = Ser
         self.cnt = cnt  # 打印次数
+        self.available = False
         # 创建一个空列表，接受打印消息队列
         self.list = []
         # print('BasePrinterThread.init', 'cnt:', self.cnt, type(self.cnt))
@@ -88,17 +101,25 @@ class BasePrinterThread(QThread):
             # 设置打印次数
             self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = self.cnt
 
+            self.available = True
+
         except Exception as e:
-            print("打印机初始化失败！%s", str(e))
-            raise
+            log.logger.warning("打印机初始化失败，将跳过打印功能：%s", str(e))
+            self.seagullBartender = None
 
         print("创建BasePrinterThread线程")
 
     def change_PrintCnt(self, cnt):
+        if not self.available or self.seagullBartender is None:
+            return
         self.seagullBartender.btFormat.PrintSetup.IdenticalCopiesOfLabel = cnt
 
     def insertMsg(self, MAC_or_IMEI, Area, deviceIotId, PID=''):
         print("basePrinter.insertMsg", MAC_or_IMEI, Area, deviceIotId, PID)
+        if not self.available or self.seagullBartender is None:
+            log.logger.info("打印功能不可用，跳过本次打印")
+            return
+
         log.logger.info("开始打印标签！")
         if len(MAC_or_IMEI) == 12:
             Pdict = {"deviceIotId": deviceIotId,
@@ -108,7 +129,7 @@ class BasePrinterThread(QThread):
                                + MAC_or_IMEI[8:10] + ': ' + MAC_or_IMEI[10:12],
                      "Area": Area[2:],
                      "PID": 'PID: ' + PID,
-                     "showId": 'IoTID: ' + deviceIotId
+                     "showId": 'IoTID: ' + deviceIotId[0:2] + deviceIotId[7:]
                      }
 
         else:
@@ -120,10 +141,12 @@ class BasePrinterThread(QThread):
 
         print("basePrinter.insertMsg", Pdict, type(Pdict))
         # 打印内容设置
-        self.seagullBartender.set_data_dict(Pdict)
-
-        # 开始打印
-        printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
+        try:
+            self.seagullBartender.set_data_dict(Pdict)
+            printerResult = self.seagullBartender.btFormat.Print("printjob", 5000)
+            log.logger.info(printerResult)
+        except Exception as e:
+            log.logger.warning("打印失败，已跳过：%s", str(e))
 
     def run(self):
         print("启动BasePrinterThread线程")
