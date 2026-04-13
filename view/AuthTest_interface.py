@@ -11,6 +11,7 @@ from PyQt5.QtGui import QColor, QTextCursor, QTextCharFormat
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect
 
 import baseUtils
+import runtime_device_info
 from baseLogger import log
 from basePrinter import BasePrinterThread
 from baseUart import BaseUartThread
@@ -132,40 +133,77 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.BodyLabelLinence.hide()
         self.LicenseLineEdit.hide()
 
+        # PID is configured in Settings (runtime device info); hide home page PID input
+        try:
+            self.BodyLabel_PID.hide()
+            self.ProuductIdLineEdit.hide()
+        except Exception:
+            pass
+
         log.logger.info("打印机初始化中，请稍等...")
+        self.CheckBox_EnablePrinter.setChecked(False)
+        self.CheckBox_EnablePrinter.setEnabled(False)
+        self.printerThread = None
         # 如果使能，创建打印机线程
         try:
             self.printerThread = BasePrinterThread(self.ser, self.printerCnt)
             # 启动BasePrinterThread线程
             self.printerThread.start()
         except Exception as e:
-            self.testStart = False
-            self.testSetStateChange(False)
-            self.ser.close()
-            showMessage("提示", "打印机线程创建失败,请检查配置文件", self)
-            return None
+            log.logger.warning("打印机线程创建失败，将禁用打印功能：%s", str(e))
+            self.printerThread = None
+
+        if self.printerThread is not None and getattr(self.printerThread, 'available', False):
+            self.CheckBox_EnablePrinter.setEnabled(True)
 
     def updateSetting(self):
         # 创建打印机打印次数变量,默认为1,可以通过外部ini文件
         configPath = baseUtils.resource_path('resources\\config\\sysConfig.json')
+
+        # Fallback: sync runtime device info from Settings UI (in case user didn't click save
+        # or some textChanged/stateChanged signal didn't fire before switching back).
+        try:
+            mainWin = self.parent()
+            settingInterface = getattr(mainWin, 'settingInterface', None)
+            deviceCard = getattr(settingInterface, 'DeviceInfoSetCard', None)
+            if deviceCard and hasattr(deviceCard, 'getCurrentDeviceInfoDict'):
+                runtime_device_info.set_device_info(deviceCard.getCurrentDeviceInfoDict())
+        except Exception:
+            pass
 
         with open(configPath, 'r', encoding='utf-8', errors='ignore') as file:
             sysItemsData = json.loads(file.read())
             # 确保sysItemsData是一个字典
             if isinstance(sysItemsData, dict):
                 self.printerCnt = sysItemsData.get("tag_print_times", 1)
-                self.printerThread.change_PrintCnt(self.printerCnt)
+                if self.printerThread is not None:
+                    self.printerThread.change_PrintCnt(self.printerCnt)
 
                 # 使用正则表达式匹配以 http 开头的 URL
                 url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
                 match = re.search(url_pattern, sysItemsData.get("reg_url", 'http://iot-dev.vehiclink.com'))
                 self.regUrl = match.group()
                 self.AuthParam = sysItemsData.get("current_auth_param", "MAC")
-                self.hostAddr = sysItemsData.get("host", 'tracker.us.navixy.com')
-                self.hostPort = int(sysItemsData.get("port", '47694'))
+
+                # host/port/PID 从运行时内存态设备信息读取（不落盘）
+                runtimeInfo = runtime_device_info.get_device_info()
+                host = str(runtimeInfo.get('host', '') or '').strip()
+                port = str(runtimeInfo.get('port', '') or '').strip()
+                pid = str(runtimeInfo.get('query_pid', '') or '').strip()
+                burningPidFromRuntime = bool(runtimeInfo.get('burning_pid', False))
+                burningHostFromRuntime = bool(runtimeInfo.get('burning_host', False))
+
+                self.hostAddr = host
+                try:
+                    self.hostPort = int(port)
+                except Exception:
+                    self.hostPort = 0
                 self.authAccountID = sysItemsData.get("current_auth_account", "")
                 self.authAccountPassWord = sysItemsData.get("current_auth_password", "")
                 self.DeviceType = sysItemsData.get("current_device_type", "BLE")
+                self.PID = pid
+                self.enablePidBurning = burningPidFromRuntime
+                self.enableHostBurning = burningHostFromRuntime
 
     def setProcessBarColor(self, value: int, color: str):
         """设置进度条"""
@@ -181,8 +219,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
         self.ComboBox_Serial.setDisabled(bool_value)
         # 串口刷新按钮
         self.Button_UpdateSerial.setDisabled(bool_value)
-        # PID输入-禁止/使能
-        self.ProuductIdLineEdit.setDisabled(bool_value)
+        # PID input is configured in Settings (no home page input)
         # License 输入-禁止/使能
         self.LicenseLineEdit.setDisabled(bool_value)
         # 区域选择-禁止/使能
@@ -239,8 +276,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
             self.serialThread.wait()
             self.testThread.quit()
             self.testThread.wait()
-            self.printerThread.quit()
-            self.printerThread.wait()
+            if self.printerThread is not None:
+                self.printerThread.quit()
+                self.printerThread.wait()
 
     def enableLogPrint(self):
         try:  # 如果之前已建立连接，先断开，防止重复连接
@@ -272,13 +310,40 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 self.updateSetting()
 
                 self.initialSerial(921600)
-                # 获取PID
-                self.PID = self.ProuductIdLineEdit.text()
                 # 获取区域
                 self.Area = self.AreaComboBox.currentText()
 
                 # 检查PID输入是否为10字节
                 if len(self.PID) == 10:
+                    # For non-BLE devices, host/port must be provided (imported in Settings)
+                    if self.enableHostBurning:
+                        host_str = str(self.hostAddr or "").strip()
+                        port_str = str(self.hostPort or "").strip()
+
+                        # host 不能为空
+                        if not host_str:
+                            self.testStart = False
+                            showMessage('提示', '已使能host烧录，但是host内容为空，请先到设置页填写/导入设备信息（host/port）', self)
+                            return None
+
+                        # port 不能为空
+                        if not port_str:
+                            self.testStart = False
+                            showMessage('提示', '已使能host烧录，但是port内容为空，请先到设置页填写/导入设备信息（host/port）', self)
+                            return None
+
+                        # 校验 port 是否为有效数字
+                        try:
+                            port_int = int(port_str)
+                        except (TypeError, ValueError):
+                            self.testStart = False
+                            showMessage('提示', '已使能host烧录，但是port无效（需为数字），请先到设置页检查设备信息（host/port）', self)
+                            return None
+
+                        if port_int <= 0:
+                            self.testStart = False
+                            showMessage('提示', '已使能host烧录，但是port无效（需为大于0的数字），请先到设置页检查设备信息（host/port）', self)
+                            return None
                     # 尝试打开串口，并建立串口线程、授权线程、测试线程
                     try:
                         self.ser.open()  # 打开串口有可能失败，做try-except异常处理
@@ -299,7 +364,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                         self.initialSerial(115200)
 
                     except Exception as e:
-                        print(str(e));
+                        print(str(e))
                         self.testStart = False
                         showMessage("提示", "当前无串口或者串口被占用", self)
                         return None
@@ -330,7 +395,7 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                     ###############################################################################
                     # 创建UserTestThread线程实例
                     try:
-                        if self.DeviceType == '4G':
+                        if self.DeviceType != 'BLE':
                             self.testThread = UserTestThread(self.ser, self.PID,
                                                              self.CheckBox_AuthTest.isChecked(),
                                                              self.Area,
@@ -340,8 +405,11 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                                              self.regUrl,
                                                              self.authAccountID,
                                                              self.authAccountPassWord,
+                                                             self.enablePidBurning,
+                                                             self.enableHostBurning,
                                                              self.hostAddr,
-                                                             self.hostPort)
+                                                             self.hostPort
+                                                             )
 
                         else:
                             self.testThread = UserTestThread(self.ser, self.PID,
@@ -352,7 +420,9 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                                                              self.CheckBox_FuncTest.isChecked(),
                                                              self.regUrl,
                                                              self.authAccountID,
-                                                             self.authAccountPassWord
+                                                             self.authAccountPassWord,
+                                                             self.enablePidBurning,
+                                                             self.enableHostBurning
                                                              )
 
                     except Exception as e:
@@ -381,17 +451,18 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                     ###############################################################################
                     # 判断打印机是否使能
                     if self.CheckBox_EnablePrinter.isChecked():
-                        try:  # 如果之前已建立连接，先断开，防止重复连接
-                            self.testThread.printMsg_sinOut.disconnect()
-                        except:
-                            pass
-                        # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
-                        self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
+                        if self.printerThread is not None and getattr(self.printerThread, 'available', False):
+                            try:  # 如果之前已建立连接，先断开，防止重复连接
+                                self.testThread.printMsg_sinOut.disconnect()
+                            except:
+                                pass
+                            # 自定义信号与槽连接，打印信息及授权信息传递，由UserTestThread线程发送到BasePrinterThread线程
+                            self.testThread.printMsg_sinOut.connect(self.printerThread.insertMsg)
 
-                        ###############################################################################
+                    ###############################################################################
                 else:
                     self.testStart = False
-                    showMessage('提示', 'PID错误：PID为空或者长度错误', self)
+                    showMessage('提示', 'PID错误：请到设置页配置 PID（长度需为10）', self)
                     return None
             else:  # 停止授权，测试
                 self.testStart = False

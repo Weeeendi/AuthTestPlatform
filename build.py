@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import subprocess
-import re
 import json
+import os
+import subprocess
+import sys
+
+import baseUtils
 
 # 确保当前目录在sys.path中
 current_dir = os.path.abspath('.')
@@ -13,7 +14,7 @@ if current_dir not in sys.path:
     sys.path.append(current_dir)
 
 # 直接从version.json读取版本号，不依赖DEFAULT_VERSION
-VERSION_FILE = os.path.join(os.path.abspath('.'), 'version.json')
+VERSION_FILE = baseUtils.resource_path('resources\\version\\version.json')
 
 def get_version_from_json():
     """直接从version.json读取版本号"""
@@ -73,13 +74,13 @@ def update_spec_file_without_increment(spec_file='main.spec'):
             content = f.read()
         
         # 使用正则表达式替换版本号
-        pattern = r"app_name = ['\"]VProductTest_V\d+\.\d+\.\d+\.\d+['\"]"
-        replacement = f"app_name = 'VProductTest_{version_str}'"
+        pattern = r"app_name = ['\"]VProductTestPro_V\d+\.\d+\.\d+\.\d+['\"]"
+        replacement = f"app_name = 'VProductTestPro_{version_str}'"
         
         # 如果找不到app_name变量，尝试查找name参数
         if not re.search(pattern, content):
-            pattern = r"name='VProductTest_V\d+\.\d+\.\d+\.\d+'"
-            replacement = f"name='VProductTest_{version_str}'"
+            pattern = r"name='VProductTestPro_V\d+\.\d+\.\d+\.\d+'"
+            replacement = f"name='VProductTestPro_{version_str}'"
         
         new_content = re.sub(pattern, replacement, content)
         

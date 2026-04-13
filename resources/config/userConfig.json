@@ -2,7 +2,7 @@
     "TestItems": [
         {
             "funName": "Flash_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "外部flash存储功能测试",
             "cmd": "0001",
             "data": "",
@@ -13,7 +13,7 @@
         },
         {
             "funName": "GSensor_Test",
-            "enable": false,
+            "enable": true,
             "dspName": "三轴G-Sensor测试",
             "cmd": "0002",
             "data": "",
@@ -152,7 +152,7 @@
             "rev_dict": "{\"IMEI\": \"\"}",
             "interval(ms)": 1000,
             "process": "ALL",
-            "retry": 5
+            "retry": 10
         },
         {
             "funName": "ICCID_Read",
@@ -163,7 +163,7 @@
             "rev_dict": "{\"ICCID\": \"\"}",
             "interval(ms)": 1000,
             "process": "ALL",
-            "retry": 5
+            "retry": 10
         }
     ]
 }

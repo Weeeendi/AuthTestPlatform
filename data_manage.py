@@ -1,11 +1,19 @@
 import json
-import sys
+import re
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout
+from PyQt5.QtWidgets import QWidget, QGridLayout
+from PyQt5.QtCore import Qt, pyqtSignal
 
 import baseUtils
-from qfluentwidgets import CheckBox, setThemeColor, ComboBox, SpinBox, BodyLabel, LineEdit
+from qfluentwidgets import (
+    CheckBox,
+    ComboBox,
+    SpinBox,
+    BodyLabel,
+    LineEdit,
+    SwitchButton,
+    PrimaryPushButton,
+)
 
 
 class SysItemEditFactory(QWidget):
@@ -48,11 +56,11 @@ class SysItemEditFactory(QWidget):
             self.labelPrintCount = self.sysItemsData.get("tag_print_times", 3)
             self.labelPrintCountLabel = BodyLabel("标签打印次数:", self)
             self.labelPrintCountSpinBox = SpinBox(self)
-
             self.labelPrintCountSpinBox.setValue(self.labelPrintCount)
 
             # 配置授权地址
             urls = []
+            self.desc = self.sysItemsData.get("desc", "")
             self.current_url = self.sysItemsData.get("reg_url", "")
             self.authAddrDict = self.sysItemsData.get("reg_urls", "")
             for authAddr in self.authAddrDict:
@@ -74,21 +82,11 @@ class SysItemEditFactory(QWidget):
             self.authAccountPassWord = self.sysItemsData.get("current_auth_password", "")
             self.authAccountPassWordLineEdit.setText(self.authAccountPassWord)
 
-            # 配置JT808
-            self.hostAddrLabel = BodyLabel("JT808地址: host", self)
-            self.hostAddrLineEdit = LineEdit(self)
-            self.hostAddrLineEdit.setText(self.sysItemsData.get("host", ""))
-
-            self.hostPortLabel = BodyLabel("port", self)
-            self.hostPortLineEdit = LineEdit(self)
-            self.hostPortLineEdit.setText(self.sysItemsData.get("port", ""))
-
-
             self.LayOut.addWidget(self.logLevelLabel, 0, 0)
             self.LayOut.addWidget(self.logLevelComboBox, 0, 1)
 
-            # self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
-            # self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
+            self.LayOut.addWidget(self.deviceTypeLabel, 1, 0)
+            self.LayOut.addWidget(self.deviceTypeComboBox, 1, 1)
 
             self.LayOut.addWidget(self.labelPrintCountLabel, 2, 0)
             self.LayOut.addWidget(self.labelPrintCountSpinBox, 2, 1)
@@ -96,57 +94,76 @@ class SysItemEditFactory(QWidget):
             self.LayOut.addWidget(self.authAddrDictLabel, 3, 0)
             self.LayOut.addWidget(self.authAddrDictComboBox, 3, 1)
 
-            self.LayOut.addWidget(self.deviceTypeLabel, 4, 0)
-            self.LayOut.addWidget(self.deviceTypeComboBox, 4, 1)
+            self.LayOut.addWidget(self.authParamLabel, 4, 0)
+            self.LayOut.addWidget(self.authParamComboBox, 4, 1)
 
-            self.LayOut.addWidget(self.authParamLabel, 4, 2)
-            self.LayOut.addWidget(self.authParamComboBox, 4, 3)
+            self.LayOut.addWidget(self.authAccountIDLabel, 5, 0)
+            self.LayOut.addWidget(self.authAccountIDLineEdit, 5, 1)
 
-            self.LayOut.addWidget(self.hostAddrLabel, 5, 0)
-            self.LayOut.addWidget(self.hostAddrLineEdit, 5, 1)
-
-            self.LayOut.addWidget(self.hostPortLabel, 5, 2)
-            self.LayOut.addWidget(self.hostPortLineEdit, 5, 3)
-
-            self.LayOut.addWidget(self.authAccountIDLabel, 6, 0)
-            self.LayOut.addWidget(self.authAccountIDLineEdit, 6, 1)
-
-            self.LayOut.addWidget(self.authAccountPassWordLabel, 6, 2)
-            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 6, 3)
+            self.LayOut.addWidget(self.authAccountPassWordLabel, 5, 2)
+            self.LayOut.addWidget(self.authAccountPassWordLineEdit, 5, 3)
 
             # 设置控件宽度
             self.authAccountPassWordLineEdit.setFixedWidth(300)
-
-            # 绑定事件
-            self.logLevelComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.deviceTypeComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.authParamComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.labelPrintCountSpinBox.valueChanged.connect(self.write_dict2Json)
-            self.authAddrDictComboBox.currentTextChanged.connect(self.write_dict2Json)
-            self.authAccountIDLineEdit.textChanged.connect(self.write_dict2Json)
-            self.authAccountPassWordLineEdit.textChanged.connect(self.write_dict2Json)
 
             self.LayOut.setSpacing(10)
             self.LayOut.setColumnStretch(1, 1)
             self.LayOut.setRowStretch(3, 1)
 
-            self.chk_device_type()
-            self.deviceTypeComboBox.currentTextChanged.connect(self.chk_device_type)
+            self.update_host()
 
         else:
             print("sysItemsData is not a dictionary.")
 
-    def chk_device_type(self):
-        if self.deviceTypeComboBox.currentText() == "4G":
-            self.hostAddrLabel.show()
-            self.hostAddrLineEdit.show()
-            self.hostPortLabel.show()
-            self.hostPortLineEdit.show()
-        else:
-            self.hostAddrLabel.hide()
-            self.hostAddrLineEdit.hide()
-            self.hostPortLabel.hide()
-            self.hostPortLineEdit.hide()
+    def update_host(self):
+        print("update_host")
+        for authAddr in self.authAddrDict:
+            desc = authAddr.get("desc", "")
+            if desc == self.desc:
+                url = authAddr.get("url", "")
+                combo_item = f'({desc}){url}'
+                self.authAddrDictComboBox.setCurrentText(combo_item)
+                return
+            else:
+                continue
+
+    def _update_sys_items_from_widgets(self):
+        if not isinstance(self.sysItemsData, dict):
+            self.sysItemsData = {}
+
+        self.sysItemsData["current_logger_level"] = self.logLevelComboBox.currentText()
+        self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
+        self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
+        self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
+
+        url_string = self.authAddrDictComboBox.currentText()
+        url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        match = re.search(url_pattern, url_string or '')
+        if match:
+            self.current_url = match.group()
+            self.desc = url_string[1:match.start() - 1]
+            self.sysItemsData["desc"] = self.desc
+            self.sysItemsData["reg_url"] = self.current_url
+
+        self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
+        self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
+        # NOTE: burning_pid is now managed via runtime device info (DeviceInfoSettingCard)
+
+    def save_configs(self):
+        """Persist current system settings from the UI widgets to the JSON config file.
+
+        This is the preferred high-level save entry point for system settings. It
+        first calls :meth:`_update_sys_items_from_widgets` to synchronize
+        ``self.sysItemsData`` with the current widget state and then writes the
+        resulting dictionary to ``self.File``.
+
+        The older :meth:`write_dict2Json` method performs similar work but
+        duplicates the update logic inline and is kept for legacy / existing
+        call sites. New code should call :meth:`save_configs` instead.
+        """
+        self._update_sys_items_from_widgets()
+        with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
+            json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
     def write_dict2Json(self):
         # 确保sysItemsData是一个字典
@@ -155,110 +172,27 @@ class SysItemEditFactory(QWidget):
             self.sysItemsData["current_device_type"] = self.deviceTypeComboBox.currentText()
             self.sysItemsData["current_auth_param"] = self.authParamComboBox.currentText()
             self.sysItemsData["tag_print_times"] = self.labelPrintCountSpinBox.value()
-            self.sysItemsData["reg_url"] = self.authAddrDictComboBox.currentText()
+            # 使用正则表达式匹配以 http 开头的 URL
+            url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+            url_string = self.authAddrDictComboBox.currentText()
+
+            desc_pattern = r'*\(*\)'
+
+            match = re.search(url_pattern, url_string)
+            if not match:
+                print("not match any legal http string")
+                return
+            self.current_url = match.group()
+            self.desc = url_string[1:match.start()-1]
+            self.update_host()
+            self.sysItemsData["desc"] = self.desc
+            self.sysItemsData["reg_url"] = self.current_url
             self.sysItemsData["current_auth_account"] = self.authAccountIDLineEdit.text()
             self.sysItemsData["current_auth_password"] = self.authAccountPassWordLineEdit.text()
-            if self.deviceTypeComboBox.currentText() == "4G":
-                self.sysItemsData["host"] = self.hostAddrLineEdit.text()
-                self.sysItemsData["port"] = self.hostPortLineEdit.text()
+            # NOTE: burning_pid is now managed via runtime device info (DeviceInfoSettingCard)
             with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
                 json.dump(self.sysItemsData, file, ensure_ascii=False, indent=4)
 
         else:
             print("sysItemsData is not a dictionary.")
 
-
-class TestItemEditFactory(QWidget):
-    def __init__(self, File, parent=None):
-        super().__init__(parent)
-        self.File = File
-        self.GridRowCount = 0
-        self.GridColCount = 0
-        self.LayOut = QGridLayout()
-        self.LayOut.setColumnStretch(1, 1)
-
-        with open(self.File, 'r', encoding='utf-8', errors='ignore') as file:
-            self.testItemsData = json.loads(file.read())
-
-        # 确保testItemsData是一个字典
-        if isinstance(self.testItemsData, dict):
-            testItemsList = self.testItemsData.get("TestItems", [])
-            for item in testItemsList:
-                name = item.get("dspName", "")
-                state = item.get("enable", False)
-                if name != '':
-                    self.create_component_enable(name, state)
-        else:
-            print("testItemsData is not a dictionary.")
-        self.LayOut.setRowStretch(self.GridRowCount, 1)
-        self.setLayout(self.LayOut)
-
-    def write_dict2Json(self):
-        # 确保testItemsData是一个字典
-        if isinstance(self.testItemsData, dict):
-            testItemsList = self.testItemsData.get("TestItems", [])
-            for item in testItemsList:
-                name = item.get("dspName", "")
-                if name != '' and self.check_component_enable(name):
-                    item.update({"enable": True})
-                else:
-                    item.update({"enable": False})
-        else:
-            print("testItemsData is not a dictionary.")
-
-        with open(self.File, 'w', encoding='utf-8', errors='ignore') as file:
-            # 将数据以JSON格式写入文件，确保中文不被转义
-            json.dump(self.testItemsData, file, ensure_ascii=False, indent=4)
-
-    def create_component_enable(self, objName, state: bool):
-        try:
-            setattr(self, objName + "CheckBox", CheckBox(objName, self))
-            getattr(self, objName + "CheckBox").setChecked(state)
-            getattr(self, objName + "CheckBox").setMinimumWidth(200)
-            getattr(self, objName + "CheckBox").stateChanged.connect(self.write_dict2Json)
-            self.LayOut.addWidget(getattr(self, objName + "CheckBox"), self.GridRowCount, self.GridColCount,
-                                  Qt.AlignLeft | Qt.AlignTop)
-            if self.GridColCount == 1:
-                self.GridRowCount += 1
-                self.GridColCount = 0
-            else:
-                self.GridColCount += 1
-
-        except Exception:
-            pass
-
-    def check_component_enable(self, objName) -> bool:
-        try:
-            state = getattr(self, objName + "CheckBox").isChecked()
-            return state
-        except Exception:
-            return None
-
-    # def resizeEvent(self, event):
-    #     # 获取当前窗口尺寸
-    #     width, height = self.width(), self.height()
-    #     print(f"标签的大小: {width, height}")
-    #     # 设置窗口的最小宽度和高度
-    #     minWidth, minHeight = 380, 300
-    #     # 确保窗口大小不小于最小尺寸
-    #     if width < minWidth or height < minHeight:
-    #         self.resize(max(width, minWidth), max(height, minHeight))
-    #         self.setMinimumSize(380, 300)
-    #     event.accept()  # 确保事件被接受和处理
-
-
-if __name__ == '__main__':
-    # 创建Qt对象
-    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    app = QApplication(sys.argv)
-    # file = 'resources/config/userConfig.json'
-    # setting_interface = TestItemEditFactory(file)
-    setting_interface = SysItemEditFactory()
-    setThemeColor("#000000")
-    setting_interface.setWindowTitle("功能选择窗口测试")
-
-    setting_interface.show()
-
-    sys.exit(app.exec())

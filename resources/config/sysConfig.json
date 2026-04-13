@@ -5,7 +5,7 @@
         "warning"
     ],
     "current_logger_level": "debug",
-    "tag_print_times": 1,
+    "tag_print_times": 2,
     "device_type": [
         "BLE",
         "BLE&4G",
@@ -24,16 +24,20 @@
             "url": "https://ireadygo.vehiclink.com"
         },
         {
-            "desc": "iReadyGo测试",
+            "desc": "iReadyGO测试",
             "url": "http://ireadygo-iot-dev.vehiclink.com"
+        },
+        {
+            "desc": "私有化测试注册",
+            "url": "http://iot-dev.vehiclink.com"
+        },
+        {
+            "desc": "飞神线上",
+            "url": "https://ireadygo.vehiclink.com"
         },
         {
             "desc": "英洛华线上",
             "url": "https://management.innuovohealthapp.com"
-        },
-        {
-            "desc": "测试注册",
-            "url": "http://iot-dev.vehiclink.com"
         },
         {
             "desc": "欧飞线上",
@@ -52,9 +56,8 @@
             "url": "https://acc.sweetrich.net"
         }
     ],
-    "reg_url": "(英洛华线上)https://management.innuovohealthapp.com",
-    "host": "tracker.us.navixy.com",
-    "port": "47694",
+    "desc": "iReadyGo线上",
+    "reg_url": "https://ireadygo.vehiclink.com",
     "current_auth_account": "dhvnw41mfa",
     "current_auth_password": "74a464528d5646e7a67a0597d57ef2bc"
 }
