@@ -1133,6 +1133,7 @@ class UserTestThread(QThread):
                     time.sleep(0.1)
                 else:
                     self.retryCnt = self.retryCnt + 1
+                    self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_GET_PRODINFO:
                 # 进入通信获取设备信息状态
@@ -1143,7 +1144,7 @@ class UserTestThread(QThread):
                 # 等待500ms
                 time.sleep(0.5)
                 # 超时
-                if self.retryCnt == 3:
+                if self.retryCnt == 5:
                     self.listIndex = -1
                     self.stateMachine = self.stateList[self.listIndex]
                     self.retryCnt = 0
@@ -1156,6 +1157,7 @@ class UserTestThread(QThread):
                     time.sleep(0.1)
                 else:
                     self.retryCnt = self.retryCnt + 1
+                    self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_GET_DEV_SN:
                 # 进入通信获取设备信息状态
@@ -1182,8 +1184,7 @@ class UserTestThread(QThread):
                     time.sleep(0.1)
                 else:
                     self.retryCnt += 1
-
-                # self.sendMutexFlag = True
+                    self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_LOAD:
                 # 进入授权信息烧录状态
@@ -1220,8 +1221,7 @@ class UserTestThread(QThread):
                     time.sleep(0.1)
                 else:
                     self.retryCnt = self.retryCnt + 1
-
-                # self.sendMutexFlag = True
+                    self.sendMutexFlag = True
 
             elif self.stateMachine == testStatus.S_AUTH_QUERY:
                 # 进入授权信息查询状态
