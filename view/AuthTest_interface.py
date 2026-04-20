@@ -310,6 +310,22 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                 self.updateSetting()
 
                 self.initialSerial(921600)
+
+                self.ser.open()  # 打开串口有可能失败，做try-except异常处理
+                # 发送复位命令
+
+                # 等待
+                time.sleep(0.2)
+
+                data = "66AABB000000CB"
+                tmp = codecs.decode(data, "hex_codec")
+
+                # 发送重启指令 不用回复
+                while not self.ser.isOpen():
+                    pass
+
+                # 发送复位命令
+                self.ser.write(tmp)
                 # 获取区域
                 self.Area = self.AreaComboBox.currentText()
 
@@ -346,22 +362,14 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
                             return None
                     # 尝试打开串口，并建立串口线程、授权线程、测试线程
                     try:
-                        self.ser.open()  # 打开串口有可能失败，做try-except异常处理
-                        # 发送复位命令
 
-                        data = "66AABB000000CB"
-                        tmp = codecs.decode(data, "hex_codec")
+                        self.initialSerial(115200)
 
-                        # 发送重启指令 不用回复
-                        while not self.ser.isOpen():
-                            pass
-
-                        # 发送复位命令
-                        self.ser.write(tmp)
                         # 等待
                         time.sleep(0.2)
 
-                        self.initialSerial(115200)
+                        # 发送复位命令
+                        self.ser.write(tmp)
 
                     except Exception as e:
                         print(str(e))

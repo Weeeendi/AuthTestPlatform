@@ -129,7 +129,7 @@ class BasePrinterThread(QThread):
                                + MAC_or_IMEI[8:10] + ': ' + MAC_or_IMEI[10:12],
                      "Area": Area[2:],
                      "PID": 'PID: ' + PID,
-                     "showId": 'IoTID: ' + deviceIotId[0:2] + deviceIotId[7:]
+                     "showId": 'IoTID: ' + deviceIotId
                      }
 
         else:
