@@ -311,7 +311,21 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
 
                 self.initialSerial(921600)
 
-                self.ser.open()  # 打开串口有可能失败，做try-except异常处理
+                # 检查串口是否已打开，已打开则先关闭
+                if self.ser.isOpen():
+                    try:
+                        self.ser.close()
+                    except:
+                        pass
+                    
+                try:    
+                    self.ser.open()  # 打开串口有可能失败，做try-except异常处理
+                except Exception as e:
+                    print(str(e))
+                    self.testStart = False
+                    showMessage("提示", "当前无串口或者串口被占用", self)
+                    return None
+                
                 # 发送复位命令
 
                 # 等待
