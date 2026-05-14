@@ -859,7 +859,10 @@ class DeviceStateChkThread(QThread):
             # self.processReadBuffer()
 
     def otaStop(self):
-        self.PCB.OTAState = OTAState.UserExit
+        try:
+            self.PCB.OTAState = OTAState.UserExit
+        except:
+            pass
 
     def otaStateChk(self) -> bool:
 

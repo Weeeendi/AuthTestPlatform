@@ -260,7 +260,7 @@ class DeviceStateTask(QThread):
         # 添加递减计时器
         last_decrement_time = time.time()
         # 递减间隔(秒)
-        decrement_interval = 1.0
+        decrement_interval = 5.0
 
         while self.running:
 
