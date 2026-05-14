@@ -40,7 +40,7 @@ except (json.JSONDecodeError, FileNotFoundError) as e:
         app_name = f'VProductTestPro_{DEFAULT_VERSION_STRING}'
     except ImportError:
         # 如果导入失败，使用硬编码的默认版本号
-        app_name = 'VProductTestPro_V25.1.0.12'
+        app_name = 'VProductTestPro_V25.1.0.14'
 
 a = Analysis(
     ['main_page.py'],

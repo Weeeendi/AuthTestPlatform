@@ -88,8 +88,17 @@ class AuthTestInterface(Ui_AuthTestInterface_UI, QWidget):
     def InitModuleConfig(self):
         # 待测设备参数
 
-        # 区域选择
-        self.AreaComboBox.addItems(['中国(CN)', '美国(US)', '欧洲(EU)'])
+        # 区域选择 - 从配置文件读取
+        configPath = baseUtils.resource_path('resources\\config\\sysConfig.json')
+        areaList = ['中国(CN)', '美国(US)', '欧洲(EU)']  # 默认值
+        try:
+            with open(configPath, 'r', encoding='utf-8', errors='ignore') as file:
+                sysItemsData = json.loads(file.read())
+                if isinstance(sysItemsData, dict):
+                    areaList = sysItemsData.get("area_config", areaList)
+        except Exception:
+            pass
+        self.AreaComboBox.addItems(areaList)
 
         self.success = 0
         self.fail = 0

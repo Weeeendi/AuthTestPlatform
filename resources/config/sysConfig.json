@@ -18,6 +18,13 @@
     ],
     "current_auth_param": "MAC",
     "current_device_type": "BLE&4G",
+    "area_config": [
+        "中国(CN)",
+        "美国(US)",
+        "欧洲(EU)",
+        "日本(JP)",
+        "印度(IN)"
+    ],
     "reg_urls": [
         {
             "desc": "iReadyGo线上",
