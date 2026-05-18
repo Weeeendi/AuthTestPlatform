@@ -15,6 +15,7 @@ from baseUart import BaseUartThread
 from baseUtils import BaseUtils
 from cmdSendInterface import DP_ListTable
 from deviceStateChk import DeviceStateChkThread, OTAState
+from device_config import DeviceConfig, DeviceType, ErrorCodeList
 from myTableWidget import myTableModel
 from qfluentwidgets import FluentIcon, MessageBox, Flyout, InfoBarIcon, themeColor
 from resources.ui.DeviceStateInterface_UI import Ui_DeviceStateInterface_UI
@@ -165,7 +166,7 @@ class DeviceStateTask(QThread):
         self.otaInProgress = bool(in_progress)
 
     def initErrDict(self):
-        for Dev in DevList:
+        for Dev in DeviceConfig.get_all_dp_groups():
             try:
                 group = self.FilterDict[Dev]
                 for key in group:
@@ -192,7 +193,7 @@ class DeviceStateTask(QThread):
 
     def addErrDescription(self, dpid, value) -> str:
         strList = ""
-        for errCode in ErrCodeList:
+        for errCode in ErrorCodeList:
             if dpid == self.errCodeDict[errCode]:
                 for i in range(len(value)):
                     if value[-(i + 1)] == '1':
@@ -220,29 +221,15 @@ class DeviceStateTask(QThread):
             return
 
         group = find_category_by_id(self.FilterDict, dpid)
-
         if group is not None:
-            if group == "Dashboard_Dp_Data":
-                page = 0
-                self.overTimeConn.dashBoardOnline = CONN_OVERTIME
-            elif group == "Controller_Dp_Data":
-                page = 1
-                self.overTimeConn.controllerOnline = CONN_OVERTIME
-            elif group == "BMS_Dp_Data":
-                page = 2
-                self.overTimeConn.BMSOnline = CONN_OVERTIME
-            elif group == "IoT_Dp_Data":
-                page = 3
-                self.overTimeConn.IotOnline = CONN_OVERTIME
-            elif group == "SubBMS_Dp_Data":
-                page = 4
-                self.overTimeConn.SubBMSOnline = CONN_OVERTIME
-
+            device_type = DeviceConfig.get_device_by_dp_group(group)
+            page = DeviceConfig.get_page_index(device_type)
+            online_attr = DeviceConfig.get_online_attr(device_type)
+            if hasattr(self.overTimeConn, online_attr):
+                setattr(self.overTimeConn, online_attr, CONN_OVERTIME)
             else:
                 return
-
             items = self.FilterDict[group]
-
             for item in items:
                 if item.get("id") == dpid:
                     dp = DataPoint(dpid, item.get('msg'), dptype, value, page)
@@ -275,15 +262,9 @@ class DeviceStateTask(QThread):
             elif self.serialOnline:
                 # 判断当前页面对应的设备是否在线
                 current_device_online = False
-                if (self.page == 0 and self.overTimeConn.dashBoardOnline > 0) or \
-                   (self.page == 1 and self.overTimeConn.controllerOnline > 0) or \
-                   (self.page == 2 and self.overTimeConn.BMSOnline > 0) or \
-                   (self.page == 3 and self.overTimeConn.IotOnline > 0) or \
-                   (self.page == 4 and self.overTimeConn.SubBMSOnline > 0):
-                    current_device_online = True
-                    # 一旦设备在线，首次连接状态结束
-                    firstConnection = False
-                    
+                device_type = DeviceConfig.get_device_by_page(self.page)
+                online_attr = DeviceConfig.get_online_attr(device_type)
+                current_device_online = hasattr(self.overTimeConn, online_attr) and getattr(self.overTimeConn, online_attr) > 0
                 if current_device_online:
                     # 设备在线
                     color = "#1afa29"
@@ -393,57 +374,46 @@ class DeviceStateInterface(Ui_DeviceStateInterface_UI, QWidget):
 
         self.setShadowEffect(self.ConnectCard)
 
-        for tab in range(self.tabPages):
-            if tab == 0:
-                # add shadow effect to card
+        for device_type in DeviceConfig.get_all_device_types():
+            config = DeviceConfig.get_config(device_type)
+            page = config['page_index']
+            groupStr = config['dp_group']
+            if page == 0:
                 self.setShadowEffect(self.DeviceCard)
                 self.setShadowEffect(self.SettingCard)
-
                 self.ParamFileToolButton.setIcon(FluentIcon.FOLDER)
                 self.FirmFileToolButton.setIcon(FluentIcon.FOLDER)
-
                 self.ParamFileToolButton.clicked.connect(lambda: self.obtainPath(self.ParamFileName))
                 self.FirmFileToolButton.clicked.connect(lambda: self.obtainPath(self.FirmFileName))
                 self.ButtonStartOTA.clicked.connect(self.onUpdateButton)
                 self.CheckBox_Param.clicked.connect(self.onUpdateFileCheckBox)
                 self.CheckBox_Firmware.clicked.connect(self.onUpdateFileCheckBox)
-                setattr(self, f"dpTableView", myTableModel(self.DpDict['Dashboard_Dp_Data']))
+                setattr(self, f"dpTableView", myTableModel(self.DpDict[groupStr]))
                 getattr(self, f"DeviceStateLayout").addWidget(getattr(self, f"dpTableView"))
+            elif groupStr:
+                self.setShadowEffect(getattr(self, f"DeviceCard_{page + 1}"))
+                self.setShadowEffect(getattr(self, f"SettingCard_{page + 1}"))
+                getattr(self, f"CheckBox_Param_{page + 1}").clicked.connect(self.onUpdateFileCheckBox)
+                getattr(self, f"CheckBox_Firmware_{page + 1}").clicked.connect(self.onUpdateFileCheckBox)
+                getattr(self, f"ParamFileToolButton_{page + 1}").setIcon(FluentIcon.FOLDER)
+                getattr(self, f"FirmFileToolButton_{page + 1}").setIcon(FluentIcon.FOLDER)
+                widget = getattr(self, f"FirmFileName_{page + 1}")
+                getattr(self, f"FirmFileToolButton_{page + 1}").clicked.connect(self.create_callback(widget))
+                widget2 = getattr(self, f"ParamFileName_{page + 1}")
+                getattr(self, f"ParamFileToolButton_{page + 1}").clicked.connect(self.create_callback(widget2))
+                setattr(self, f"dpTableView_{page}", myTableModel(self.DpDict[groupStr]))
+                getattr(self, f"DeviceStateLayout_{page + 1}").addWidget(getattr(self, f"dpTableView_{page}"))
+                getattr(self, f"ButtonStartOTA_{page + 1}").clicked.connect(self.onUpdateButton)
 
-            else:
-                self.setShadowEffect(getattr(self, f"DeviceCard_{tab + 1}"))
-                self.setShadowEffect(getattr(self, f"SettingCard_{tab + 1}"))
-
-                getattr(self, f"CheckBox_Param_{tab + 1}").clicked.connect(self.onUpdateFileCheckBox)
-                getattr(self, f"CheckBox_Firmware_{tab + 1}").clicked.connect(self.onUpdateFileCheckBox)
-
-                getattr(self, f"ParamFileToolButton_{tab + 1}").setIcon(FluentIcon.FOLDER)
-                getattr(self, f"FirmFileToolButton_{tab + 1}").setIcon(FluentIcon.FOLDER)
-                widget = getattr(self, f"FirmFileName_{tab + 1}")
-                getattr(self, f"FirmFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget))
-                widget2 = getattr(self, f"ParamFileName_{tab + 1}")
-                getattr(self, f"ParamFileToolButton_{tab + 1}").clicked.connect(self.create_callback(widget2))
-                if tab == 1:
-                    groupStr = "Controller_Dp_Data"
-                elif tab == 2:
-                    groupStr = "BMS_Dp_Data"
-                elif tab == 3:
-                    groupStr = "IoT_Dp_Data"
-                elif tab == 4:
-                    groupStr = "SubBMS_Dp_Data"
-                else:
-                    log.logger.debug('未知错误')
-                    return
-
-                setattr(self, f"dpTableView_{tab}", myTableModel(self.DpDict[groupStr]))
-                getattr(self, f"DeviceStateLayout_{tab + 1}").addWidget(getattr(self, f"dpTableView_{tab}"))
-                getattr(self, f"ButtonStartOTA_{tab + 1}").clicked.connect(self.onUpdateButton)
-
-        for tab in range(self.tabPages):
-            self.page = tab
+        for device_type in DeviceConfig.get_all_device_types():
+            config = DeviceConfig.get_config(device_type)
+            page = config['page_index']
+            # Dongle 页没有 connStateIcon_{page+1}，跳过
+            if page == 5:
+                continue
+            self.page = page
             self.light_callback("#e6e6e6", "Serial is not Connection")
             self.onUpdateFileCheckBox()
-
         self.page = 0
 
         # 单独初始化 Dongle 页

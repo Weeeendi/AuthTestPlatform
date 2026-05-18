@@ -2,6 +2,7 @@ import json
 import threading
 import time
 from enum import Enum
+from device_config import DeviceConfig, DeviceType
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -132,7 +133,7 @@ class DeviceStateChkThread(QThread):
     # 自定义信号，用来发送握手成功
     DS_shakeHandSignal_sinOut = pyqtSignal()
 
-    pageTypeList = [(0, 1), (1, 2), (2, 3), (3, 0), (4, 4), (5, 5)]
+
 
     def __init__(self):
         super(DeviceStateChkThread, self).__init__()
@@ -667,31 +668,20 @@ class DeviceStateChkThread(QThread):
             log.logger.debug('数据点更新错误应答，未在对应状态！')
 
 
-    def onStartOTA(self, path, devType):
-        protocolDeviceType = -1
-
-        # 获取协议类型
-        for i in range(len(self.pageTypeList)):
-            if devType == self.pageTypeList[i][0]:
-                protocolDeviceType = self.pageTypeList[i][1]
+    def onStartOTA(self, path, page_index):
+        # page_index 来自 UI，统一用 DeviceConfig 映射
+        device_type = DeviceConfig.get_device_by_page(page_index)
+        protocolDeviceType = DeviceConfig.get_protocol_type(device_type)
         if protocolDeviceType == -1:
             log.logger.debug('设备类型错误')
             return
         fileSize, crc32 = BaseUtils.calculate_file_info(path)
-
-        # 初始化 PCB
         log.logger.debug("升级文件地址： %s" % path)
         self.PCB = OTA_PCB(path, protocolDeviceType, fileSize, crc32, 0)
-
-        # 初始化发送互斥标志位
         self.sendMutexFlag = True
-        # 重置超时计数，避免继承上一状态的cycleCnt导致进入OTA后立刻触发超时失败
         self.cycleCnt = 0
         self.UpdateProcessState('等待升级', OTAState.GoOn, 0)
-        # 进入 OTA 状态
-
         self.stateMachine = MachineState.OTAStart
-
         for i in range(len(self.stateList)):
             if self.stateList[i] == self.stateMachine:
                 self.listIndex = i
@@ -730,8 +720,11 @@ class DeviceStateChkThread(QThread):
             percent = 100
 
         if state == OTAState.Success:
-            # 已收到退出成功应答后，回到DP展示态，避免立即重新握手导致状态混乱
-            self.doStopOTA(MachineState.DpDisplay)
+            # 结构化判断设备类型
+            if DeviceConfig.is_dongle(self.PCB.devType):
+                self.doStopOTA(MachineState.Waiting)
+            else:
+                self.doStopOTA(MachineState.DpDisplay)
             percent = 100
 
         self.DS_progressBar_sinOut.emit(percent, state, str)
